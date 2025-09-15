@@ -1,0 +1,60 @@
+{
+  "site": {
+    "title": "Dance Academy - La tua scuola, il nostro palcoscenico",
+    "logoPath": "logo.png",
+    "logoVideoPath": "logo.mp4",
+    "logoInlinePath": "logo_inline.png",
+    "videoBackgroundPath": "video.mp4",
+    "introText": "Il viaggio che racconta la danza italiana"
+  },
+  "navigation": [
+    {"text": "EPISODI", "href": "#episodi"},
+    {"text": "MISSIONE", "href": "#missione"},
+    {"text": "CANDIDATI", "href": "#candidati"},
+    {"text": "CONTATTI", "href": "#contatti"}
+  ],
+  "hero": {
+    "title": "Dance Academy",
+    "subtitle": "Il tuo talento. La nostra regia.\nIl tuo successo."
+  },
+  "missione": {
+    "copyBlocks": [
+      {
+        "title": "Ogni episodio una scuola da scoprire",
+        "text": "Non solo un video: la tua storia che raggiunge migliaia di famiglie"
+      },
+      {
+        "title": "Il palcoscenico digitale delle scuole d'Italia",
+        "text": "Il format che trasforma l'eccellenza in riconoscimento"
+      },
+      {
+        "title": "Video professionali che restano tuoi.",
+        "text": "Per il sito, per i social, per sempre."
+      }
+    ],
+    "ctaText": "CANDIDATI",
+    "ctaHref": "#candidati"
+  },
+  "candidati": {
+    "title": "Candidati",
+    "form": {
+      "fields": [
+        {"id": "nome", "label": "Il tuo nome", "type": "text", "required": true},
+        {"id": "email", "label": "Email", "type": "email", "required": true},
+        {"id": "telefono", "label": "Telefono *", "type": "tel", "required": true},
+        {"id": "scuola", "label": "Nome della scuola", "type": "text", "required": false},
+        {"id": "citta", "label": "Città", "type": "text", "required": false},
+        {"id": "messaggio", "label": "Raccontaci di te", "type": "textarea", "required": true}
+      ],
+      "submitText": "INVIA"
+    }
+  },
+  "contatti": {
+    "title": "Contatti",
+    "description": "Per informazioni, collaborazioni o richieste specifiche, contattaci direttamente.",
+    "contacts": [
+      {"type": "Email", "value": "danceacademy@gmail.com"},
+      {"type": "Telefono", "value": "+39 3334528978"}
+    ]
+  }
+}

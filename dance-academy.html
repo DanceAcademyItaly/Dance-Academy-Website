@@ -1,0 +1,1062 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title id="pageTitle">Dance Academy</title>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --black: #000000;
+            --accent: #96795c;
+            --text-primary: rgba(255, 255, 255, 0.95);
+            --text-secondary: rgba(255, 255, 255, 0.8);
+            --text-muted: rgba(255, 255, 255, 0.5);
+            --bg-dark: rgba(0, 0, 0, 0.02);
+            --bg-medium: rgba(0, 0, 0, 0.5);
+            --bg-strong: rgba(0, 0, 0, 0.7);
+            --border-default: rgba(255, 255, 255, 0.2);
+            --border-hover: rgba(255, 255, 255, 0.3);
+            --border-active: rgba(255, 255, 255, 0.6);
+            --border-light: rgba(255, 255, 255, 0.1);
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            font-weight: 300;
+            line-height: 1.6;
+            background: var(--black);
+            color: var(--text-primary);
+            overflow-x: hidden;
+        }
+
+        /* Progress Bar */
+        .progress-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 0%;
+            height: 2px;
+            background: var(--accent);
+            z-index: 10001;
+            transition: width 0.1s linear;
+        }
+
+        /* Header */
+        .header-fixed {
+            position: fixed;
+            top: 20px;
+            left: 0;
+            right: 0;
+            z-index: 10000;
+            display: flex;
+            justify-content: space-between;
+            padding: 0 40px;
+            pointer-events: none;
+        }
+
+        .header-fixed span {
+            font-size: 12px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            font-weight: 300;
+            transition: all 0.4s ease;
+        }
+
+        .header-fixed span.active {
+            color: var(--text-primary);
+        }
+
+        /* Intro */
+        .intro-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--black);
+            z-index: 20000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            animation: introFade 5s ease-in-out forwards;
+            pointer-events: none;
+        }
+
+        .intro-logo {
+            width: 60vh;
+            height: auto;
+            object-fit: contain;
+            animation: logoFade 5s ease-in-out forwards;
+        }
+
+        .intro-text {
+            color: var(--text-primary);
+            font-size: 24px;
+            text-align: center;
+            margin-top: 40px;
+            opacity: 0;
+            animation: textFade 5s ease-in-out forwards;
+            line-height: 1.2;
+        }
+
+        @keyframes introFade {
+            0%, 80% { opacity: 1; visibility: visible; }
+            100% { opacity: 0; visibility: hidden; }
+        }
+
+        @keyframes logoFade {
+            0% { opacity: 0; }
+            10% { opacity: 1; }
+            80% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+
+        @keyframes textFade {
+            0%, 50% { opacity: 0; }
+            60% { opacity: 1; }
+            80% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+
+        /* Video Background */
+        .video-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            z-index: -1;
+            opacity: 0;
+            filter: grayscale(25%) brightness(0.50) contrast(1.2);
+            animation: fadeIn 0.5s ease-in 5s forwards;
+        }
+
+        @keyframes fadeIn {
+            to { opacity: 1; }
+        }
+
+        /* Scroll Container */
+        .scroll-container {
+            opacity: 0;
+            animation: fadeIn 0.5s ease-in 4.5s forwards;
+        }
+
+        /* Blocks */
+        .block {
+            position: relative;
+            width: 100%;
+        }
+
+        /* Hero Block */
+        .hero-block {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+
+        .hero-logo {
+            height: 100px;
+            width: auto;
+            margin-bottom: 30px;
+        }
+
+        .hero-text {
+            font-size: 1.5rem;
+            color: var(--text-secondary);
+            max-width: 600px;
+            line-height: 1.6;
+        }
+
+        /* Episodi Block */
+        .episodi-block {
+            min-height: 100vh;
+            padding: 80px 40px 40px;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .episodi-container {
+            display: grid;
+            grid-template-columns: 250px 1fr;
+            gap: 40px;
+            width: fit-content;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            overflow-y: auto;
+        }
+
+        .stagione-accordion {
+            margin-bottom: 0;
+        }
+
+        .accordion-header {
+            padding: 20px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-size: 12px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            background: var(--bg-strong);
+            border: 1px solid var(--border-default);
+            transition: all 0.3s;
+        }
+
+        .accordion-header:hover {
+            color: var(--text-primary);
+            border-color: var(--border-hover);
+        }
+
+        .accordion-header.active {
+            background: rgba(0, 0, 0, 0.65);
+            border: 2px solid var(--border-active);
+            color: var(--text-primary);
+        }
+
+        .episodi-list {
+            list-style: none;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+
+        .episodi-list.expanded {
+            max-height: 500px;
+        }
+
+        .episodio-item {
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            font-size: 11px;
+            color: var(--text-secondary);
+            padding: 16px 20px;
+            background: var(--bg-dark);
+            border-left: 2px solid transparent;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .episodio-item:hover {
+            color: var(--text-primary);
+            border-left-color: var(--border-hover);
+            transform: translateX(5px);
+        }
+
+        .episodio-item.active {
+            color: var(--text-primary);
+            border-left: 2px solid var(--border-active);
+            transform: translateX(5px);
+        }
+
+        /* Content Area */
+        .content-area {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .episodio-content {
+            display: none;
+        }
+
+        .episodio-content.active {
+            display: block;
+            width: fit-content;
+        }
+
+        .video-principale {
+            width: 100%;
+            max-width: 37.5vw;
+            min-width: 400px;
+            aspect-ratio: 16/9;
+            background: var(--bg-dark);
+            border: 1px solid var(--border-default);
+            margin-bottom: 30px;
+            flex-shrink: 0;
+        }
+
+        .video-principale iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        .coreografie-section {
+            margin-top: 20px;
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            max-width: 37.5vw;
+            min-width: 400px;
+        }
+
+        .coreografie-header {
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--border-light);
+            flex-shrink: 0;
+            width: 100%;
+        }
+
+        .coreografie-grid {
+            display: flex;
+            gap: 20px;
+            flex-shrink: 0;
+            width: 100%;
+        }
+
+        .coreo-card {
+            background: var(--bg-medium);
+            border: 1px solid var(--border-default);
+            flex: 1;
+            transition: all 0.3s;
+        }
+
+        .coreo-card:hover {
+            border-color: var(--border-hover);
+        }
+
+        .coreo-video {
+            aspect-ratio: 16/9;
+            background: var(--black);
+        }
+
+        .coreo-video iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        .coreo-title {
+            padding: 15px;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--text-secondary);
+        }
+
+        /* Missione Block */
+        .missione-block {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 80px 40px;
+        }
+
+        .missione-container {
+            max-width: 800px;
+            text-align: center;
+        }
+
+        .copy-block {
+            margin: 40px 0;
+        }
+
+        .copy-block h3 {
+            font-size: 2rem;
+            font-weight: 300;
+            letter-spacing: 2px;
+            line-height: 1.3;
+            margin-bottom: 15px;
+        }
+
+        .copy-block p {
+            color: var(--text-secondary);
+            line-height: 1.8;
+            font-size: 1.3rem;
+        }
+
+        .cta-container {
+            margin-top: 60px;
+        }
+
+        .cta-primary {
+            display: inline-block;
+            background: var(--bg-medium);
+            border: 1px solid var(--border-default);
+            color: var(--text-secondary);
+            padding: 18px 45px;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            font-size: 13px;
+            text-decoration: none;
+            transition: all 0.3s;
+        }
+
+        .cta-primary:hover {
+            color: var(--text-primary);
+            border-color: var(--border-hover);
+            transform: translateY(-2px);
+        }
+
+        /* Candidati Block */
+        .candidati-block {
+            min-height: 100vh;
+            padding: 80px 40px;
+            background: var(--bg-dark);
+        }
+
+        .form-container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .form-container h2 {
+            font-size: 2rem;
+            font-weight: 300;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            margin-bottom: 50px;
+            text-align: center;
+        }
+
+        .form-section {
+            margin-bottom: 40px;
+        }
+
+        .form-section-title {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--text-secondary);
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+            position: relative;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 20px;
+            background: var(--bg-strong);
+            border: 1px solid var(--border-default);
+            color: var(--text-secondary);
+            font-family: inherit;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            transition: all 0.3s;
+        }
+
+        .form-group input::placeholder,
+        .form-group select::placeholder,
+        .form-group textarea::placeholder {
+            color: var(--text-secondary);
+        }
+
+        .form-group input:hover,
+        .form-group select:hover,
+        .form-group textarea:hover {
+            color: var(--text-primary);
+            border-color: var(--border-hover);
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            color: var(--text-primary);
+            border-color: var(--border-hover);
+        }
+
+        .form-group textarea {
+            min-height: 80px;
+            resize: vertical;
+            text-transform: none;
+        }
+
+        .form-group textarea.tall {
+            min-height: 160px;
+        }
+
+        .form-group select {
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='rgba(255,255,255,0.5)' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 15px center;
+            background-size: 20px;
+            padding-right: 45px;
+        }
+
+        .form-info {
+            padding: 16px 20px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border-default);
+            font-size: 11px;
+            letter-spacing: 1px;
+            color: var(--text-secondary);
+            margin: 15px 0;
+        }
+
+        .form-submit {
+            width: 100%;
+            padding: 18px 45px;
+            background: var(--bg-medium);
+            border: 1px solid var(--border-default);
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 30px;
+        }
+
+        .form-submit:hover {
+            color: var(--text-primary);
+            border-color: var(--border-hover);
+            transform: translateY(-2px);
+        }
+
+        /* Required asterisk styling */
+        .form-group .required-label {
+            position: absolute;
+            right: 10px;
+            top: 10px;
+            color: var(--accent);
+            font-weight: bold;
+            pointer-events: none;
+            z-index: 10;
+            font-size: 12px;
+        }
+
+        .form-group select + .required-label {
+            right: 40px;
+        }
+
+        /* Contatti Block */
+        .contatti-block {
+            min-height: 100vh;
+            padding: 80px 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 0, 0, 0.6);
+        }
+
+        .contatti-container {
+            max-width: 600px;
+            text-align: center;
+        }
+
+        .contatti-container h2 {
+            font-size: 2rem;
+            font-weight: 300;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            margin-bottom: 50px;
+        }
+
+        .contatti-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 40px;
+            margin-top: 50px;
+        }
+
+        .contatto-item h3 {
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--text-secondary);
+            margin-bottom: 15px;
+        }
+
+        .contatto-item p {
+            color: var(--text-primary);
+            font-size: 16px;
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+            .header-fixed {
+                padding: 0 20px;
+            }
+            
+            .header-fixed span {
+                font-size: 10px;
+                letter-spacing: 1px;
+            }
+
+            /* Hero adjustments */
+            .hero-logo {
+                height: 80px;
+            }
+
+            .hero-text {
+                font-size: 1.2rem;
+                padding: 0 20px;
+            }
+
+            /* Episodi responsive */
+            .episodi-container {
+                grid-template-columns: 1fr;
+                gap: 20px;
+                padding: 0 20px;
+            }
+
+            .video-principale,
+            .coreografie-section {
+                max-width: 100%;
+                min-width: unset;
+            }
+
+            .coreografie-grid {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            /* Missione responsive */
+            .missione-container {
+                padding: 0 20px;
+            }
+
+            .copy-block h3 {
+                font-size: 1.5rem;
+            }
+
+            .copy-block p {
+                font-size: 1.1rem;
+            }
+
+            /* Form responsive */
+            .form-container {
+                padding: 0 20px;
+            }
+
+            .form-container h2 {
+                font-size: 1.5rem;
+            }
+
+            .form-group input,
+            .form-group select,
+            .form-group textarea {
+                padding: 15px;
+                font-size: 11px;
+            }
+
+            /* Contatti responsive */
+            .contatti-container {
+                padding: 0 20px;
+            }
+
+            .contatti-container h2 {
+                font-size: 1.5rem;
+            }
+
+            .contatti-info {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+        }
+
+        /* Popup Styles */
+        .popup-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: overlayFadeIn 0.3s ease-out;
+        }
+
+        .popup-content {
+            background: rgba(0, 0, 0, 0.95);
+            border: 1px solid var(--border-default);
+            color: var(--text-primary);
+            padding: 40px 50px;
+            text-align: center;
+            z-index: 10000;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            font-family: inherit;
+            font-weight: 300;
+            animation: popupSlideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        }
+
+        .popup-content.success {
+            border-color: var(--accent);
+        }
+
+        .popup-title {
+            margin: 0 0 20px 0;
+            font-size: 24px;
+            font-weight: 300;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: var(--text-primary);
+            line-height: 1.3;
+        }
+
+        .popup-title.success {
+            color: var(--accent);
+        }
+
+        .popup-message {
+            margin: 0 0 30px 0;
+            font-size: 16px;
+            line-height: 1.6;
+            color: var(--text-secondary);
+            font-weight: 300;
+        }
+
+        .popup-button {
+            background: var(--bg-medium);
+            border: 1px solid var(--border-default);
+            color: var(--text-secondary);
+            padding: 15px 35px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-size: 12px;
+            cursor: pointer;
+            font-family: inherit;
+            font-weight: 300;
+            transition: all 0.3s ease;
+        }
+
+        .popup-button:hover {
+            color: var(--text-primary);
+            border-color: var(--border-hover);
+            transform: translateY(-2px);
+        }
+
+        @keyframes overlayFadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes popupSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-30px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        @media (max-width: 480px) {
+            .header-fixed {
+                padding: 0 10px;
+                flex-wrap: wrap;
+                gap: 5px;
+            }
+            
+            .header-fixed span {
+                font-size: 8px;
+                letter-spacing: 0.5px;
+            }
+
+            /* Intro adjustments */
+            .intro-logo {
+                width: 80vh;
+            }
+
+            .intro-text {
+                font-size: 18px;
+                margin-top: 20px;
+                padding: 0 20px;
+            }
+
+            /* Hero mobile */
+            .hero-logo {
+                height: 60px;
+            }
+
+            .hero-text {
+                font-size: 1rem;
+                padding: 0 15px;
+            }
+
+            /* Episodi mobile */
+            .episodi-block {
+                padding: 60px 15px 40px;
+            }
+
+            /* Missione mobile */
+            .missione-block {
+                padding: 60px 15px;
+            }
+
+            .copy-block h3 {
+                font-size: 1.2rem;
+                line-height: 1.4;
+            }
+
+            .copy-block p {
+                font-size: 1rem;
+                line-height: 1.6;
+            }
+
+            .cta-primary {
+                padding: 15px 30px;
+                font-size: 11px;
+                letter-spacing: 2px;
+            }
+
+            /* Form mobile */
+            .candidati-block {
+                padding: 60px 15px;
+            }
+
+            .form-container h2 {
+                font-size: 1.2rem;
+                margin-bottom: 30px;
+            }
+
+            .form-section-title {
+                font-size: 10px;
+            }
+
+            .form-group input,
+            .form-group select,
+            .form-group textarea {
+                padding: 12px;
+                font-size: 10px;
+                letter-spacing: 1px;
+            }
+
+            .form-submit {
+                padding: 15px 30px;
+                font-size: 11px;
+                letter-spacing: 2px;
+            }
+
+            /* Contatti mobile */
+            .contatti-block {
+                padding: 60px 15px;
+            }
+
+            .contatti-container h2 {
+                font-size: 1.2rem;
+            }
+
+            .contatto-item h3 {
+                font-size: 12px;
+            }
+
+            .contatto-item p {
+                font-size: 14px;
+            }
+        }
+
+
+    </style>
+</head>
+<body>
+    <!-- Progress Bar -->
+    <div class="progress-bar" id="progressBar"></div>
+
+    <!-- Header -->
+    <header class="header-fixed" id="header">
+        <span data-section="hero">HOME</span>
+        <span data-section="episodi">EPISODI</span>
+        <span data-section="missione">MISSIONE</span>
+        <span data-section="candidati">CANDIDATI</span>
+        <span data-section="contatti">CONTATTI</span>
+    </header>
+
+    <!-- Intro -->
+    <div class="intro-overlay">
+        <video id="introLogo" class="intro-logo" muted playsinline>
+            <source src="" type="video/mp4">
+        </video>
+        <p id="introText" class="intro-text"></p>
+    </div>
+
+    <!-- Video Background -->
+    <video id="videoBg" class="video-bg" muted loop playsinline>
+        <source src="" type="video/mp4">
+    </video>
+
+    <!-- Scroll Container -->
+    <main class="scroll-container">
+        <!-- Hero -->
+        <div class="hero-block block" data-block="hero">
+            <img id="heroLogo" src="" alt="Dance Academy" class="hero-logo">
+            <p id="heroSubtitle" class="hero-text"></p>
+        </div>
+
+        <!-- Episodi -->
+        <div class="episodi-block block" data-block="episodi">
+            <div class="episodi-container">
+                <aside class="sidebar" id="sidebar"></aside>
+                <div class="content-area" id="contentArea"></div>
+            </div>
+        </div>
+
+        <!-- Missione -->
+        <div class="missione-block block" data-block="missione">
+            <div id="missioneContainer" class="missione-container"></div>
+        </div>
+
+        <!-- Candidati -->
+        <div class="candidati-block block" data-block="candidati">
+            <div class="form-container">
+                <h2>Candidati</h2>
+                <form id="candidatiForm">
+                    <!-- Scuola -->
+                    <div class="form-section">
+                        <div class="form-section-title">SCUOLA</div>
+                        <div class="form-group">
+                            <input type="text" name="nomeScuola" placeholder="Nome della scuola *" class="required" required>
+                        </div>
+                        <div class="form-group">
+                            <input type="text" name="citta" placeholder="Città *" class="required" required>
+                        </div>
+                        <div class="form-group">
+                            <input type="text" name="provincia" placeholder="Provincia *" class="required" required>
+                        </div>
+                        <div class="form-group">
+                            <input type="text" name="indirizzo" placeholder="Indirizzo completo *" class="required" required>
+                        </div>
+                        <div class="form-group">
+                            <input type="number" name="annoFondazione" placeholder="Anno di fondazione *" class="required" min="1900" max="2024" required>
+                        </div>
+                        <div class="form-group">
+                            <select name="numeroAllievi" class="required" required>
+                                <option value="">Numero di allievi attivi *</option>
+                                <option value="<50">Meno di 50</option>
+                                <option value="50-100">50-100</option>
+                                <option value="100-200">100-200</option>
+                                <option value="200-500">200-500</option>
+                                <option value="500+">Oltre 500</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Referente -->
+                    <div class="form-section">
+                        <div class="form-section-title">REFERENTE</div>
+                        <div class="form-group">
+                            <input type="text" name="nome" placeholder="Nome *" class="required" required>
+                        </div>
+                        <div class="form-group">
+                            <input type="text" name="cognome" placeholder="Cognome *" class="required" required>
+                        </div>
+                        <div class="form-group">
+                            <select name="ruolo" class="required" required>
+                                <option value="">Ruolo *</option>
+                                <option value="proprietario">Proprietario/a</option>
+                                <option value="direttore">Direttore/direttrice artistico/a</option>
+                                <option value="amministratore">Amministratore/amministratrice</option>
+                                <option value="insegnante">Insegnante principal</option>
+                                <option value="altro">Altro</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <input type="email" name="email" placeholder="E-mail *" class="required" required>
+                        </div>
+                        <div class="form-group">
+                            <input type="tel" name="telefono" placeholder="N. telefono *" class="required" required>
+                        </div>
+                    </div>
+
+                    <!-- Profilo Artistico -->
+                    <div class="form-section">
+                        <div class="form-section-title">PROFILO ARTISTICO</div>
+                        <div class="form-group">
+                            <input type="text" name="discipline" placeholder="Discipline insegnate *" class="required" required>
+                        </div>
+                        <div class="form-group">
+                            <textarea name="riconoscimenti" placeholder="Riconoscimenti e risultati principali (ultimi 3 anni)" class="tall"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <textarea name="unicita" placeholder="Cosa rende unica la vostra scuola? *" class="tall required" required></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Presenza Online -->
+                    <div class="form-section">
+                        <div class="form-section-title">PRESENZA ONLINE</div>
+                        <div class="form-group">
+                            <input type="url" name="sitoWeb" placeholder="Sito web">
+                        </div>
+                        <div class="form-group">
+                            <input type="text" name="instagram" placeholder="Instagram">
+                        </div>
+                        <div class="form-group">
+                            <input type="text" name="facebook" placeholder="Facebook">
+                        </div>
+                        <div class="form-group">
+                            <input type="text" name="contenutiSocial" placeholder="Attualmente create contenuti per i social? *" class="required" required>
+                        </div>
+                    </div>
+
+                    <!-- Il Vostro Interesse -->
+                    <div class="form-section">
+                        <div class="form-section-title">IL VOSTRO INTERESSE</div>
+                        <div class="form-group">
+                            <textarea name="perche" placeholder="Perché volete partecipare a Dance Academy? *" class="tall required" required></textarea>
+                        </div>
+                        <div class="form-group">
+                            <select name="disponibilita" class="required" required>
+                                <option value="">Disponibilità per le riprese *</option>
+                                <option value="subito">Da subito</option>
+                                <option value="1mese">Entro 1 mese</option>
+                                <option value="2mesi">Entro 2 mesi</option>
+                                <option value="3mesi">Entro 3 mesi</option>
+                                <option value="concordare">Da concordare</option>
+                            </select>
+                        </div>
+                        <div class="form-info">
+                            Le riprese richiedono 1-2 giorni presso la vostra sede. Il nostro team gestirà tutta la produzione tecnica.
+                        </div>
+                        <div class="form-group">
+                            <textarea name="altreInfo" placeholder="Altre informazioni che vorreste condividere" class="tall"></textarea>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="form-submit">INVIA CANDIDATURA</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Contatti -->
+        <div class="contatti-block block" data-block="contatti">
+            <div id="contattiContainer" class="contatti-container"></div>
+        </div>
+    </main>
+
+    <script src="dance-academy.js"></script>
+    <script src="form-handler.js"></script>
+</body>
+</html>
