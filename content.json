@@ -1,10 +1,10 @@
 {
   "site": {
     "title": "Dance Academy - La tua scuola, il nostro palcoscenico",
-    "logoPath": "logo.png",
-    "logoVideoPath": "logo.mp4",
-    "logoInlinePath": "logo_inline.png",
-    "videoBackgroundPath": "video.mp4",
+    "logoPath": "Assets/logo.png",
+    "logoVideoPath": "Assets/logo.mp4",
+    "logoInlinePath": "Assets/logo_inline.png",
+    "videoBackgroundPath": "Assets/video.mp4",
     "introText": "Il viaggio che racconta la danza italiana"
   },
   "navigation": [

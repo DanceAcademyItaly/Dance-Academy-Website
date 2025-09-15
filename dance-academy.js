@@ -30,9 +30,9 @@ function createFallbackContent() {
     return {
         site: {
             title: "Dance Academy",
-            logoVideoPath: "logo.mp4",
-            logoInlinePath: "logo_inline.png",
-            videoBackgroundPath: "video.mp4",
+            logoVideoPath: "Assets/logo.mp4",
+            logoInlinePath: "Assets/logo_inline.png",
+            videoBackgroundPath: "Assets/video.mp4",
             introText: "Il viaggio che racconta la danza italiana"
         },
         hero: {
@@ -73,20 +73,20 @@ function populateContent() {
     
     const introLogo = document.getElementById('introLogo');
     if (introLogo) {
-        introLogo.querySelector('source').src = siteContent.site?.logoVideoPath || 'logo.mp4';
+        introLogo.querySelector('source').src = siteContent.site?.logoVideoPath || 'Assets/logo.mp4';
         introLogo.load();
     }
     
     // Video background
     const videoBg = document.getElementById('videoBg');
     if (videoBg) {
-        videoBg.querySelector('source').src = siteContent.site?.videoBackgroundPath || 'video.mp4';
+        videoBg.querySelector('source').src = siteContent.site?.videoBackgroundPath || 'Assets/video.mp4';
         videoBg.load();
     }
     
     // Hero
     const heroLogo = document.getElementById('heroLogo');
-    if (heroLogo) heroLogo.src = siteContent.site?.logoInlinePath || 'logo_inline.png';
+    if (heroLogo) heroLogo.src = siteContent.site?.logoInlinePath || 'Assets/logo_inline.png';
     
     const heroSubtitle = document.getElementById('heroSubtitle');
     if (heroSubtitle) heroSubtitle.textContent = siteContent.hero?.subtitle || '';
