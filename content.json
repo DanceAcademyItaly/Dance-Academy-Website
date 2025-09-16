@@ -53,7 +53,7 @@
     "title": "Contatti",
     "description": "Per informazioni, collaborazioni o richieste specifiche, contattaci direttamente.",
     "contacts": [
-      {"type": "Email", "value": "danceacademy@gmail.com"},
+      {"type": "Email", "value": "danceacademyitaly@gmail.com"},
       {"type": "Telefono", "value": "+39 3334528978"}
     ]
   }

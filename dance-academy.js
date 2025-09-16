@@ -326,28 +326,101 @@ function initializeScrollSystem() {
         }
     });
     
-    // Start intro video
+    // Wait for intro video to load and start intro sequence
     const introLogo = document.getElementById('introLogo');
     if (introLogo) {
-        introLogo.play().catch(e => console.log('Autoplay prevented'));
-    }
-    
-    // Start background video after intro
-    setTimeout(() => {
-        const videoBg = document.getElementById('videoBg');
-        if (videoBg) {
-            videoBg.play().catch(e => console.log('Autoplay prevented'));
+        // Function to start the intro sequence
+        function startIntroSequence() {
+            // Start intro video
+            introLogo.play().then(() => {
+                console.log('Intro video started playing');
+                
+                // Start animations immediately when video starts
+                const introOverlay = document.querySelector('.intro-overlay');
+                const introText = document.getElementById('introText');
+                const scrollContainer = document.querySelector('.scroll-container');
+                const videoBg = document.getElementById('videoBg');
+                
+                // Start intro animations
+                introLogo.classList.add('animate');
+                introOverlay.classList.add('animate');
+                if (introText) introText.classList.add('animate');
+                
+                // Start background video and its animation after intro (5s from video start)
+                setTimeout(() => {
+                    if (videoBg) {
+                        videoBg.classList.add('animate');
+                        videoBg.play().catch(e => console.log('Background video autoplay prevented'));
+                    }
+                }, 5000);
+                
+                // Show scroll container (4.5s from video start)
+                setTimeout(() => {
+                    if (scrollContainer) {
+                        scrollContainer.classList.add('animate');
+                    }
+                }, 4500);
+                
+                // Enable scrolling when intro is complete (5.5s from video start)
+                setTimeout(() => {
+                    scrollEnabled = true;
+                    document.body.style.overflow = 'auto';
+                    window.removeEventListener('scroll', preventScroll);
+                    window.removeEventListener('wheel', preventScroll);
+                    window.removeEventListener('touchmove', preventScroll);
+                    console.log('Scrolling enabled');
+                }, 5500);
+                
+            }).catch(e => {
+                console.log('Intro video autoplay prevented, starting sequence anyway');
+                // If autoplay fails, still start animations and enable scrolling
+                const introOverlay = document.querySelector('.intro-overlay');
+                const introText = document.getElementById('introText');
+                const scrollContainer = document.querySelector('.scroll-container');
+                const videoBg = document.getElementById('videoBg');
+                
+                // Start animations anyway
+                introLogo.classList.add('animate');
+                if (introOverlay) introOverlay.classList.add('animate');
+                if (introText) introText.classList.add('animate');
+                if (scrollContainer) scrollContainer.classList.add('animate');
+                if (videoBg) videoBg.classList.add('animate');
+                
+                setTimeout(() => {
+                    scrollEnabled = true;
+                    document.body.style.overflow = 'auto';
+                    window.removeEventListener('scroll', preventScroll);
+                    window.removeEventListener('wheel', preventScroll);
+                    window.removeEventListener('touchmove', preventScroll);
+                }, 1000);
+            });
         }
-    }, 5000);
-    
-    // Enable scrolling when video is fully visible (after 5.5s)
-    setTimeout(() => {
-        scrollEnabled = true;
-        document.body.style.overflow = 'auto';
-        window.removeEventListener('scroll', preventScroll);
-        window.removeEventListener('wheel', preventScroll);
-        window.removeEventListener('touchmove', preventScroll);
-    }, 5500);
+        
+        // Check if video is already loaded
+        if (introLogo.readyState >= 3) { // HAVE_FUTURE_DATA or greater
+            startIntroSequence();
+        } else {
+            // Wait for video to load enough data to play
+            introLogo.addEventListener('canplay', startIntroSequence, { once: true });
+            
+            // Fallback: if video doesn't load within 10 seconds, start anyway
+            setTimeout(() => {
+                if (!scrollEnabled) {
+                    console.log('Video loading timeout, starting sequence anyway');
+                    startIntroSequence();
+                }
+            }, 10000);
+        }
+    } else {
+        // If no intro video, enable scrolling immediately
+        setTimeout(() => {
+            scrollEnabled = true;
+            document.body.style.overflow = 'auto';
+            window.removeEventListener('scroll', preventScroll);
+            window.removeEventListener('wheel', preventScroll);
+            window.removeEventListener('touchmove', preventScroll);
+        }, 1000);
+    }
     
     // Simple Progress Bar System
     const progressBar = document.getElementById('progressBar');
@@ -422,6 +495,20 @@ function initializeScrollSystem() {
     if (currentSection) {
         updateActiveHeader(currentSection);
     }
+    
+    // Add click handlers for header navigation
+    headerSpans.forEach(span => {
+        span.style.cursor = 'pointer';
+        span.style.pointerEvents = 'all';
+        span.addEventListener('click', () => {
+            const targetSection = span.dataset.section;
+            const targetBlock = document.querySelector(`[data-block="${targetSection}"]`);
+            
+            if (targetBlock && getComputedStyle(targetBlock).display !== 'none') {
+                targetBlock.scrollIntoView({ behavior: 'smooth' });
+            }
+        });
+    });
     
     // Style required field asterisks
     const requiredFields = document.querySelectorAll('.required');

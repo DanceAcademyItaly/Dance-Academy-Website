@@ -40,6 +40,42 @@
             overflow-x: hidden;
         }
 
+        /* Hide scrollbar - webkit browsers (Chrome, Safari, Edge) */
+        ::-webkit-scrollbar {
+            width: 0px;
+            background: transparent;
+        }
+
+        /* Hide scrollbar - Firefox */
+        html {
+            scrollbar-width: none;
+        }
+
+        /* Alternative: Make scrollbar almost invisible (uncomment to use instead) */
+        /*
+        ::-webkit-scrollbar {
+            width: 4px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 2px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+        
+        html {
+            scrollbar-width: thin;
+            scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
+        }
+        */
+
         /* Progress Bar */
         .progress-bar {
             position: fixed;
@@ -72,6 +108,12 @@
             color: var(--text-muted);
             font-weight: 300;
             transition: all 0.4s ease;
+            cursor: pointer;
+            pointer-events: all;
+        }
+        
+        .header-fixed span:hover {
+            color: var(--text-primary);
         }
 
         .header-fixed span.active {
@@ -91,14 +133,23 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            animation: introFade 5s ease-in-out forwards;
+            opacity: 1;
+            visibility: visible;
             pointer-events: none;
+        }
+
+        .intro-overlay.animate {
+            animation: introFade 5s ease-in-out forwards;
         }
 
         .intro-logo {
             width: 60vh;
             height: auto;
             object-fit: contain;
+            opacity: 0;
+        }
+
+        .intro-logo.animate {
             animation: logoFade 5s ease-in-out forwards;
         }
 
@@ -108,8 +159,11 @@
             text-align: center;
             margin-top: 40px;
             opacity: 0;
-            animation: textFade 5s ease-in-out forwards;
             line-height: 1.2;
+        }
+
+        .intro-text.animate {
+            animation: textFade 5s ease-in-out forwards;
         }
 
         @keyframes introFade {
@@ -142,7 +196,10 @@
             z-index: -1;
             opacity: 0;
             filter: grayscale(25%) brightness(0.50) contrast(1.2);
-            animation: fadeIn 0.5s ease-in 5s forwards;
+        }
+
+        .video-bg.animate {
+            animation: fadeIn 0.5s ease-in forwards;
         }
 
         @keyframes fadeIn {
@@ -152,7 +209,10 @@
         /* Scroll Container */
         .scroll-container {
             opacity: 0;
-            animation: fadeIn 0.5s ease-in 4.5s forwards;
+        }
+
+        .scroll-container.animate {
+            animation: fadeIn 0.5s ease-in forwards;
         }
 
         /* Blocks */
