@@ -13,6 +13,17 @@ const SCROLL_CONFIG = {
     offset: 0
 };
 
+// Header navigation animation configuration - 2s with slow start/end, fast middle
+const HEADER_NAV_CONFIG = {
+    duration: 2.0,
+    easing: (t) => {
+        // Custom easing: very slow start and end, faster in middle
+        // Using a modified sine wave for smooth acceleration/deceleration
+        return (1 - Math.cos(t * Math.PI)) / 2;
+    },
+    offset: 0
+};
+
 // Feature detection for progressive enhancement
 function supportsLenisFeatures() {
     return !!(
@@ -121,6 +132,9 @@ function initEnhancedScrollSystem() {
 
         console.log('Lenis smooth scroll initialized successfully');
 
+        // Initialize DOM cache for performance
+        initDOMCache();
+
         // Initialize RAF loop (will be implemented in T006)
         initScrollRAF();
 
@@ -132,12 +146,6 @@ function initEnhancedScrollSystem() {
 
         // Preserve episode navigation
         preserveEpisodeNavigation();
-
-        // Verify form compatibility (T013)
-        verifyFormCompatibility();
-
-        // Verify CMS integration (T014)
-        verifyCMSIntegration();
 
     } catch (error) {
         console.error('Error initializing Lenis:', error);
@@ -168,13 +176,6 @@ function initScrollRAF() {
     console.log('RAF loop initialized for smooth scrolling');
 }
 
-// Stop RAF loop (for cleanup)
-function stopScrollRAF() {
-    if (rafId) {
-        cancelAnimationFrame(rafId);
-        rafId = null;
-    }
-}
 
 // Optimized scroll updates
 function updateScrollElements(scrollY) {
@@ -182,8 +183,18 @@ function updateScrollElements(scrollY) {
     updateProgressBar(scrollY);
 }
 
-// Cache viewport height for performance
+// Cache viewport height and common DOM elements for performance
 let cachedViewportHeight = window.innerHeight;
+let cachedHeaderSpans = null;
+let cachedBlocks = null;
+let cachedProgressBar = null;
+
+// Initialize DOM cache after page load
+function initDOMCache() {
+    cachedHeaderSpans = document.querySelectorAll('.header-fixed span[data-section]');
+    cachedBlocks = document.querySelectorAll('.block');
+    cachedProgressBar = document.getElementById('progressBar');
+}
 
 // Update cached viewport on resize
 window.addEventListener('resize', () => {
@@ -279,8 +290,7 @@ function initializeEnhancedScrollAfterIntro() {
 
 // Update progress bar (enhanced for Lenis integration)
 function updateProgressBar(scrollY) {
-    const progressBar = document.getElementById('progressBar');
-    if (!progressBar) return;
+    if (!cachedProgressBar) return;
 
     const windowHeight = window.innerHeight;
     const documentHeight = document.documentElement.scrollHeight - windowHeight;
@@ -291,7 +301,7 @@ function updateProgressBar(scrollY) {
     const progressPercentage = Math.min(100, Math.max(0, scrollPercent * 100));
 
     // Smooth progress bar update
-    progressBar.style.width = progressPercentage + '%';
+    cachedProgressBar.style.width = progressPercentage + '%';
 
     // Update active header section (preserving existing functionality)
     updateActiveHeaderSection();
@@ -299,14 +309,13 @@ function updateProgressBar(scrollY) {
 
 // Enhanced header section update for smooth scroll integration
 function updateActiveHeaderSection() {
-    const headerSpans = document.querySelectorAll('.header-fixed span[data-section]');
-    const blocks = document.querySelectorAll('.block');
+    if (!cachedHeaderSpans || !cachedBlocks) return;
 
     let activeSection = null;
     const viewportCenter = cachedViewportHeight / 2;
 
     // Find the current section based on scroll position
-    for (let block of blocks) {
+    for (let block of cachedBlocks) {
         if (getComputedStyle(block).display === 'none') continue;
 
         const rect = block.getBoundingClientRect();
@@ -321,7 +330,7 @@ function updateActiveHeaderSection() {
 
     // Update header active states
     if (activeSection) {
-        headerSpans.forEach(span => {
+        cachedHeaderSpans.forEach(span => {
             if (span.getAttribute('data-section') === activeSection) {
                 span.classList.add('active');
             } else {
@@ -333,35 +342,59 @@ function updateActiveHeaderSection() {
 
 // Header navigation preservation
 function preserveHeaderNavigation() {
-    const headerSpans = document.querySelectorAll('.header-fixed span[data-section]');
+    if (!cachedHeaderSpans) return;
 
-    headerSpans.forEach(span => {
+    cachedHeaderSpans.forEach(span => {
         span.addEventListener('click', function(e) {
             e.preventDefault();
 
             const sectionId = this.getAttribute('data-section');
-            const target = document.getElementById(sectionId);
+            const target = document.querySelector(`[data-block="${sectionId}"]`);
 
             if (target) {
                 if (lenis && isScrollSystemInitialized) {
-                    // Use Lenis for smooth scroll with responsive settings
-                    lenis.scrollTo(target, SCROLL_CONFIG);
+                    // Use Lenis for header navigation with 2-second slow-fast-slow animation
+                    lenis.scrollTo(target, HEADER_NAV_CONFIG);
                 } else {
-                    // Fallback to native smooth scroll
-                    target.scrollIntoView({
-                        behavior: 'smooth',
-                        block: 'start'
-                    });
+                    // Enhanced fallback with custom scroll behavior
+                    smoothScrollToTarget(target, HEADER_NAV_CONFIG);
                 }
 
                 // Update active state
-                headerSpans.forEach(s => s.classList.remove('active'));
+                cachedHeaderSpans.forEach(s => s.classList.remove('active'));
                 this.classList.add('active');
             }
         });
     });
 
     console.log('Header navigation preserved and enhanced');
+}
+
+// Custom smooth scroll fallback with configurable easing
+function smoothScrollToTarget(target, config) {
+    const startY = window.scrollY;
+    const targetY = target.offsetTop;
+    const distance = targetY - startY;
+    const duration = config.duration * 1000; // Convert to milliseconds
+    let startTime = null;
+
+    function animation(currentTime) {
+        if (startTime === null) startTime = currentTime;
+        const timeElapsed = currentTime - startTime;
+        const progress = Math.min(timeElapsed / duration, 1);
+
+        // Apply custom easing function
+        const easedProgress = config.easing(progress);
+        const currentY = startY + (distance * easedProgress);
+
+        window.scrollTo(0, currentY);
+
+        if (progress < 1) {
+            requestAnimationFrame(animation);
+        }
+    }
+
+    requestAnimationFrame(animation);
 }
 
 // Episode navigation sidebar preservation
@@ -406,52 +439,6 @@ function preserveEpisodeNavigation() {
     console.log('Episode navigation sidebar preservation enabled');
 }
 
-// T013: Form interactions verification - forms are independent of scroll system
-// The form-handler.js operates independently and should remain unaffected
-// Forms use preventDefault() and handle their own submission logic
-function verifyFormCompatibility() {
-    const forms = document.querySelectorAll('form');
-
-    forms.forEach(form => {
-        console.log(`Form verified: ${form.id || 'unnamed'} - independent of scroll system`);
-    });
-
-    // Ensure form containers scroll properly if needed
-    const formContainers = document.querySelectorAll('.form-container, #candidatiForm');
-    formContainers.forEach(container => {
-        // Ensure forms are accessible with smooth scroll
-        if (container) {
-            console.log('Form container accessible with smooth scroll');
-        }
-    });
-
-    console.log('T013: Form interactions verified - remain unaffected by scroll system');
-}
-
-// T014: CMS Integration Verification
-function verifyCMSIntegration() {
-    // The ContentManager is a separate system that operates independently
-    // It manages content.json which is loaded by the main site
-
-    // Verify content loading functionality
-    if (typeof loadContent === 'function') {
-        console.log('T014: Content loading function available - CMS integration preserved');
-    }
-
-    // Verify content population functions
-    if (typeof populateContent === 'function') {
-        console.log('T014: Content population function available - CMS integration preserved');
-    }
-
-    // Verify episode population (if episodes exist)
-    if (typeof populateEpisodes === 'function') {
-        console.log('T014: Episode population function available - CMS integration preserved');
-    }
-
-    // Content.json loading should remain unaffected by scroll changes
-    // The CMS operates through file system and doesn't interact with scroll
-    console.log('T014: CMS integration verified - ContentManager/ files remain functional');
-}
 
 function enhanceEpisodeLink(link) {
     // Preserve the original click handler by calling it first
