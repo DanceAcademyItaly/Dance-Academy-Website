@@ -1,2 +1,16 @@
 content-backup.json
 ContentManager/
+
+# Claude Code files
+.claude/
+CLAUDE.md
+
+# Specification files
+.specify/
+specs/
+
+# Backup files
+*.backup
+*-backup.json
+*.working-backup
+contentbackup.json

@@ -288,15 +288,17 @@ function initializeEnhancedScrollAfterIntro() {
     }
 }
 
-// Update progress bar (enhanced for Lenis integration)
+// Update progress bar (smooth normalized 0-100% progression)
 function updateProgressBar(scrollY) {
     if (!cachedProgressBar) return;
 
+    // Calculate total scrollable height
     const windowHeight = window.innerHeight;
     const documentHeight = document.documentElement.scrollHeight - windowHeight;
 
     if (documentHeight <= 0) return; // Prevent division by zero
 
+    // Simple normalized progress: 0% at top, 100% at bottom
     const scrollPercent = scrollY / documentHeight;
     const progressPercentage = Math.min(100, Math.max(0, scrollPercent * 100));
 

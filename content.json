@@ -17,6 +17,83 @@
     "title": "Dance Academy",
     "subtitle": "Il tuo talento. La nostra regia.\nIl tuo successo."
   },
+  "episodes": {
+    "seasons": [
+      {
+        "id": 1,
+        "name": "Stagione 1",
+        "episodes": [
+          {
+            "id": 1,
+            "title": "EP. 1: Accademia di Milano",
+            "mainVideo": "https://www.youtube.com/embed/dQw4w9WgXcQ",
+            "choreographies": [
+              {
+                "title": "Balletto Classico",
+                "video": "https://www.youtube.com/embed/dQw4w9WgXcQ"
+              },
+              {
+                "title": "Danza Moderna",
+                "video": "https://www.youtube.com/embed/dQw4w9WgXcQ"
+              }
+            ]
+          },
+          {
+            "id": 2,
+            "title": "EP. 2: Studio di Roma",
+            "mainVideo": "https://www.youtube.com/embed/dQw4w9WgXcQ",
+            "choreographies": [
+              {
+                "title": "Jazz Dance",
+                "video": "https://www.youtube.com/embed/dQw4w9WgXcQ"
+              },
+              {
+                "title": "Hip Hop",
+                "video": "https://www.youtube.com/embed/dQw4w9WgXcQ"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": 2,
+        "name": "Stagione 2",
+        "episodes": [
+          {
+            "id": 3,
+            "title": "EP. 1: Venezia Street Dance",
+            "mainVideo": "https://www.youtube.com/embed/dQw4w9WgXcQ",
+            "choreographies": [
+              {
+                "title": "Street Style",
+                "video": "https://www.youtube.com/embed/dQw4w9WgXcQ"
+              },
+              {
+                "title": "Urban Moves",
+                "video": "https://www.youtube.com/embed/dQw4w9WgXcQ"
+              }
+            ]
+          },
+          {
+            "id": 4,
+            "title": "EP. 2: Palermo Jazz Studio",
+            "mainVideo": "https://www.youtube.com/embed/dQw4w9WgXcQ",
+            "choreographies": [
+              {
+                "title": "Jazz Fusion",
+                "video": "https://www.youtube.com/embed/dQw4w9WgXcQ"
+              },
+              {
+                "title": "Latin Jazz",
+                "video": "https://www.youtube.com/embed/dQw4w9WgXcQ"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "defaultActiveEpisode": 1
+  },
   "missione": {
     "copyBlocks": [
       {
