@@ -392,8 +392,32 @@ function updateProgressBar(scrollY) {
                     const progressInSection = (scrollY - section.top) / section.height;
                     const clampedProgressInSection = Math.min(1, Math.max(0, progressInSection));
 
-                    // Calculate total progress: completed sections + progress in current section
-                    progressPercentage = section.progressStart + (clampedProgressInSection * section.progressRange);
+                    // Special handling for candidati section to ensure linear progression
+                    if (section.id === 'candidati') {
+                        // For candidati, use linear progression from its start to the point where contatti transition begins
+                        const contattiSection = sectionProgressData.sections.find(s => s.id === 'contatti');
+                        if (contattiSection) {
+                            // Calculate the exact progress value where contatti transition would start
+                            const contattiTransitionStart = contattiSection.top - window.innerHeight;
+                            const candidatiEffectiveEnd = Math.min(section.bottom, contattiTransitionStart);
+                            const candidatiEffectiveHeight = candidatiEffectiveEnd - section.top;
+
+                            if (candidatiEffectiveHeight > 0 && scrollY <= candidatiEffectiveEnd) {
+                                const effectiveProgressInSection = (scrollY - section.top) / candidatiEffectiveHeight;
+                                const clampedEffectiveProgress = Math.min(1, Math.max(0, effectiveProgressInSection));
+                                progressPercentage = section.progressStart + (clampedEffectiveProgress * section.progressRange);
+                            } else {
+                                // Fallback to normal calculation
+                                progressPercentage = section.progressStart + (clampedProgressInSection * section.progressRange);
+                            }
+                        } else {
+                            // No contatti section found, use normal calculation
+                            progressPercentage = section.progressStart + (clampedProgressInSection * section.progressRange);
+                        }
+                    } else {
+                        // Normal calculation for all other sections
+                        progressPercentage = section.progressStart + (clampedProgressInSection * section.progressRange);
+                    }
                     break;
                 } else if (scrollY < section.top) {
                     // We're before this section - use previous section's end progress
