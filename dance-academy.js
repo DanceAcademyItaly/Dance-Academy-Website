@@ -132,8 +132,7 @@ function initEnhancedScrollSystem() {
 
         console.log('Lenis smooth scroll initialized successfully');
 
-        // Initialize DOM cache for performance
-        initDOMCache();
+        // DOM cache already initialized in loadContent()
 
         // Initialize RAF loop (will be implemented in T006)
         initScrollRAF();
@@ -187,18 +186,83 @@ function updateScrollElements(scrollY) {
 let cachedViewportHeight = window.innerHeight;
 let cachedHeaderSpans = null;
 let cachedBlocks = null;
+let cachedVisibleBlocks = null;
 let cachedProgressBar = null;
+let cachedDocumentHeight = 0;
+let lastHeaderUpdate = 0;
+const HEADER_UPDATE_THROTTLE = 100; // Update header every 100ms max
+
+// Section-based progress bar data
+let sectionProgressData = null;
 
 // Initialize DOM cache after page load
 function initDOMCache() {
     cachedHeaderSpans = document.querySelectorAll('.header-fixed span[data-section]');
     cachedBlocks = document.querySelectorAll('.block');
     cachedProgressBar = document.getElementById('progressBar');
+    updateVisibleBlocks();
+    updateCachedDocumentHeight();
+}
+
+// Update cached visible blocks (only when layout changes)
+function updateVisibleBlocks() {
+    if (!cachedBlocks) return; // Safety check
+    cachedVisibleBlocks = Array.from(cachedBlocks).filter(block =>
+        getComputedStyle(block).display !== 'none'
+    );
+    // Recalculate section progress data when visible blocks change
+    calculateSectionProgressData();
+}
+
+// Update cached document height
+function updateCachedDocumentHeight() {
+    cachedDocumentHeight = document.documentElement.scrollHeight - window.innerHeight;
+}
+
+// Calculate section-based progress data for equal progress bar divisions
+function calculateSectionProgressData() {
+    if (!cachedVisibleBlocks || cachedVisibleBlocks.length === 0) {
+        sectionProgressData = null;
+        return;
+    }
+
+    const sections = [];
+    const totalSections = cachedVisibleBlocks.length;
+    const progressPerSection = 100 / totalSections; // Equal divisions
+
+    cachedVisibleBlocks.forEach((block, index) => {
+        const sectionId = block.dataset.block;
+        const sectionTop = block.offsetTop;
+        const sectionHeight = block.offsetHeight;
+        const sectionBottom = sectionTop + sectionHeight;
+
+        sections.push({
+            id: sectionId,
+            element: block,
+            top: sectionTop,
+            bottom: sectionBottom,
+            height: sectionHeight,
+            progressStart: index * progressPerSection,
+            progressEnd: (index + 1) * progressPerSection,
+            progressRange: progressPerSection
+        });
+    });
+
+    sectionProgressData = {
+        sections: sections,
+        totalSections: totalSections,
+        progressPerSection: progressPerSection
+    };
+
+    console.log(`Section progress data calculated: ${totalSections} sections`);
 }
 
 // Update cached viewport on resize
 window.addEventListener('resize', () => {
     cachedViewportHeight = window.innerHeight;
+    updateCachedDocumentHeight();
+    // Recalculate section progress data on resize
+    calculateSectionProgressData();
 });
 
 // Enhanced anchor navigation with smooth scroll
@@ -290,42 +354,74 @@ function initializeEnhancedScrollAfterIntro() {
 
 // Update progress bar (smooth normalized 0-100% progression)
 function updateProgressBar(scrollY) {
-    if (!cachedProgressBar) return;
+    if (!cachedProgressBar || !sectionProgressData) return;
 
-    // Calculate total scrollable height
-    const windowHeight = window.innerHeight;
-    const documentHeight = document.documentElement.scrollHeight - windowHeight;
+    let progressPercentage = 0;
 
-    if (documentHeight <= 0) return; // Prevent division by zero
+    // Use scroll position instead of viewport center to start from 0%
+    for (let i = 0; i < sectionProgressData.sections.length; i++) {
+        const section = sectionProgressData.sections[i];
 
-    // Simple normalized progress: 0% at top, 100% at bottom
-    const scrollPercent = scrollY / documentHeight;
-    const progressPercentage = Math.min(100, Math.max(0, scrollPercent * 100));
+        if (scrollY >= section.top && scrollY <= section.bottom) {
+            // We're in this section - calculate progress within it
+            const progressInSection = (scrollY - section.top) / section.height;
+            const clampedProgressInSection = Math.min(1, Math.max(0, progressInSection));
+
+            // Calculate total progress: completed sections + progress in current section
+            progressPercentage = section.progressStart + (clampedProgressInSection * section.progressRange);
+            break;
+        } else if (scrollY < section.top) {
+            // We're before this section - use previous section's end progress
+            progressPercentage = i > 0 ? sectionProgressData.sections[i - 1].progressEnd : 0;
+            break;
+        } else if (i === sectionProgressData.sections.length - 1) {
+            // We're past the last section
+            progressPercentage = 100;
+        }
+    }
+
+    // Clamp to 0-100 range
+    progressPercentage = Math.min(100, Math.max(0, progressPercentage));
 
     // Smooth progress bar update
     cachedProgressBar.style.width = progressPercentage + '%';
 
-    // Update active header section (preserving existing functionality)
-    updateActiveHeaderSection();
+    // Throttle header updates for performance
+    const now = performance.now();
+    if (now - lastHeaderUpdate > HEADER_UPDATE_THROTTLE) {
+        updateActiveHeaderSection(scrollY);
+        lastHeaderUpdate = now;
+    }
 }
 
 // Enhanced header section update for smooth scroll integration
-function updateActiveHeaderSection() {
-    if (!cachedHeaderSpans || !cachedBlocks) return;
+function updateActiveHeaderSection(scrollY) {
+    if (!cachedHeaderSpans || !cachedVisibleBlocks) return;
 
     let activeSection = null;
-    const viewportCenter = cachedViewportHeight / 2;
 
-    // Find the current section based on scroll position
-    for (let block of cachedBlocks) {
-        if (getComputedStyle(block).display === 'none') continue;
+    // Find section with early switching (when current section is 3/4 through)
+    for (let i = 0; i < cachedVisibleBlocks.length; i++) {
+        const block = cachedVisibleBlocks[i];
+        const blockTop = block.offsetTop;
+        const blockHeight = block.offsetHeight;
+        const blockBottom = blockTop + blockHeight;
 
-        const rect = block.getBoundingClientRect();
-        const blockTop = rect.top;
-        const blockBottom = rect.bottom;
+        // Calculate 75% point through current section
+        const switchPoint = blockTop + (blockHeight * 0.75);
 
-        if (blockTop <= viewportCenter && blockBottom >= viewportCenter) {
+        if (scrollY >= blockTop && scrollY < switchPoint) {
+            // We're in the first 75% of this section
             activeSection = block.dataset.block || block.id;
+            break;
+        } else if (scrollY >= switchPoint && scrollY <= blockBottom) {
+            // We're in the last 25% of this section - highlight next section
+            if (i + 1 < cachedVisibleBlocks.length) {
+                activeSection = cachedVisibleBlocks[i + 1].dataset.block || cachedVisibleBlocks[i + 1].id;
+            } else {
+                // Last section, keep current section highlighted
+                activeSection = block.dataset.block || block.id;
+            }
             break;
         }
     }
@@ -472,7 +568,10 @@ async function loadContent() {
         siteContent = createFallbackContent();
         hasEpisodes = false;
     }
-    
+
+    // Initialize DOM cache early
+    initDOMCache();
+
     populateContent();
     initializeScrollSystem();
 }
@@ -554,7 +653,10 @@ function populateContent() {
     if (hasEpisodes) {
         document.querySelector('.episodi-block').style.display = 'flex';
         populateEpisodes();
-        
+
+        // Update visible blocks after showing episodes
+        updateVisibleBlocks();
+
         // Update header to show episodes
         const headerSpans = document.querySelectorAll('.header-fixed span');
         headerSpans[1].style.display = 'inline';
