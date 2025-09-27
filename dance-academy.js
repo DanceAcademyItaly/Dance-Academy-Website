@@ -358,25 +358,74 @@ function updateProgressBar(scrollY) {
 
     let progressPercentage = 0;
 
-    // Use scroll position instead of viewport center to start from 0%
-    for (let i = 0; i < sectionProgressData.sections.length; i++) {
-        const section = sectionProgressData.sections[i];
+    // Find contatti section for special handling
+    const contattiSection = sectionProgressData.sections.find(section => section.id === 'contatti');
 
-        if (scrollY >= section.top && scrollY <= section.bottom) {
-            // We're in this section - calculate progress within it
-            const progressInSection = (scrollY - section.top) / section.height;
-            const clampedProgressInSection = Math.min(1, Math.max(0, progressInSection));
+    if (contattiSection) {
+        // Calculate when contatti section starts appearing (top reaches bottom of viewport)
+        const contattiStartsAppearing = contattiSection.top - window.innerHeight;
+        // Calculate when contatti section is fully visible (bottom reaches bottom of viewport)
+        const contattiFullyVisible = contattiSection.bottom - window.innerHeight;
 
-            // Calculate total progress: completed sections + progress in current section
-            progressPercentage = section.progressStart + (clampedProgressInSection * section.progressRange);
-            break;
-        } else if (scrollY < section.top) {
-            // We're before this section - use previous section's end progress
-            progressPercentage = i > 0 ? sectionProgressData.sections[i - 1].progressEnd : 0;
-            break;
-        } else if (i === sectionProgressData.sections.length - 1) {
-            // We're past the last section
+        if (scrollY >= contattiFullyVisible) {
+            // Contatti is fully visible - progress bar at 100%
             progressPercentage = 100;
+        } else if (scrollY >= contattiStartsAppearing) {
+            // Contatti is appearing - interpolate from previous progress to 100%
+            const previousSectionIndex = sectionProgressData.sections.findIndex(s => s.id === 'contatti') - 1;
+            const startProgress = previousSectionIndex >= 0 ? sectionProgressData.sections[previousSectionIndex].progressEnd : 80;
+
+            const progressInContattiTransition = (scrollY - contattiStartsAppearing) / (contattiFullyVisible - contattiStartsAppearing);
+            const clampedProgress = Math.min(1, Math.max(0, progressInContattiTransition));
+
+            progressPercentage = startProgress + (clampedProgress * (100 - startProgress));
+        } else {
+            // Use normal section-based calculation for sections before contatti
+            for (let i = 0; i < sectionProgressData.sections.length; i++) {
+                const section = sectionProgressData.sections[i];
+
+                // Skip contatti section in normal calculation
+                if (section.id === 'contatti') continue;
+
+                if (scrollY >= section.top && scrollY <= section.bottom) {
+                    // We're in this section - calculate progress within it
+                    const progressInSection = (scrollY - section.top) / section.height;
+                    const clampedProgressInSection = Math.min(1, Math.max(0, progressInSection));
+
+                    // Calculate total progress: completed sections + progress in current section
+                    progressPercentage = section.progressStart + (clampedProgressInSection * section.progressRange);
+                    break;
+                } else if (scrollY < section.top) {
+                    // We're before this section - use previous section's end progress
+                    progressPercentage = i > 0 ? sectionProgressData.sections[i - 1].progressEnd : 0;
+                    break;
+                } else if (i === sectionProgressData.sections.length - 2) {
+                    // We're past the second-to-last section (before contatti)
+                    progressPercentage = section.progressEnd;
+                }
+            }
+        }
+    } else {
+        // Fallback to original section-based calculation if contatti not found
+        for (let i = 0; i < sectionProgressData.sections.length; i++) {
+            const section = sectionProgressData.sections[i];
+
+            if (scrollY >= section.top && scrollY <= section.bottom) {
+                // We're in this section - calculate progress within it
+                const progressInSection = (scrollY - section.top) / section.height;
+                const clampedProgressInSection = Math.min(1, Math.max(0, progressInSection));
+
+                // Calculate total progress: completed sections + progress in current section
+                progressPercentage = section.progressStart + (clampedProgressInSection * section.progressRange);
+                break;
+            } else if (scrollY < section.top) {
+                // We're before this section - use previous section's end progress
+                progressPercentage = i > 0 ? sectionProgressData.sections[i - 1].progressEnd : 0;
+                break;
+            } else if (i === sectionProgressData.sections.length - 1) {
+                // We're past the last section
+                progressPercentage = 100;
+            }
         }
     }
 
