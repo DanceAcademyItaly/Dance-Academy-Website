@@ -146,6 +146,11 @@ function initEnhancedScrollSystem() {
         // Preserve episode navigation
         preserveEpisodeNavigation();
 
+        // Initialize episodi parallax now that Lenis is ready
+        if (hasEpisodes) {
+            initEpisodiParallax();
+        }
+
     } catch (error) {
         console.error('Error initializing Lenis:', error);
         initBasicScroll(); // Fallback to basic scroll
@@ -439,47 +444,35 @@ function handleResponsiveResize() {
     }, 150); // 150ms throttle for good responsiveness without performance impact
 }
 
-// Initialize hero section scroll-decoupled animations
-function initHeroDecoupledAnimations() {
+// Initialize hero section animations with direct approach
+function initHeroAnimations() {
     const heroLogo = document.getElementById('heroLogo');
     const heroSubtitle = document.getElementById('heroSubtitle');
+
+    if (!heroLogo && !heroSubtitle) return;
 
     // Store original positions before any modifications
     const originalPositions = captureOriginalHeroPositions(heroLogo, heroSubtitle);
 
-    // Hero section height for scroll range calculation
-    const heroSectionHeight = window.innerHeight; // Hero section is 100vh
-
-    // Add resize listener for responsive distance updates
-    window.addEventListener('resize', handleResponsiveResize);
-
     if (heroLogo) {
-        // Position hero logo to stay fixed vertically
         setupHeroElementPositioning(heroLogo, originalPositions.logo);
-
-        // Logo exits to the left - movement over full hero section height
-        addDecoupledElement(heroLogo, 'heroExit', {
-            direction: 'left',
-            startTrigger: 0,
-            endTrigger: heroSectionHeight,  // Use hero section height as range
-            totalDistance: 100     // 100vw total movement distance
-        });
     }
 
     if (heroSubtitle) {
-        // Position hero subtitle to stay fixed vertically
         setupHeroElementPositioning(heroSubtitle, originalPositions.subtitle);
-
-        // Subtitle exits to the right - movement over full hero section height
-        addDecoupledElement(heroSubtitle, 'heroExit', {
-            direction: 'right',
-            startTrigger: 0,
-            endTrigger: heroSectionHeight,  // Use hero section height as range
-            totalDistance: 100     // 100vw total movement distance
-        });
     }
 
-    console.log('Hero scroll-decoupled animations initialized');
+    // Store state for direct scroll updates (same approach as episodi)
+    heroAnimationState = {
+        heroLogo,
+        heroSubtitle,
+        heroSectionHeight: window.innerHeight // Hero section is 100vh
+    };
+
+    // Add resize listener for responsive updates
+    window.addEventListener('resize', handleResponsiveResize);
+
+    console.log('Hero animations initialized with direct approach');
 }
 
 // Capture original hero positions to preserve relative spacing
@@ -558,8 +551,13 @@ function updateScrollElements(scrollY) {
     // Update progress bar with raw scroll (keep original behavior)
     updateProgressBar(scrollY);
 
-    // Update decoupled elements with processed scroll
-    updateDecoupledElements(processedScroll);
+    // Update hero animations with direct approach
+    updateHeroAnimations(scrollY);
+
+    // Update episodi parallax if initialized
+    if (episodiParallaxState) {
+        updateEpisodiParallax(scrollY, episodiParallaxState);
+    }
 }
 
 // Cache viewport height and common DOM elements for performance
@@ -1102,13 +1100,15 @@ function populateContent() {
     const heroSubtitle = document.getElementById('heroSubtitle');
     if (heroSubtitle) heroSubtitle.textContent = siteContent.hero?.subtitle || '';
 
-    // Initialize scroll-decoupled hero animations
-    initHeroDecoupledAnimations();
+    // Initialize hero animations with direct approach
+    initHeroAnimations();
     
     // Episodes
     if (hasEpisodes) {
         document.querySelector('.episodi-block').style.display = 'flex';
         populateEpisodes();
+
+        // Initialize episodi parallax after content is populated (will be called when Lenis is ready)
 
         // Update visible blocks after showing episodes
         updateVisibleBlocks();
@@ -1549,6 +1549,225 @@ function initializeScrollSystem() {
 
     // Initialize form handler (from form-handler.js)
     initFormHandler();
+}
+
+// Episodi deadzone positioning calculation
+function calculateEpisodiDeadzonePosition() {
+    const header = document.querySelector('.header-fixed');
+    const headerSpan = header.querySelector('span');
+
+    // Get header measurements
+    const headerTop = 20; // Fixed CSS value
+    const headerRect = headerSpan.getBoundingClientRect();
+    const headerTextHeight = headerRect.height;
+
+    // Calculate symmetric position: distance from top to header = distance from header to content
+    const targetContentTop = headerTop + headerTextHeight + headerTop;
+
+    return targetContentTop;
+}
+
+// Episodi parallax configuration - desktop only
+const episodiParallaxConfig = {
+    enabled: true,
+    // Original curves that maintain proper speed hierarchy
+    sidebarEasing: t => 1 - Math.pow(1 - t, 4), // Stronger ease-out (slower)
+    contentEasing: t => 1 - Math.pow(1 - t, 2), // Pure ease-out with higher max speed
+};
+
+// Episodi parallax state
+let episodiParallaxState = null;
+
+// Hero animation state
+let heroAnimationState = null;
+
+// Initialize episodi parallax system
+function initEpisodiParallax() {
+    // Only enable on desktop
+    if (window.innerWidth <= 768) return;
+
+    const sidebar = document.querySelector('.sidebar');
+    const contentArea = document.querySelector('.content-area');
+
+    if (!sidebar || !contentArea) return;
+
+    const deadzonePosition = calculateEpisodiDeadzonePosition();
+
+    // Get original positions before decoupling
+    const sidebarRect = sidebar.getBoundingClientRect();
+    const contentRect = contentArea.getBoundingClientRect();
+
+    const sidebarOriginalTop = sidebarRect.top + window.scrollY;
+    const contentOriginalTop = contentRect.top + window.scrollY;
+
+    // Decouple elements from document flow
+    sidebar.style.position = 'fixed';
+    sidebar.style.top = sidebarRect.top + 'px';
+    sidebar.style.left = sidebarRect.left + 'px';
+    sidebar.style.width = sidebarRect.width + 'px';
+    sidebar.style.zIndex = '1000';
+
+    contentArea.style.position = 'fixed';
+    contentArea.style.top = contentRect.top + 'px';
+    contentArea.style.left = contentRect.left + 'px';
+    contentArea.style.width = contentRect.width + 'px';
+    contentArea.style.zIndex = '1000';
+
+    // Calculate how far each element needs to move to reach deadzone
+    const sidebarTravelDistance = sidebarOriginalTop - deadzonePosition;
+    const contentTravelDistance = contentOriginalTop - deadzonePosition;
+
+    // Add spacer to maintain document flow height
+    const episodiBlock = document.querySelector('.episodi-block');
+    const episodiOriginalHeight = episodiBlock.offsetHeight;
+
+    const spacer = document.createElement('div');
+    spacer.style.height = episodiOriginalHeight + 'px';
+    spacer.className = 'episodi-spacer';
+    episodiBlock.parentNode.insertBefore(spacer, episodiBlock.nextSibling);
+
+    // Store state for use in updateScrollElements
+    episodiParallaxState = {
+        sidebar,
+        contentArea,
+        sidebarTravelDistance,
+        contentTravelDistance,
+        deadzonePosition,
+        sidebarOriginalTop: sidebarRect.top,
+        contentOriginalTop: contentRect.top
+    };
+
+    console.log('Episodi parallax initialized for desktop', {
+        deadzonePosition,
+        sidebarTravelDistance,
+        contentTravelDistance,
+        sidebarOriginalTop,
+        contentOriginalTop
+    });
+}
+
+// Update episodi parallax positions with 3-phase behavior
+function updateEpisodiParallax(scrollY, elements) {
+    if (!episodiParallaxConfig.enabled || window.innerWidth <= 768) return;
+
+    const {
+        sidebar,
+        contentArea,
+        sidebarTravelDistance,
+        contentTravelDistance,
+        deadzonePosition,
+        sidebarOriginalTop,
+        contentOriginalTop
+    } = elements;
+
+    // Phase definitions
+    const entranceStart = 200;
+    const entranceEnd = 1200;    // Elements reach deadzone
+    const deadzoneEnd = 1450;    // 250px deadzone duration
+    const exitEnd = 2450;        // 1000px exit animation
+
+    if (scrollY < entranceStart) {
+        // Before entrance - elements at original positions
+        sidebar.style.top = sidebarOriginalTop + 'px';
+        contentArea.style.top = contentOriginalTop + 'px';
+        sidebar.style.opacity = '1';
+        contentArea.style.opacity = '1';
+        sidebar.style.transform = 'translateX(0)';
+        contentArea.style.transform = 'translateX(0)';
+
+    } else if (scrollY <= entranceEnd) {
+        // Phase 1: Entrance - current parallax behavior
+        const scrollProgress = (scrollY - entranceStart) / (entranceEnd - entranceStart);
+        const sidebarEasedProgress = episodiParallaxConfig.sidebarEasing(scrollProgress);
+        const contentEasedProgress = episodiParallaxConfig.contentEasing(scrollProgress);
+
+        const sidebarMovement = sidebarTravelDistance * sidebarEasedProgress;
+        const contentMovement = contentTravelDistance * contentEasedProgress;
+
+        sidebar.style.top = (sidebarOriginalTop - sidebarMovement) + 'px';
+        contentArea.style.top = (contentOriginalTop - contentMovement) + 'px';
+        sidebar.style.opacity = '1';
+        contentArea.style.opacity = '1';
+        sidebar.style.transform = 'translateX(0)';
+        contentArea.style.transform = 'translateX(0)';
+
+    } else if (scrollY <= deadzoneEnd) {
+        // Phase 2: Deadzone - elements stay fixed at deadzone positions
+        sidebar.style.top = (sidebarOriginalTop - sidebarTravelDistance) + 'px';
+        contentArea.style.top = (contentOriginalTop - contentTravelDistance) + 'px';
+        sidebar.style.opacity = '1';
+        contentArea.style.opacity = '1';
+        sidebar.style.transform = 'translateX(0)';
+        contentArea.style.transform = 'translateX(0)';
+
+    } else {
+        // Phase 3: Exit - horizontal slide out with fade (hero-style)
+        const exitProgress = Math.min(1, (scrollY - deadzoneEnd) / (exitEnd - deadzoneEnd));
+        const exitEasing = Math.pow(exitProgress, 1.25); // Same as hero easeInFast
+
+        // Calculate fade (same as hero: starts at 33%, fully faded at 80%)
+        let opacity = 1;
+        if (exitProgress >= 0.33) {
+            if (exitProgress >= 0.8) {
+                opacity = 0;
+            } else {
+                const fadeProgress = (exitProgress - 0.33) / 0.47;
+                opacity = 1 - Math.pow(fadeProgress, 0.5);
+            }
+        }
+
+        // Horizontal movement (less range than hero since elements are positioned differently)
+        const moveDistance = 60; // 60vw instead of 100vw for hero
+        const sidebarMoveX = -moveDistance * exitEasing; // Left
+        const contentMoveX = moveDistance * exitEasing;   // Right
+
+        // Apply exit animation
+        sidebar.style.top = (sidebarOriginalTop - sidebarTravelDistance) + 'px';
+        contentArea.style.top = (contentOriginalTop - contentTravelDistance) + 'px';
+        sidebar.style.opacity = opacity;
+        contentArea.style.opacity = opacity;
+        sidebar.style.transform = `translateX(${sidebarMoveX}vw)`;
+        contentArea.style.transform = `translateX(${contentMoveX}vw)`;
+    }
+}
+
+// Update hero animations with direct scroll position checking (same approach as episodi)
+function updateHeroAnimations(scrollY) {
+    if (!heroAnimationState) return;
+
+    const { heroLogo, heroSubtitle, heroSectionHeight } = heroAnimationState;
+
+    // Hero exit animation runs from 0 to heroSectionHeight (100vh)
+    const exitProgress = Math.min(1, Math.max(0, scrollY / heroSectionHeight));
+    const exitEasing = Math.pow(exitProgress, 1.25); // Same easeInFast as original
+
+    // Calculate fade (same as original: starts at 33%, fully faded at 80%)
+    let opacity = 1;
+    if (exitProgress >= 0.33) {
+        if (exitProgress >= 0.8) {
+            opacity = 0;
+        } else {
+            const fadeProgress = (exitProgress - 0.33) / 0.47;
+            opacity = 1 - Math.pow(fadeProgress, 0.5);
+        }
+    }
+
+    // Apply horizontal movement and fade to both elements
+    const moveDistance = 100; // 100vw total movement distance
+
+    if (heroLogo) {
+        const logoMoveX = -moveDistance * exitEasing; // Exit left
+        heroLogo.style.opacity = opacity;
+        // Combine centering transform (-50%) with exit movement
+        heroLogo.style.transform = `translateX(calc(-50% + ${logoMoveX}vw))`;
+    }
+
+    if (heroSubtitle) {
+        const subtitleMoveX = moveDistance * exitEasing; // Exit right
+        heroSubtitle.style.opacity = opacity;
+        // Combine centering transform (-50%) with exit movement
+        heroSubtitle.style.transform = `translateX(calc(-50% + ${subtitleMoveX}vw))`;
+    }
 }
 
 // Start
