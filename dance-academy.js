@@ -1572,7 +1572,7 @@ const episodiParallaxConfig = {
     enabled: true,
     // Original curves that maintain proper speed hierarchy
     sidebarEasing: t => 1 - Math.pow(1 - t, 4), // Stronger ease-out (slower)
-    contentEasing: t => 1 - Math.pow(1 - t, 2), // Pure ease-out with higher max speed
+    contentEasing: t => 1 - Math.pow(1 - t, 1.5), // Pure ease-out with moderate speed
 };
 
 // Episodi parallax state
