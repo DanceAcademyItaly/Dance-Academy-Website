@@ -180,7 +180,9 @@
         }
 
         .intro-logo {
-            width: 60vh;
+            width: calc(80vh * (100vw / 480px) * 0.8);
+            min-width: 80vh;
+            max-width: 96vh;
             height: auto;
             object-fit: contain;
             opacity: 0;
@@ -269,7 +271,9 @@
         }
 
         .hero-logo {
-            height: 100px;
+            height: calc(100px * (100vw / 1600px));
+            min-height: 60px;
+            max-height: 140px;
             width: auto;
             margin-bottom: 30px;
         }
@@ -705,10 +709,6 @@
             }
 
             /* Hero adjustments */
-            .hero-logo {
-                height: 80px;
-            }
-
             .hero-text {
                 font-size: 1.2rem;
                 padding: 0 20px;
@@ -882,10 +882,6 @@
             }
 
             /* Intro adjustments */
-            .intro-logo {
-                width: 80vh;
-            }
-
             .intro-text {
                 font-size: 18px;
                 margin-top: 20px;
@@ -893,10 +889,6 @@
             }
 
             /* Hero mobile */
-            .hero-logo {
-                height: 60px;
-            }
-
             .hero-text {
                 font-size: 1rem;
                 padding: 0 15px;

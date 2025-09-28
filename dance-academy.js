@@ -176,10 +176,390 @@ function initScrollRAF() {
 }
 
 
-// Optimized scroll updates
+// Scroll decoupling system
+let scrollDecouplingConfig = {
+    enabled: true,
+    deadzones: [
+        // { start: 0, end: 50 },      // Example: pause at top
+        // { start: 500, end: 600 },   // Example: pause between sections
+    ],
+    globalMultiplier: 1.0,
+    easing: {
+        enabled: false,
+        factor: 0.1
+    }
+};
+
+let decoupledScrollState = {
+    rawScroll: 0,
+    processedScroll: 0,
+    velocity: 0,
+    inDeadzone: false,
+    currentDeadzone: null
+};
+
+// Process raw scroll input into custom scroll values
+function processScrollInput(rawScroll) {
+    if (!scrollDecouplingConfig.enabled) {
+        return rawScroll;
+    }
+
+    let processedScroll = rawScroll;
+
+    // Apply deadzone logic
+    for (let deadzone of scrollDecouplingConfig.deadzones) {
+        if (rawScroll >= deadzone.start && rawScroll <= deadzone.end) {
+            // In deadzone - freeze processed scroll at deadzone start
+            processedScroll = deadzone.start;
+            decoupledScrollState.inDeadzone = true;
+            decoupledScrollState.currentDeadzone = deadzone;
+            break;
+        } else if (rawScroll > deadzone.end) {
+            // Past deadzone - subtract deadzone duration from processed scroll
+            const deadzoneLength = deadzone.end - deadzone.start;
+            processedScroll -= deadzoneLength;
+        }
+    }
+
+    // Apply global multiplier
+    processedScroll *= scrollDecouplingConfig.globalMultiplier;
+
+    // Apply easing if enabled
+    if (scrollDecouplingConfig.easing.enabled) {
+        const easingFactor = scrollDecouplingConfig.easing.factor;
+        decoupledScrollState.processedScroll += (processedScroll - decoupledScrollState.processedScroll) * easingFactor;
+        processedScroll = decoupledScrollState.processedScroll;
+    }
+
+    // Update state
+    decoupledScrollState.rawScroll = rawScroll;
+    if (!scrollDecouplingConfig.easing.enabled) {
+        decoupledScrollState.processedScroll = processedScroll;
+    }
+
+    return processedScroll;
+}
+
+// Scroll-decoupled element behaviors
+let decoupledElements = [];
+
+// Add element to decoupled scroll system
+function addDecoupledElement(element, behavior, config = {}) {
+    const decoupledElement = {
+        element,
+        behavior,
+        config: {
+            startTrigger: 0,
+            endTrigger: 1000,
+            ...config
+        },
+        state: {
+            progress: 0,
+            active: false
+        },
+        update(processedScroll) {
+            // Calculate progress within trigger range
+            const { startTrigger, endTrigger } = this.config;
+            const range = endTrigger - startTrigger;
+
+            if (processedScroll < startTrigger) {
+                this.state.progress = 0;
+                this.state.active = false;
+            } else if (processedScroll > endTrigger) {
+                this.state.progress = 1;
+                this.state.active = true;
+            } else {
+                this.state.progress = (processedScroll - startTrigger) / range;
+                this.state.active = true;
+            }
+
+            // Apply behavior based on type
+            this.applyBehavior();
+        },
+
+        applyBehavior() {
+            if (!this.element || !this.state.active) return;
+
+            switch (this.behavior) {
+                case 'heroExit':
+                    this.applyHeroExit();
+                    break;
+                case 'parallax':
+                    this.applyParallax();
+                    break;
+                case 'fadeMove':
+                    this.applyFadeMove();
+                    break;
+                // Add more behaviors as needed
+            }
+        },
+
+        applyHeroExit() {
+            const direction = this.config.direction || 'left';
+            // Use custom curve that reaches high speed quickly
+            const easing = this.easeInFast(this.state.progress);
+
+            // Calculate fade opacity - starts fading at 33% progress, fully faded at 80%
+            let opacity = 1;
+            if (this.state.progress >= 0.33) {
+                if (this.state.progress >= 0.8) {
+                    // Fully faded at 80% and beyond
+                    opacity = 0;
+                } else {
+                    // Map progress from 0.33-0.8 to 0.0-1.0 for fade calculation
+                    const fadeProgress = (this.state.progress - 0.33) / 0.47;
+                    // Steeper fade: quadratic curve for faster initial fade
+                    opacity = 1 - Math.pow(fadeProgress, 0.5);
+                }
+            }
+
+            // For positioned hero elements, use transform for exit animation
+            if (this.element.dataset.isPositioned === 'true') {
+                // Start from centered position (translateX(-50%))
+                // Add horizontal movement for exit
+                let horizontalOffset = 0;
+
+                // Responsive distance: 150vw on mobile, 100vw on desktop
+                const isMobile = window.innerWidth <= 768;
+                const totalDistance = isMobile ? 150 : (this.config.totalDistance || 100);
+
+                if (direction === 'left') {
+                    // Exit to the left - using configurable viewport-based distance
+                    horizontalOffset = -totalDistance * easing;
+                } else if (direction === 'right') {
+                    // Exit to the right - using configurable viewport-based distance
+                    horizontalOffset = totalDistance * easing;
+                }
+
+                // Combine centering transform with exit movement
+                // Apply both movement and fade
+                this.element.style.transform = `translateX(calc(-50% + ${horizontalOffset}vw))`;
+                this.element.style.opacity = opacity;
+            } else {
+                // Fallback to transform for non-positioned elements
+                const distance = this.config.distance || 400;
+                let translateX = 0;
+                if (direction === 'left') {
+                    translateX = -distance * easing;
+                } else if (direction === 'right') {
+                    translateX = distance * easing;
+                }
+                this.element.style.transform = `translateX(${translateX}px)`;
+                this.element.style.opacity = opacity;
+            }
+        },
+
+        applyParallax() {
+            const speed = this.config.speed || 0.5;
+            const offset = this.state.progress * this.config.distance * speed;
+            this.element.style.transform = `translateY(${offset}px)`;
+        },
+
+        applyFadeMove() {
+            const distance = this.config.distance || 50;
+            const direction = this.config.direction || 'up';
+            const easing = this.easeOutCubic(this.state.progress);
+
+            let translateY = 0;
+            if (direction === 'up') {
+                translateY = distance * (1 - easing);
+            } else if (direction === 'down') {
+                translateY = -distance * (1 - easing);
+            }
+
+            this.element.style.transform = `translateY(${translateY}px)`;
+            this.element.style.opacity = easing;
+        },
+
+        easeOutCubic(t) {
+            return 1 - Math.pow(1 - t, 3);
+        },
+
+        easeInCubic(t) {
+            return Math.pow(t, 3);
+        },
+
+        easeInQuart(t) {
+            return Math.pow(t, 4);
+        },
+
+        easeInCustom(t) {
+            // Custom curve between cubic and quartic (power of 3.5)
+            return Math.pow(t, 3.5);
+        },
+
+        easeInQuad(t) {
+            return Math.pow(t, 2);
+        },
+
+        easeInOneFive(t) {
+            return Math.pow(t, 1.5);
+        },
+
+        easeInFast(t) {
+            // Simple power curve that accelerates quickly without slowing down
+            return Math.pow(t, 1.25);
+        }
+    };
+
+    decoupledElements.push(decoupledElement);
+    return decoupledElement;
+}
+
+// Update all decoupled elements
+function updateDecoupledElements(processedScroll) {
+    for (let element of decoupledElements) {
+        element.update(processedScroll);
+    }
+}
+
+// Responsive distance management
+let isCurrentlyMobile = window.innerWidth <= 768;
+let resizeTimeout = null;
+
+// Throttled resize handler for responsive distance
+function handleResponsiveResize() {
+    if (resizeTimeout) return; // Already scheduled
+
+    resizeTimeout = setTimeout(() => {
+        const wasMobile = isCurrentlyMobile;
+        isCurrentlyMobile = window.innerWidth <= 768;
+
+        // Only trigger updates if mobile state actually changed
+        if (wasMobile !== isCurrentlyMobile) {
+            // Force immediate update of all hero elements
+            decoupledElements.forEach(element => {
+                if (element.behavior === 'heroExit') {
+                    element.update(decoupledScrollState.processedScroll);
+                }
+            });
+        }
+
+        resizeTimeout = null;
+    }, 150); // 150ms throttle for good responsiveness without performance impact
+}
+
+// Initialize hero section scroll-decoupled animations
+function initHeroDecoupledAnimations() {
+    const heroLogo = document.getElementById('heroLogo');
+    const heroSubtitle = document.getElementById('heroSubtitle');
+
+    // Store original positions before any modifications
+    const originalPositions = captureOriginalHeroPositions(heroLogo, heroSubtitle);
+
+    // Hero section height for scroll range calculation
+    const heroSectionHeight = window.innerHeight; // Hero section is 100vh
+
+    // Add resize listener for responsive distance updates
+    window.addEventListener('resize', handleResponsiveResize);
+
+    if (heroLogo) {
+        // Position hero logo to stay fixed vertically
+        setupHeroElementPositioning(heroLogo, originalPositions.logo);
+
+        // Logo exits to the left - movement over full hero section height
+        addDecoupledElement(heroLogo, 'heroExit', {
+            direction: 'left',
+            startTrigger: 0,
+            endTrigger: heroSectionHeight,  // Use hero section height as range
+            totalDistance: 100     // 100vw total movement distance
+        });
+    }
+
+    if (heroSubtitle) {
+        // Position hero subtitle to stay fixed vertically
+        setupHeroElementPositioning(heroSubtitle, originalPositions.subtitle);
+
+        // Subtitle exits to the right - movement over full hero section height
+        addDecoupledElement(heroSubtitle, 'heroExit', {
+            direction: 'right',
+            startTrigger: 0,
+            endTrigger: heroSectionHeight,  // Use hero section height as range
+            totalDistance: 100     // 100vw total movement distance
+        });
+    }
+
+    console.log('Hero scroll-decoupled animations initialized');
+}
+
+// Capture original hero positions to preserve relative spacing
+function captureOriginalHeroPositions(heroLogo, heroSubtitle) {
+    const positions = {};
+
+    if (heroLogo) {
+        const logoRect = heroLogo.getBoundingClientRect();
+        positions.logo = {
+            top: logoRect.top,
+            left: logoRect.left,
+            bottom: logoRect.bottom
+        };
+    }
+
+    if (heroSubtitle) {
+        const subtitleRect = heroSubtitle.getBoundingClientRect();
+        positions.subtitle = {
+            top: subtitleRect.top,
+            left: subtitleRect.left,
+            bottom: subtitleRect.bottom
+        };
+    }
+
+    // Calculate original spacing
+    if (positions.logo && positions.subtitle) {
+        positions.verticalSpacing = Math.abs(positions.subtitle.top - positions.logo.bottom);
+        console.log(`Original vertical spacing: ${positions.verticalSpacing}px`);
+    }
+
+    return positions;
+}
+
+// Setup hero element to be positioned independently of page scroll
+function setupHeroElementPositioning(element, originalPosition = null) {
+    const computedStyle = window.getComputedStyle(element);
+
+    // Use original position if provided, otherwise use current position
+    const rect = originalPosition || element.getBoundingClientRect();
+
+    // Calculate percentage-based position relative to viewport
+    const topPercent = (rect.top / window.innerHeight) * 100;
+
+    // Center element horizontally by using 50% left and transform
+    const leftPercent = 50; // Always center horizontally
+
+    // Make element fixed position to prevent vertical scrolling
+    element.style.position = 'fixed';
+    element.style.top = topPercent + '%';
+    element.style.left = leftPercent + '%';
+    element.style.transform = 'translateX(-50%)'; // Center using transform
+    element.style.zIndex = '1000';
+
+    // Preserve original styling but remove margins that might affect positioning
+    const originalMargin = computedStyle.margin;
+    element.style.margin = '0';
+
+    // Preserve dimensions to maintain layout
+    if (!element.style.width) element.style.width = computedStyle.width;
+    if (!element.style.height) element.style.height = computedStyle.height;
+
+    // Store positioning data for animations
+    element.dataset.originalMargin = originalMargin;
+    element.dataset.topPercent = topPercent;
+    element.dataset.leftPercent = leftPercent;
+    element.dataset.isPositioned = 'true';
+
+    console.log(`Hero element centered at ${topPercent.toFixed(1)}% top, 50% left`);
+}
+
+// Optimized scroll updates with decoupling
 function updateScrollElements(scrollY) {
-    // Update progress bar efficiently
+    // Process raw scroll into custom scroll values
+    const processedScroll = processScrollInput(scrollY);
+
+    // Update progress bar with raw scroll (keep original behavior)
     updateProgressBar(scrollY);
+
+    // Update decoupled elements with processed scroll
+    updateDecoupledElements(processedScroll);
 }
 
 // Cache viewport height and common DOM elements for performance
@@ -718,9 +1098,12 @@ function populateContent() {
     // Hero
     const heroLogo = document.getElementById('heroLogo');
     if (heroLogo) heroLogo.src = siteContent.site?.logoInlinePath || 'Assets/logo_inline.png';
-    
+
     const heroSubtitle = document.getElementById('heroSubtitle');
     if (heroSubtitle) heroSubtitle.textContent = siteContent.hero?.subtitle || '';
+
+    // Initialize scroll-decoupled hero animations
+    initHeroDecoupledAnimations();
     
     // Episodes
     if (hasEpisodes) {
