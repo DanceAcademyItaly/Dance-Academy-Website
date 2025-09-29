@@ -151,6 +151,9 @@ function initEnhancedScrollSystem() {
             initEpisodiParallax();
         }
 
+        // Initialize missione animations now that Lenis is ready
+        initMissioneAnimations();
+
     } catch (error) {
         console.error('Error initializing Lenis:', error);
         initBasicScroll(); // Fallback to basic scroll
@@ -557,6 +560,11 @@ function updateScrollElements(scrollY) {
     // Update episodi parallax if initialized
     if (episodiParallaxState) {
         updateEpisodiParallax(scrollY, episodiParallaxState);
+    }
+
+    // Update missione animations if initialized
+    if (missioneAnimationState) {
+        updateMissioneAnimations(scrollY, missioneAnimationState);
     }
 }
 
@@ -1581,6 +1589,9 @@ let episodiParallaxState = null;
 // Hero animation state
 let heroAnimationState = null;
 
+// Missione animation state
+let missioneAnimationState = null;
+
 // Initialize episodi parallax system
 function initEpisodiParallax() {
     // Only enable on desktop
@@ -1644,6 +1655,168 @@ function initEpisodiParallax() {
         sidebarOriginalTop,
         contentOriginalTop
     });
+}
+
+// Initialize missione animations system - FIXED APPROACH
+function initMissioneAnimations() {
+    // POINT 3: Enable for all viewports
+    console.log('Initializing missione animations for all viewports');
+
+    const missioneContainer = document.getElementById('missioneContainer');
+    const missioneBlock = document.querySelector('.missione-block');
+
+    if (!missioneContainer || !missioneBlock) {
+        console.log('Missione elements not found');
+        return;
+    }
+
+    // Wait for content to be populated
+    function attemptInitialization(attempts = 0) {
+        const copyBlocks = missioneContainer.querySelectorAll('.copy-block');
+        const ctaContainer = missioneContainer.querySelector('.cta-container');
+
+        console.log(`Missione init attempt ${attempts + 1}: found ${copyBlocks.length} copy blocks, cta: ${!!ctaContainer}`);
+
+        if ((copyBlocks.length === 0 && !ctaContainer) && attempts < 10) {
+            setTimeout(() => attemptInitialization(attempts + 1), 200);
+            return;
+        }
+
+        if (copyBlocks.length === 0 && !ctaContainer) {
+            console.log('No missione content found after multiple attempts');
+            return;
+        }
+
+        const elements = [];
+
+        // Collect all animatable elements
+        copyBlocks.forEach(block => {
+            elements.push(block);
+        });
+
+        if (ctaContainer) {
+            elements.push(ctaContainer);
+        }
+
+        // POINT 1 FIX: Hide elements IMMEDIATELY to prevent flash
+        elements.forEach(element => {
+            element.style.opacity = '0';
+            element.style.visibility = 'hidden';
+        });
+
+        // PROPER VERTICAL DISTRIBUTION: Spread elements across viewport with breathing room
+        const elementData = elements.map((element, index) => {
+            const rect = element.getBoundingClientRect();
+
+            // Use 60% of viewport height for proper vertical distribution
+            const distributionHeight = window.innerHeight * 0.6;
+            const startY = window.innerHeight * 0.15; // Start at 15% from top
+
+            // Distribute elements evenly across the available vertical space
+            const spacing = elements.length > 1 ? distributionHeight / (elements.length - 1) : 0;
+            const finalTop = startY + (index * spacing);
+
+            // Proper horizontal centering for any viewport width
+            const finalLeft = window.innerWidth * 0.5; // 50% from left edge
+
+            // Position element fixed with proper centering and distribution
+            element.style.position = 'fixed';
+            element.style.top = finalTop + 'px';
+            element.style.left = finalLeft + 'px';
+            element.style.width = 'auto'; // Let content determine width
+            element.style.maxWidth = '800px'; // Constrain max width
+            element.style.textAlign = 'center'; // Center text content
+            element.style.transform = 'translateX(-50%) translateY(12px)'; // Center + emerge
+            element.style.zIndex = '1000';
+            element.style.transition = 'all 0.8s cubic-bezier(0.16, 1, 0.3, 1)';
+            element.style.visibility = 'visible'; // Show now that it's positioned
+
+            // Add class to mark as animated element
+            element.classList.add('missione-animated');
+            element.dataset.animationIndex = index;
+
+            console.log(`Element ${index} properly distributed: top=${finalTop.toFixed(1)}px, spacing=${spacing.toFixed(1)}px`);
+
+            return {
+                element,
+                targetTop: finalTop,
+                targetLeft: finalLeft,
+                width: 'auto'
+            };
+        });
+
+        // Add window resize handler to recalculate positions
+        function recalculatePositions() {
+            if (!missioneAnimationState || !missioneAnimationState.elements) return;
+
+            missioneAnimationState.elements.forEach((elementData, index) => {
+                const { element } = elementData;
+
+                // Recalculate positions for new viewport size
+                const distributionHeight = window.innerHeight * 0.6;
+                const startY = window.innerHeight * 0.15; // Restore normal position
+                const spacing = elements.length > 1 ? distributionHeight / (elements.length - 1) : 0;
+                const newTop = startY + (index * spacing);
+                const newLeft = window.innerWidth * 0.5;
+
+                // Update element position
+                element.style.top = newTop + 'px';
+                element.style.left = newLeft + 'px';
+
+                // Update stored positions
+                elementData.targetTop = newTop;
+                elementData.targetLeft = newLeft;
+            });
+        }
+
+        // Remove existing resize handler to avoid duplicates
+        if (window.missioneResizeHandler) {
+            window.removeEventListener('resize', window.missioneResizeHandler);
+        }
+
+        // Add new resize handler
+        window.missioneResizeHandler = recalculatePositions;
+        window.addEventListener('resize', recalculatePositions);
+
+        // Add spacer to maintain document flow height (like episodi section)
+        const missioneOriginalHeight = missioneBlock.offsetHeight;
+        const spacer = document.createElement('div');
+        spacer.style.height = missioneOriginalHeight + 'px';
+        spacer.className = 'missione-spacer';
+        missioneBlock.parentNode.insertBefore(spacer, missioneBlock.nextSibling);
+
+        // Calculate scroll trigger positions - start animation 100px sooner
+        const missioneTop = missioneBlock.offsetTop;
+        const entranceStart = missioneTop - window.innerHeight * 0.2 - 200; // Start 200px earlier
+        const entranceEnd = entranceStart + 300;
+        const deadzoneEnd = entranceEnd + 250; // Match episodi deadzone duration (250px)
+        const exitEnd = deadzoneEnd + 1000;    // Exit animation duration (ready for implementation)
+
+        console.log('Missione scroll positions (simple):', {
+            sectionTop: missioneTop,
+            entranceStart,
+            entranceEnd,
+            deadzoneEnd
+        });
+
+        // Store state for use in updateScrollElements
+        missioneAnimationState = {
+            elements: elementData, // Now contains element data with positioning info
+            missioneBlock,
+            entranceStart,
+            entranceEnd,
+            deadzoneEnd,
+            exitEnd,
+            simple: true
+        };
+
+        console.log('Missione animations initialized successfully (simple approach)', {
+            elementCount: elements.length
+        });
+    }
+
+    // Start initialization attempts
+    attemptInitialization();
 }
 
 // Update episodi parallax positions with 3-phase behavior
@@ -1729,6 +1902,123 @@ function updateEpisodiParallax(scrollY, elements) {
         sidebar.style.transform = `translateX(${sidebarMoveX}vw)`;
         contentArea.style.transform = `translateX(${contentMoveX}vw)`;
     }
+}
+
+// Update missione animations - SIMPLIFIED VERSION
+function updateMissioneAnimations(scrollY, animationState) {
+    if (!animationState) return;
+
+    const { elements, entranceStart, entranceEnd, deadzoneEnd, exitEnd, simple } = animationState;
+
+    if (!elements || elements.length === 0) return;
+
+    // Use simple approach with reverse stagger and fixed positioning
+    if (simple) {
+        elements.forEach((elementData, index) => {
+            const { element, targetTop, targetLeft } = elementData;
+
+            // REVERSE STAGGER: last elements animate first (bottom to top)
+            const totalElements = elements.length;
+            const reverseIndex = totalElements - 1 - index;
+
+            // Entrance stagger: reverse order (button first)
+            const elementTrigger = entranceStart + (reverseIndex * 80);
+            const animationDuration = 200;
+            const elementAnimationEnd = elementTrigger + animationDuration;
+
+            // Exit stagger: SAME order as entrance (button first)
+            const elementExitStart = deadzoneEnd + (reverseIndex * 80);
+            const elementExitEnd = elementExitStart + animationDuration;
+
+            // Maintain fixed positioning at target viewport coordinates
+            element.style.top = targetTop + 'px';
+            element.style.left = targetLeft + 'px';
+
+            if (scrollY < elementTrigger) {
+                // Phase 1: Before entrance - hidden beneath floor
+                element.style.transform = 'translateX(-50%) translateY(12px)';
+                element.style.opacity = '0';
+                element.classList.remove('animated');
+
+            } else if (scrollY >= elementTrigger && scrollY <= elementAnimationEnd) {
+                // Phase 2: Entrance animation - emerge from floor
+                const progress = (scrollY - elementTrigger) / animationDuration;
+                const easedProgress = 1 - Math.pow(1 - progress, 3); // Ease-out cubic
+
+                const translateY = 12 * (1 - easedProgress); // 12px → 0px
+                const opacity = easedProgress; // 0 → 1
+
+                element.style.transform = `translateX(-50%) translateY(${translateY}px)`;
+                element.style.opacity = opacity;
+
+                if (!element.classList.contains('animated')) {
+                    element.classList.add('animated');
+                    console.log(`Element ${index} (reverse order ${reverseIndex}) emerged at scroll ${scrollY}`);
+                }
+
+            } else if (scrollY > elementAnimationEnd && scrollY <= elementExitStart) {
+                // Phase 3: Extended deadzone - stay visible until element's specific exit time
+                element.style.transform = 'translateX(-50%) translateY(0px)';
+                element.style.opacity = '1';
+                element.classList.add('animated');
+
+            } else if (scrollY > elementExitStart && scrollY <= elementExitEnd) {
+                // Phase 4: Exit animation - submerge into ceiling (REVERSE OF ENTRANCE)
+                const progress = (scrollY - elementExitStart) / animationDuration;
+                const easedProgress = 1 - Math.pow(1 - progress, 3); // Same easing as entrance
+
+                const translateY = -12 * easedProgress; // 0px → -12px (submerge into ceiling)
+                const opacity = 1 - easedProgress; // 1 → 0
+
+                element.style.transform = `translateX(-50%) translateY(${translateY}px)`;
+                element.style.opacity = opacity;
+
+                if (!element.classList.contains('exiting')) {
+                    element.classList.add('exiting');
+                    console.log(`Element ${index} (same order ${reverseIndex}) submerging at scroll ${scrollY}`);
+                }
+
+            } else if (scrollY > elementExitEnd) {
+                // Phase 5: After exit - hidden above ceiling
+                element.style.transform = 'translateX(-50%) translateY(-12px)';
+                element.style.opacity = '0';
+                element.classList.remove('animated');
+                element.classList.add('exiting');
+            }
+        });
+
+        // Deadzone handling is now managed by the main phase logic above
+
+        return;
+    }
+
+    // Legacy complex approach (keeping for fallback)
+    const currentPhase = scrollY < entranceStart ? 'before' :
+                        scrollY <= entranceEnd ? 'entrance' : 'deadzone';
+
+    elements.forEach((elementData, index) => {
+        const { element, finalTop, originalLeft } = elementData;
+
+        const staggerOffset = index * 25;
+        const elementEntranceStart = entranceStart + staggerOffset;
+        const elementEntranceEnd = entranceEnd + staggerOffset;
+
+        if (scrollY < elementEntranceStart) {
+            element.style.transform = 'translateY(50px)';
+            element.style.opacity = '0';
+        } else if (scrollY <= elementEntranceEnd) {
+            const scrollProgress = (scrollY - elementEntranceStart) / (elementEntranceEnd - elementEntranceStart);
+            const easing = 1 - Math.pow(1 - scrollProgress, 3);
+            const translateY = 50 * (1 - easing);
+            const opacity = easing;
+
+            element.style.transform = `translateY(${translateY}px)`;
+            element.style.opacity = opacity;
+        } else {
+            element.style.transform = 'translateY(0px)';
+            element.style.opacity = '1';
+        }
+    });
 }
 
 // Update hero animations with direct scroll position checking (same approach as episodi)
