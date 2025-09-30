@@ -1367,18 +1367,31 @@ function populateContent() {
 function populateEpisodes() {
     const sidebar = document.getElementById('sidebar');
     const contentArea = document.getElementById('contentArea');
-    
+
     if (!siteContent?.episodes || !sidebar || !contentArea) return;
-    
-    const defaultEpisodeId = siteContent.episodes.defaultActiveEpisode || 1;
+
+    // Find last episode of last season automatically
+    let defaultEpisodeId = 1; // fallback
     let activeSeasonId = null;
-    
-    // Find active season
-    siteContent.episodes.seasons.forEach(season => {
-        if (season.episodes.some(ep => ep.id === defaultEpisodeId)) {
-            activeSeasonId = season.id;
+
+    if (siteContent.episodes.seasons && siteContent.episodes.seasons.length > 0) {
+        // Get the last season
+        const lastSeason = siteContent.episodes.seasons[siteContent.episodes.seasons.length - 1];
+        activeSeasonId = lastSeason.id;
+
+        // Get the last episode of the last season
+        if (lastSeason.episodes && lastSeason.episodes.length > 0) {
+            const lastEpisode = lastSeason.episodes[lastSeason.episodes.length - 1];
+            defaultEpisodeId = lastEpisode.id;
         }
-    });
+
+        console.log('Auto-selected last episode:', {
+            seasonName: lastSeason.name,
+            seasonId: activeSeasonId,
+            episodeTitle: lastSeason.episodes[lastSeason.episodes.length - 1]?.title,
+            episodeId: defaultEpisodeId
+        });
+    }
     
     // Build sidebar
     sidebar.innerHTML = '';
