@@ -1324,18 +1324,18 @@ function populateContent() {
             const div = document.createElement('div');
             div.className = 'copy-block';
             div.innerHTML = `
-                ${block.title ? `<h3>${block.title}</h3>` : ''}
-                ${block.text ? `<p>${block.text}</p>` : ''}
+                ${block.title ? `<h3 class="missione-title">${block.title}</h3>` : ''}
+                ${block.text ? `<p class="missione-text">${block.text}</p>` : ''}
             `;
             missioneContainer.appendChild(div);
         });
-        
+
         if (siteContent.missione.ctaText) {
             const ctaDiv = document.createElement('div');
             ctaDiv.className = 'cta-container';
             const link = document.createElement('a');
             link.href = '#candidati';
-            link.className = 'cta-primary';
+            link.className = 'missione-button';
             link.textContent = siteContent.missione.ctaText;
             link.onclick = (e) => {
                 e.preventDefault();
@@ -1385,12 +1385,6 @@ function populateEpisodes() {
             defaultEpisodeId = lastEpisode.id;
         }
 
-        console.log('Auto-selected last episode:', {
-            seasonName: lastSeason.name,
-            seasonId: activeSeasonId,
-            episodeTitle: lastSeason.episodes[lastSeason.episodes.length - 1]?.title,
-            episodeId: defaultEpisodeId
-        });
     }
     
     // Build sidebar
