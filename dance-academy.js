@@ -24,6 +24,169 @@ const HEADER_NAV_CONFIG = {
     offset: 0
 };
 
+// Fluid Typography Enhancement System
+const TYPOGRAPHY_CONFIG = {
+    enabled: true,
+    fallbackForOldBrowsers: true,
+    extremeViewportAdjustment: true,
+    minViewport: 320,
+    maxViewport: 2560,
+    baseViewport: 1600, // Design baseline
+
+    // Fine-tuning for extreme sizes
+    scaleFactors: {
+        extraSmall: 0.95,  // < 1200px
+        extraLarge: 1.05   // > 2200px
+    }
+};
+
+let typographyState = {
+    isSupported: false,
+    currentViewportWidth: 0,
+    scaleFactor: 1,
+    resizeTimeout: null
+};
+
+// Check CSS clamp() support
+function supportsClamp() {
+    if (typographyState.isSupported !== undefined) {
+        return typographyState.isSupported;
+    }
+
+    try {
+        const testElement = document.createElement('div');
+        testElement.style.fontSize = 'clamp(1rem, 2vw, 3rem)';
+        typographyState.isSupported = testElement.style.fontSize !== '';
+        return typographyState.isSupported;
+    } catch (e) {
+        typographyState.isSupported = false;
+        return false;
+    }
+}
+
+// Calculate fluid font size for fallback
+function calculateFluidSize(minSize, preferredSize, maxSize, currentViewport) {
+    const { minViewport, maxViewport } = TYPOGRAPHY_CONFIG;
+
+    if (currentViewport <= minViewport) return minSize;
+    if (currentViewport >= maxViewport) return maxSize;
+
+    const viewportRatio = (currentViewport - minViewport) / (maxViewport - minViewport);
+    const sizeRange = maxSize - minSize;
+    return minSize + (sizeRange * viewportRatio);
+}
+
+// Apply extreme viewport adjustments
+function getViewportScaleFactor(viewportWidth) {
+    if (viewportWidth < 1200) {
+        return TYPOGRAPHY_CONFIG.scaleFactors.extraSmall;
+    } else if (viewportWidth > 2200) {
+        return TYPOGRAPHY_CONFIG.scaleFactors.extraLarge;
+    }
+    return 1;
+}
+
+// Throttled resize handler for typography
+function handleTypographyResize() {
+    if (!TYPOGRAPHY_CONFIG.enabled) return;
+
+    if (typographyState.resizeTimeout) {
+        clearTimeout(typographyState.resizeTimeout);
+    }
+
+    typographyState.resizeTimeout = setTimeout(() => {
+        const newWidth = window.innerWidth;
+        const scaleFactor = getViewportScaleFactor(newWidth);
+
+        // Only update if significant change
+        if (Math.abs(newWidth - typographyState.currentViewportWidth) > 50 ||
+            scaleFactor !== typographyState.scaleFactor) {
+
+            typographyState.currentViewportWidth = newWidth;
+            typographyState.scaleFactor = scaleFactor;
+
+            updateTypographySystem();
+        }
+    }, 150); // Match existing throttle pattern
+}
+
+// Update typography system
+function updateTypographySystem() {
+    if (!TYPOGRAPHY_CONFIG.enabled) return;
+
+    const root = document.documentElement;
+    const { scaleFactor } = typographyState;
+
+    // Apply scale factor for extreme viewports
+    if (TYPOGRAPHY_CONFIG.extremeViewportAdjustment && scaleFactor !== 1) {
+        root.style.setProperty('--typography-scale-factor', scaleFactor.toString());
+
+        // Apply scaling to CSS variables if needed for old browser fallback
+        if (!supportsClamp() && TYPOGRAPHY_CONFIG.fallbackForOldBrowsers) {
+            applyFallbackSizes();
+        }
+    }
+}
+
+// Fallback system for browsers without clamp() support
+function applyFallbackSizes() {
+    if (supportsClamp()) return;
+
+    console.log('Applying typography fallback for older browsers');
+
+    const root = document.documentElement;
+    const viewport = typographyState.currentViewportWidth;
+    const scale = typographyState.scaleFactor;
+
+    // Define fallback sizes (in px, converted from our clamp values)
+    const fallbackSizes = {
+        '--text-2xs': calculateFluidSize(8, 10, 12, viewport) * scale,
+        '--text-xs': calculateFluidSize(11, 12, 14, viewport) * scale,
+        '--text-sm': calculateFluidSize(12, 14, 16, viewport) * scale,
+        '--text-base': calculateFluidSize(14, 17, 20, viewport) * scale,
+        '--text-lg': calculateFluidSize(16, 20, 24, viewport) * scale,
+        '--text-xl': calculateFluidSize(18, 23, 28, viewport) * scale,
+        '--text-2xl': calculateFluidSize(20, 26, 32, viewport) * scale,
+        '--text-3xl': calculateFluidSize(24, 32, 40, viewport) * scale,
+        '--text-4xl': calculateFluidSize(28, 38, 48, viewport) * scale,
+    };
+
+    // Apply fallback sizes
+    Object.entries(fallbackSizes).forEach(([property, size]) => {
+        root.style.setProperty(property, size + 'px');
+    });
+}
+
+// Initialize typography system
+function initTypographySystem() {
+    if (!TYPOGRAPHY_CONFIG.enabled) {
+        console.log('Typography system disabled');
+        return;
+    }
+
+    console.log('Initializing fluid typography system');
+
+    // Initial setup
+    typographyState.currentViewportWidth = window.innerWidth;
+    typographyState.scaleFactor = getViewportScaleFactor(window.innerWidth);
+
+    // Check support and apply initial settings
+    if (supportsClamp()) {
+        console.log('CSS clamp() supported - using native fluid typography');
+    } else if (TYPOGRAPHY_CONFIG.fallbackForOldBrowsers) {
+        console.log('CSS clamp() not supported - using JavaScript fallback');
+        applyFallbackSizes();
+    }
+
+    // Apply initial extreme viewport adjustments
+    updateTypographySystem();
+
+    // Add resize listener
+    window.addEventListener('resize', handleTypographyResize);
+
+    console.log('Fluid typography system initialized successfully');
+}
+
 // Feature detection for progressive enhancement
 function supportsLenisFeatures() {
     return !!(
@@ -447,16 +610,17 @@ function handleResponsiveResize() {
     }, 150); // 150ms throttle for good responsiveness without performance impact
 }
 
-// Initialize hero section animations with direct approach
+// Initialize hero section animations - RESTORED ORIGINAL APPROACH
 function initHeroAnimations() {
     const heroLogo = document.getElementById('heroLogo');
     const heroSubtitle = document.getElementById('heroSubtitle');
 
     if (!heroLogo && !heroSubtitle) return;
 
-    // Store original positions before any modifications
+    // Capture original positions before any modifications
     const originalPositions = captureOriginalHeroPositions(heroLogo, heroSubtitle);
 
+    // Setup positioned elements for independent scrolling
     if (heroLogo) {
         setupHeroElementPositioning(heroLogo, originalPositions.logo);
     }
@@ -465,18 +629,32 @@ function initHeroAnimations() {
         setupHeroElementPositioning(heroSubtitle, originalPositions.subtitle);
     }
 
-    // Store state for direct scroll updates (same approach as episodi)
-    heroAnimationState = {
-        heroLogo,
-        heroSubtitle,
-        heroSectionHeight: window.innerHeight // Hero section is 100vh
-    };
+    // Add hero elements to decoupled scroll system
+    if (heroLogo) {
+        addDecoupledElement(heroLogo, 'heroExit', {
+            startTrigger: 0,
+            endTrigger: window.innerHeight,
+            direction: 'left',
+            totalDistance: 100
+        });
+    }
 
-    // Add resize listener for responsive updates
+    if (heroSubtitle) {
+        addDecoupledElement(heroSubtitle, 'heroExit', {
+            startTrigger: 0,
+            endTrigger: window.innerHeight,
+            direction: 'right',
+            totalDistance: 100
+        });
+    }
+
+    // Add responsive distance handler
     window.addEventListener('resize', handleResponsiveResize);
 
-    console.log('Hero animations initialized with direct approach');
+    console.log('Hero animations initialized with decoupled scroll system');
 }
+
+// Hero resize handler removed - using original decoupled scroll approach
 
 // Capture original hero positions to preserve relative spacing
 function captureOriginalHeroPositions(heroLogo, heroSubtitle) {
@@ -551,10 +729,13 @@ function updateScrollElements(scrollY) {
     // Process raw scroll into custom scroll values
     const processedScroll = processScrollInput(scrollY);
 
+    // Update decoupled elements (hero animations)
+    updateDecoupledElements(processedScroll);
+
     // Update progress bar with raw scroll (keep original behavior)
     updateProgressBar(scrollY);
 
-    // Update hero animations with direct approach
+    // Update hero animations (now handled by decoupled system)
     updateHeroAnimations(scrollY);
 
     // Update episodi parallax if initialized
@@ -1032,6 +1213,10 @@ async function loadContent() {
     initDOMCache();
 
     populateContent();
+
+    // Initialize typography system before scroll system
+    initTypographySystem();
+
     initializeScrollSystem();
 }
 
@@ -1592,7 +1777,7 @@ let heroAnimationState = null;
 // Missione animation state
 let missioneAnimationState = null;
 
-// Initialize episodi parallax system
+// Initialize episodi parallax system - RESTORED ORIGINAL APPROACH
 function initEpisodiParallax() {
     // Only enable on desktop
     if (window.innerWidth <= 768) return;
@@ -1604,24 +1789,26 @@ function initEpisodiParallax() {
 
     const deadzonePosition = calculateEpisodiDeadzonePosition();
 
-    // Get original positions before decoupling
+    // Get original element positions
     const sidebarRect = sidebar.getBoundingClientRect();
     const contentRect = contentArea.getBoundingClientRect();
 
     const sidebarOriginalTop = sidebarRect.top + window.scrollY;
     const contentOriginalTop = contentRect.top + window.scrollY;
 
-    // Decouple elements from document flow
+    // Apply viewport-locked positioning to actual elements
     sidebar.style.position = 'fixed';
     sidebar.style.top = sidebarRect.top + 'px';
     sidebar.style.left = sidebarRect.left + 'px';
     sidebar.style.width = sidebarRect.width + 'px';
+    sidebar.style.height = sidebarRect.height + 'px';
     sidebar.style.zIndex = '1000';
 
     contentArea.style.position = 'fixed';
     contentArea.style.top = contentRect.top + 'px';
     contentArea.style.left = contentRect.left + 'px';
     contentArea.style.width = contentRect.width + 'px';
+    contentArea.style.height = contentRect.height + 'px';
     contentArea.style.zIndex = '1000';
 
     // Calculate how far each element needs to move to reach deadzone
@@ -1644,9 +1831,12 @@ function initEpisodiParallax() {
         sidebarTravelDistance,
         contentTravelDistance,
         deadzonePosition,
-        sidebarOriginalTop: sidebarRect.top,
-        contentOriginalTop: contentRect.top
+        sidebarOriginalTop,
+        contentOriginalTop
     };
+
+    // Add resize handler for responsive updates
+    window.addEventListener('resize', handleEpisodiResize);
 
     console.log('Episodi parallax initialized for desktop', {
         deadzonePosition,
@@ -1657,169 +1847,162 @@ function initEpisodiParallax() {
     });
 }
 
-// Initialize missione animations system - FIXED APPROACH
-function initMissioneAnimations() {
-    // POINT 3: Enable for all viewports
-    console.log('Initializing missione animations for all viewports');
+// Optimized episodi resize handler with performance improvements
+let episodiResizeTimeout = null;
 
-    const missioneContainer = document.getElementById('missioneContainer');
-    const missioneBlock = document.querySelector('.missione-block');
+function handleEpisodiResize() {
+    if (!episodiParallaxState || window.innerWidth <= 768) return;
 
-    if (!missioneContainer || !missioneBlock) {
-        console.log('Missione elements not found');
-        return;
+    // Throttle resize handling to avoid excessive recalculations
+    if (episodiResizeTimeout) {
+        clearTimeout(episodiResizeTimeout);
     }
 
-    // Wait for content to be populated
-    function attemptInitialization(attempts = 0) {
-        const copyBlocks = missioneContainer.querySelectorAll('.copy-block');
-        const ctaContainer = missioneContainer.querySelector('.cta-container');
-
-        console.log(`Missione init attempt ${attempts + 1}: found ${copyBlocks.length} copy blocks, cta: ${!!ctaContainer}`);
-
-        if ((copyBlocks.length === 0 && !ctaContainer) && attempts < 10) {
-            setTimeout(() => attemptInitialization(attempts + 1), 200);
-            return;
-        }
-
-        if (copyBlocks.length === 0 && !ctaContainer) {
-            console.log('No missione content found after multiple attempts');
-            return;
-        }
-
-        const elements = [];
-
-        // Collect all animatable elements
-        copyBlocks.forEach(block => {
-            elements.push(block);
-        });
-
-        if (ctaContainer) {
-            elements.push(ctaContainer);
-        }
-
-        // POINT 1 FIX: Hide elements IMMEDIATELY to prevent flash
-        elements.forEach(element => {
-            element.style.opacity = '0';
-            element.style.visibility = 'hidden';
-        });
-
-        // PROPER VERTICAL DISTRIBUTION: Spread elements across viewport with breathing room
-        const elementData = elements.map((element, index) => {
-            const rect = element.getBoundingClientRect();
-
-            // Use 60% of viewport height for proper vertical distribution
-            const distributionHeight = window.innerHeight * 0.6;
-            const startY = window.innerHeight * 0.15; // Start at 15% from top
-
-            // Distribute elements evenly across the available vertical space
-            const spacing = elements.length > 1 ? distributionHeight / (elements.length - 1) : 0;
-            const finalTop = startY + (index * spacing);
-
-            // Proper horizontal centering for any viewport width
-            const finalLeft = window.innerWidth * 0.5; // 50% from left edge
-
-            // Position element fixed with proper centering and distribution
-            element.style.position = 'fixed';
-            element.style.top = finalTop + 'px';
-            element.style.left = finalLeft + 'px';
-            element.style.width = 'auto'; // Let content determine width
-            element.style.maxWidth = '800px'; // Constrain max width
-            element.style.textAlign = 'center'; // Center text content
-            element.style.transform = 'translateX(-50%) translateY(12px)'; // Center + emerge
-            element.style.zIndex = '1000';
-            element.style.transition = 'all 0.8s cubic-bezier(0.16, 1, 0.3, 1)';
-            element.style.visibility = 'visible'; // Show now that it's positioned
-
-            // Add class to mark as animated element
-            element.classList.add('missione-animated');
-            element.dataset.animationIndex = index;
-
-            console.log(`Element ${index} properly distributed: top=${finalTop.toFixed(1)}px, spacing=${spacing.toFixed(1)}px`);
-
-            return {
-                element,
-                targetTop: finalTop,
-                targetLeft: finalLeft,
-                width: 'auto'
-            };
-        });
-
-        // Add window resize handler to recalculate positions
-        function recalculatePositions() {
-            if (!missioneAnimationState || !missioneAnimationState.elements) return;
-
-            missioneAnimationState.elements.forEach((elementData, index) => {
-                const { element } = elementData;
-
-                // Recalculate positions for new viewport size
-                const distributionHeight = window.innerHeight * 0.6;
-                const startY = window.innerHeight * 0.15; // Restore normal position
-                const spacing = elements.length > 1 ? distributionHeight / (elements.length - 1) : 0;
-                const newTop = startY + (index * spacing);
-                const newLeft = window.innerWidth * 0.5;
-
-                // Update element position
-                element.style.top = newTop + 'px';
-                element.style.left = newLeft + 'px';
-
-                // Update stored positions
-                elementData.targetTop = newTop;
-                elementData.targetLeft = newLeft;
-            });
-        }
-
-        // Remove existing resize handler to avoid duplicates
-        if (window.missioneResizeHandler) {
-            window.removeEventListener('resize', window.missioneResizeHandler);
-        }
-
-        // Add new resize handler
-        window.missioneResizeHandler = recalculatePositions;
-        window.addEventListener('resize', recalculatePositions);
-
-        // Add spacer to maintain document flow height (like episodi section)
-        const missioneOriginalHeight = missioneBlock.offsetHeight;
-        const spacer = document.createElement('div');
-        spacer.style.height = missioneOriginalHeight + 'px';
-        spacer.className = 'missione-spacer';
-        missioneBlock.parentNode.insertBefore(spacer, missioneBlock.nextSibling);
-
-        // Calculate scroll trigger positions - start animation 100px sooner
-        const missioneTop = missioneBlock.offsetTop;
-        const entranceStart = missioneTop - window.innerHeight * 0.2 - 200; // Start 200px earlier
-        const entranceEnd = entranceStart + 300;
-        const deadzoneEnd = entranceEnd + 250; // Match episodi deadzone duration (250px)
-        const exitEnd = deadzoneEnd + 1000;    // Exit animation duration (ready for implementation)
-
-        console.log('Missione scroll positions (simple):', {
-            sectionTop: missioneTop,
-            entranceStart,
-            entranceEnd,
-            deadzoneEnd
-        });
-
-        // Store state for use in updateScrollElements
-        missioneAnimationState = {
-            elements: elementData, // Now contains element data with positioning info
-            missioneBlock,
-            entranceStart,
-            entranceEnd,
-            deadzoneEnd,
-            exitEnd,
-            simple: true
-        };
-
-        console.log('Missione animations initialized successfully (simple approach)', {
-            elementCount: elements.length
-        });
-    }
-
-    // Start initialization attempts
-    attemptInitialization();
+    episodiResizeTimeout = setTimeout(() => {
+        performEpisodiResize();
+        episodiResizeTimeout = null;
+    }, 150); // 150ms throttle
 }
 
-// Update episodi parallax positions with 3-phase behavior
+function performEpisodiResize() {
+    const { sidebar, contentArea } = episodiParallaxState;
+
+    // Cache scroll position for later use
+    const scrollY = window.scrollY;
+
+    // Temporarily restore natural flow for accurate measurements
+    sidebar.style.position = '';
+    sidebar.style.top = '';
+    sidebar.style.left = '';
+    sidebar.style.width = '';
+    sidebar.style.height = '';
+
+    contentArea.style.position = '';
+    contentArea.style.top = '';
+    contentArea.style.left = '';
+    contentArea.style.width = '';
+    contentArea.style.height = '';
+
+    // Use requestAnimationFrame to ensure layout is complete before measuring
+    requestAnimationFrame(() => {
+        // Batch all DOM reads
+        const newDeadzonePosition = calculateEpisodiDeadzonePosition();
+        const newSidebarRect = sidebar.getBoundingClientRect();
+        const newContentRect = contentArea.getBoundingClientRect();
+
+        // Calculate all values before any DOM writes
+        const newSidebarOriginalTop = newSidebarRect.top + scrollY;
+        const newContentOriginalTop = newContentRect.top + scrollY;
+        const newSidebarTravelDistance = newSidebarOriginalTop - newDeadzonePosition;
+        const newContentTravelDistance = newContentOriginalTop - newDeadzonePosition;
+
+        // Reapply fixed positioning with direct property assignments
+        sidebar.style.position = 'fixed';
+        sidebar.style.top = newSidebarRect.top + 'px';
+        sidebar.style.left = newSidebarRect.left + 'px';
+        sidebar.style.width = newSidebarRect.width + 'px';
+        sidebar.style.height = newSidebarRect.height + 'px';
+        sidebar.style.zIndex = '1000';
+
+        contentArea.style.position = 'fixed';
+        contentArea.style.top = newContentRect.top + 'px';
+        contentArea.style.left = newContentRect.left + 'px';
+        contentArea.style.width = newContentRect.width + 'px';
+        contentArea.style.height = newContentRect.height + 'px';
+        contentArea.style.zIndex = '1000';
+
+        // Update state in single operation
+        Object.assign(episodiParallaxState, {
+            deadzonePosition: newDeadzonePosition,
+            sidebarTravelDistance: newSidebarTravelDistance,
+            contentTravelDistance: newContentTravelDistance,
+            sidebarOriginalTop: newSidebarOriginalTop,
+            contentOriginalTop: newContentOriginalTop
+        });
+
+        // Defer scroll update to next frame to avoid blocking
+        requestAnimationFrame(() => {
+            if (lenis) {
+                updateEpisodiParallax(lenis.scroll, episodiParallaxState);
+            }
+        });
+
+        console.log('Episodi parallax repositioned (optimized)', {
+            newDeadzonePosition,
+            newSidebarTravelDistance,
+            newContentTravelDistance
+        });
+    });
+}
+
+// Initialize missione animations system - RESTORED TO ORIGINAL
+function initMissioneAnimations() {
+    // Clean up any residual styling from previous animation attempts
+    const missioneContainer = document.getElementById('missioneContainer');
+    if (missioneContainer) {
+        // Reset container to original state
+        missioneContainer.style.position = '';
+        missioneContainer.style.top = '';
+        missioneContainer.style.left = '';
+        missioneContainer.style.transform = '';
+        missioneContainer.style.width = '';
+        missioneContainer.style.height = '';
+        missioneContainer.style.zIndex = '';
+        missioneContainer.style.marginTop = '';
+
+        // Reset all child elements to original state
+        const allElements = missioneContainer.querySelectorAll('.copy-block, .cta-container');
+        allElements.forEach(element => {
+            element.style.position = '';
+            element.style.top = '';
+            element.style.left = '';
+            element.style.transform = '';
+            element.style.width = '';
+            element.style.height = '';
+            element.style.opacity = '';
+            element.style.visibility = '';
+            element.style.zIndex = '';
+            element.style.display = '';
+            element.style.flexDirection = '';
+            element.style.justifyContent = '';
+            element.style.alignItems = '';
+            element.style.textAlign = '';
+            element.style.maxWidth = '';
+            element.style.transition = '';
+
+            // Reset font sizes to default
+            const h3 = element.querySelector('h3');
+            const p = element.querySelector('p');
+            if (h3) {
+                h3.style.fontSize = '';
+                h3.style.lineHeight = '';
+                h3.style.margin = '';
+            }
+            if (p) {
+                p.style.fontSize = '';
+                p.style.lineHeight = '';
+                p.style.margin = '';
+            }
+
+            // Remove animation classes
+            element.classList.remove('missione-animated', 'missione-positioned', 'animated', 'exiting');
+            element.removeAttribute('data-animation-index');
+        });
+    }
+
+    // Clean up any resize handlers
+    if (window.missioneResizeHandler) {
+        window.removeEventListener('resize', window.missioneResizeHandler);
+        window.missioneResizeHandler = null;
+    }
+
+    // Reset animation state
+    missioneAnimationState = null;
+
+    console.log('Missione section restored to original state (no special animations)');
+}
+
+// Optimized episodi parallax with batched DOM updates
 function updateEpisodiParallax(scrollY, elements) {
     if (!episodiParallaxConfig.enabled || window.innerWidth <= 768) return;
 
@@ -1839,14 +2022,15 @@ function updateEpisodiParallax(scrollY, elements) {
     const deadzoneEnd = 1450;    // 250px deadzone duration
     const exitEnd = 2450;        // 1000px exit animation
 
+    // Calculate all values first, then batch DOM updates
+    let sidebarTop, contentTop, sidebarOpacity, contentOpacity, sidebarTransform, contentTransform;
+
     if (scrollY < entranceStart) {
         // Before entrance - elements at original positions
-        sidebar.style.top = sidebarOriginalTop + 'px';
-        contentArea.style.top = contentOriginalTop + 'px';
-        sidebar.style.opacity = '1';
-        contentArea.style.opacity = '1';
-        sidebar.style.transform = 'translateX(0)';
-        contentArea.style.transform = 'translateX(0)';
+        sidebarTop = sidebarOriginalTop;
+        contentTop = contentOriginalTop;
+        sidebarOpacity = contentOpacity = 1;
+        sidebarTransform = contentTransform = 'translateX(0)';
 
     } else if (scrollY <= entranceEnd) {
         // Phase 1: Entrance - current parallax behavior
@@ -1857,21 +2041,17 @@ function updateEpisodiParallax(scrollY, elements) {
         const sidebarMovement = sidebarTravelDistance * sidebarEasedProgress;
         const contentMovement = contentTravelDistance * contentEasedProgress;
 
-        sidebar.style.top = (sidebarOriginalTop - sidebarMovement) + 'px';
-        contentArea.style.top = (contentOriginalTop - contentMovement) + 'px';
-        sidebar.style.opacity = '1';
-        contentArea.style.opacity = '1';
-        sidebar.style.transform = 'translateX(0)';
-        contentArea.style.transform = 'translateX(0)';
+        sidebarTop = sidebarOriginalTop - sidebarMovement;
+        contentTop = contentOriginalTop - contentMovement;
+        sidebarOpacity = contentOpacity = 1;
+        sidebarTransform = contentTransform = 'translateX(0)';
 
     } else if (scrollY <= deadzoneEnd) {
         // Phase 2: Deadzone - elements stay fixed at deadzone positions
-        sidebar.style.top = (sidebarOriginalTop - sidebarTravelDistance) + 'px';
-        contentArea.style.top = (contentOriginalTop - contentTravelDistance) + 'px';
-        sidebar.style.opacity = '1';
-        contentArea.style.opacity = '1';
-        sidebar.style.transform = 'translateX(0)';
-        contentArea.style.transform = 'translateX(0)';
+        sidebarTop = sidebarOriginalTop - sidebarTravelDistance;
+        contentTop = contentOriginalTop - contentTravelDistance;
+        sidebarOpacity = contentOpacity = 1;
+        sidebarTransform = contentTransform = 'translateX(0)';
 
     } else {
         // Phase 3: Exit - horizontal slide out with fade (hero-style)
@@ -1894,170 +2074,35 @@ function updateEpisodiParallax(scrollY, elements) {
         const sidebarMoveX = -moveDistance * exitEasing; // Left
         const contentMoveX = moveDistance * exitEasing;   // Right
 
-        // Apply exit animation
-        sidebar.style.top = (sidebarOriginalTop - sidebarTravelDistance) + 'px';
-        contentArea.style.top = (contentOriginalTop - contentTravelDistance) + 'px';
-        sidebar.style.opacity = opacity;
-        contentArea.style.opacity = opacity;
-        sidebar.style.transform = `translateX(${sidebarMoveX}vw)`;
-        contentArea.style.transform = `translateX(${contentMoveX}vw)`;
+        sidebarTop = sidebarOriginalTop - sidebarTravelDistance;
+        contentTop = contentOriginalTop - contentTravelDistance;
+        sidebarOpacity = contentOpacity = opacity;
+        sidebarTransform = `translateX(${sidebarMoveX}vw)`;
+        contentTransform = `translateX(${contentMoveX}vw)`;
     }
+
+    // Efficient direct property updates (faster than cssText manipulation)
+    sidebar.style.top = sidebarTop + 'px';
+    sidebar.style.opacity = sidebarOpacity;
+    sidebar.style.transform = sidebarTransform;
+
+    contentArea.style.top = contentTop + 'px';
+    contentArea.style.opacity = contentOpacity;
+    contentArea.style.transform = contentTransform;
 }
 
-// Update missione animations - SIMPLIFIED VERSION
+// Update missione animations - RESTORED TO ORIGINAL (NO ANIMATIONS)
 function updateMissioneAnimations(scrollY, animationState) {
-    if (!animationState) return;
-
-    const { elements, entranceStart, entranceEnd, deadzoneEnd, exitEnd, simple } = animationState;
-
-    if (!elements || elements.length === 0) return;
-
-    // Use simple approach with reverse stagger and fixed positioning
-    if (simple) {
-        elements.forEach((elementData, index) => {
-            const { element, targetTop, targetLeft } = elementData;
-
-            // REVERSE STAGGER: last elements animate first (bottom to top)
-            const totalElements = elements.length;
-            const reverseIndex = totalElements - 1 - index;
-
-            // Entrance stagger: reverse order (button first)
-            const elementTrigger = entranceStart + (reverseIndex * 80);
-            const animationDuration = 200;
-            const elementAnimationEnd = elementTrigger + animationDuration;
-
-            // Exit stagger: SAME order as entrance (button first)
-            const elementExitStart = deadzoneEnd + (reverseIndex * 80);
-            const elementExitEnd = elementExitStart + animationDuration;
-
-            // Maintain fixed positioning at target viewport coordinates
-            element.style.top = targetTop + 'px';
-            element.style.left = targetLeft + 'px';
-
-            if (scrollY < elementTrigger) {
-                // Phase 1: Before entrance - hidden beneath floor
-                element.style.transform = 'translateX(-50%) translateY(12px)';
-                element.style.opacity = '0';
-                element.classList.remove('animated');
-
-            } else if (scrollY >= elementTrigger && scrollY <= elementAnimationEnd) {
-                // Phase 2: Entrance animation - emerge from floor
-                const progress = (scrollY - elementTrigger) / animationDuration;
-                const easedProgress = 1 - Math.pow(1 - progress, 3); // Ease-out cubic
-
-                const translateY = 12 * (1 - easedProgress); // 12px → 0px
-                const opacity = easedProgress; // 0 → 1
-
-                element.style.transform = `translateX(-50%) translateY(${translateY}px)`;
-                element.style.opacity = opacity;
-
-                if (!element.classList.contains('animated')) {
-                    element.classList.add('animated');
-                    console.log(`Element ${index} (reverse order ${reverseIndex}) emerged at scroll ${scrollY}`);
-                }
-
-            } else if (scrollY > elementAnimationEnd && scrollY <= elementExitStart) {
-                // Phase 3: Extended deadzone - stay visible until element's specific exit time
-                element.style.transform = 'translateX(-50%) translateY(0px)';
-                element.style.opacity = '1';
-                element.classList.add('animated');
-
-            } else if (scrollY > elementExitStart && scrollY <= elementExitEnd) {
-                // Phase 4: Exit animation - submerge into ceiling (REVERSE OF ENTRANCE)
-                const progress = (scrollY - elementExitStart) / animationDuration;
-                const easedProgress = 1 - Math.pow(1 - progress, 3); // Same easing as entrance
-
-                const translateY = -12 * easedProgress; // 0px → -12px (submerge into ceiling)
-                const opacity = 1 - easedProgress; // 1 → 0
-
-                element.style.transform = `translateX(-50%) translateY(${translateY}px)`;
-                element.style.opacity = opacity;
-
-                if (!element.classList.contains('exiting')) {
-                    element.classList.add('exiting');
-                    console.log(`Element ${index} (same order ${reverseIndex}) submerging at scroll ${scrollY}`);
-                }
-
-            } else if (scrollY > elementExitEnd) {
-                // Phase 5: After exit - hidden above ceiling
-                element.style.transform = 'translateX(-50%) translateY(-12px)';
-                element.style.opacity = '0';
-                element.classList.remove('animated');
-                element.classList.add('exiting');
-            }
-        });
-
-        // Deadzone handling is now managed by the main phase logic above
-
-        return;
-    }
-
-    // Legacy complex approach (keeping for fallback)
-    const currentPhase = scrollY < entranceStart ? 'before' :
-                        scrollY <= entranceEnd ? 'entrance' : 'deadzone';
-
-    elements.forEach((elementData, index) => {
-        const { element, finalTop, originalLeft } = elementData;
-
-        const staggerOffset = index * 25;
-        const elementEntranceStart = entranceStart + staggerOffset;
-        const elementEntranceEnd = entranceEnd + staggerOffset;
-
-        if (scrollY < elementEntranceStart) {
-            element.style.transform = 'translateY(50px)';
-            element.style.opacity = '0';
-        } else if (scrollY <= elementEntranceEnd) {
-            const scrollProgress = (scrollY - elementEntranceStart) / (elementEntranceEnd - elementEntranceStart);
-            const easing = 1 - Math.pow(1 - scrollProgress, 3);
-            const translateY = 50 * (1 - easing);
-            const opacity = easing;
-
-            element.style.transform = `translateY(${translateY}px)`;
-            element.style.opacity = opacity;
-        } else {
-            element.style.transform = 'translateY(0px)';
-            element.style.opacity = '1';
-        }
-    });
+    // No special animations for missione section
+    // Section works with standard document flow and CSS
+    return;
 }
 
-// Update hero animations with direct scroll position checking (same approach as episodi)
+// Update hero animations - RESTORED TO USE DECOUPLED SCROLL SYSTEM
 function updateHeroAnimations(scrollY) {
-    if (!heroAnimationState) return;
-
-    const { heroLogo, heroSubtitle, heroSectionHeight } = heroAnimationState;
-
-    // Hero exit animation runs from 0 to heroSectionHeight (100vh)
-    const exitProgress = Math.min(1, Math.max(0, scrollY / heroSectionHeight));
-    const exitEasing = Math.pow(exitProgress, 1.25); // Same easeInFast as original
-
-    // Calculate fade (same as original: starts at 33%, fully faded at 80%)
-    let opacity = 1;
-    if (exitProgress >= 0.33) {
-        if (exitProgress >= 0.8) {
-            opacity = 0;
-        } else {
-            const fadeProgress = (exitProgress - 0.33) / 0.47;
-            opacity = 1 - Math.pow(fadeProgress, 0.5);
-        }
-    }
-
-    // Apply horizontal movement and fade to both elements
-    const moveDistance = 100; // 100vw total movement distance
-
-    if (heroLogo) {
-        const logoMoveX = -moveDistance * exitEasing; // Exit left
-        heroLogo.style.opacity = opacity;
-        // Combine centering transform (-50%) with exit movement
-        heroLogo.style.transform = `translateX(calc(-50% + ${logoMoveX}vw))`;
-    }
-
-    if (heroSubtitle) {
-        const subtitleMoveX = moveDistance * exitEasing; // Exit right
-        heroSubtitle.style.opacity = opacity;
-        // Combine centering transform (-50%) with exit movement
-        heroSubtitle.style.transform = `translateX(calc(-50% + ${subtitleMoveX}vw))`;
-    }
+    // Hero animations are now handled by the decoupled scroll system
+    // This function is kept for compatibility but functionality moved to decoupled elements
+    // updateDecoupledElements() handles hero animations automatically
 }
 
 // Start
