@@ -1942,71 +1942,351 @@ function performEpisodiResize() {
     });
 }
 
-// Initialize missione animations system - RESTORED TO ORIGINAL
+// Initialize missione animations system - LENIS-BASED WITH IMMEDIATE DETACHMENT
 function initMissioneAnimations() {
-    // Clean up any residual styling from previous animation attempts
-    const missioneContainer = document.getElementById('missioneContainer');
-    if (missioneContainer) {
-        // Reset container to original state
-        missioneContainer.style.position = '';
-        missioneContainer.style.top = '';
-        missioneContainer.style.left = '';
-        missioneContainer.style.transform = '';
-        missioneContainer.style.width = '';
-        missioneContainer.style.height = '';
-        missioneContainer.style.zIndex = '';
-        missioneContainer.style.marginTop = '';
+    console.log('Initializing missione animations with Lenis integration');
 
-        // Reset all child elements to original state
-        const allElements = missioneContainer.querySelectorAll('.copy-block, .cta-container');
-        allElements.forEach(element => {
-            element.style.position = '';
+    const missioneContainer = document.getElementById('missioneContainer');
+    const missioneBlock = document.querySelector('.missione-block');
+
+    if (!missioneContainer || !missioneBlock) {
+        console.log('Missione elements not found');
+        return;
+    }
+
+    // Wait for content to be populated
+    function attemptInitialization(attempts = 0) {
+        const copyBlocks = missioneContainer.querySelectorAll('.copy-block');
+        const ctaContainer = missioneContainer.querySelector('.cta-container');
+
+        console.log(`Missione init attempt ${attempts + 1}: found ${copyBlocks.length} copy blocks, cta: ${!!ctaContainer}`);
+
+        if ((copyBlocks.length === 0 && !ctaContainer) && attempts < 10) {
+            setTimeout(() => attemptInitialization(attempts + 1), 200);
+            return;
+        }
+
+        if (copyBlocks.length === 0 && !ctaContainer) {
+            console.log('No missione content found after multiple attempts');
+            return;
+        }
+
+        const elements = [];
+
+        // Collect all animatable elements - granular level (title, text, button)
+        copyBlocks.forEach(block => {
+            const title = block.querySelector('.missione-title');
+            const text = block.querySelector('.missione-text');
+
+            if (title) elements.push(title);
+            if (text) elements.push(text);
+        });
+
+        // Add button element (more precise selector)
+        if (ctaContainer) {
+            const button = ctaContainer.querySelector('.missione-button');
+            if (button) {
+                elements.push(button);
+            } else {
+                // Fallback to container if button not found
+                elements.push(ctaContainer);
+            }
+        }
+
+        // Get original positions BEFORE making anything fixed (same as episodi approach)
+        const originalContainerRect = missioneContainer.getBoundingClientRect();
+        const originalContainerTop = originalContainerRect.top + window.scrollY;
+
+        // Store original element positions BEFORE fixing the container
+        const originalElementPositions = elements.map((element, index) => {
+            const rect = element.getBoundingClientRect();
+            return {
+                element,
+                index,
+                top: rect.top + window.scrollY,
+                left: rect.left,
+                width: rect.width,
+                height: rect.height
+            };
+        });
+
+        // IMMEDIATELY detach from document scroll - position in center of viewport
+        // Calculate viewport-centered position for missione section
+        const viewportCenterY = window.innerHeight / 2;
+        const containerCenterY = viewportCenterY - (originalContainerRect.height / 2);
+
+        missioneContainer.style.position = 'fixed';
+        missioneContainer.style.top = Math.max(containerCenterY, 20) + 'px'; // Ensure minimum 20px from top
+        missioneContainer.style.left = '50%';
+        missioneContainer.style.transform = 'translateX(-50%)'; // Center horizontally
+        missioneContainer.style.width = 'clamp(320px, 90vw, 800px)'; // RESPONSIVE width
+        missioneContainer.style.height = 'auto'; // Let content determine height
+        missioneContainer.style.zIndex = '1000';
+
+        // Initially hide container - will be shown when animation sequence starts
+        missioneContainer.style.visibility = 'hidden';
+        missioneContainer.style.opacity = '0';
+
+        console.log('Container positioning debug:', {
+            originalContainerRect,
+            viewportCenterY,
+            containerCenterY,
+            finalTop: Math.max(containerCenterY, 20),
+            containerStyle: {
+                position: missioneContainer.style.position,
+                top: missioneContainer.style.top,
+                left: missioneContainer.style.left,
+                transform: missioneContainer.style.transform,
+                width: missioneContainer.style.width,
+                height: missioneContainer.style.height,
+                zIndex: missioneContainer.style.zIndex
+            },
+            centeredHorizontally: true
+        });
+
+        // Add spacer to maintain document flow height (same as episodi approach)
+        const missioneOriginalHeight = missioneBlock.offsetHeight;
+        const spacer = document.createElement('div');
+        spacer.style.height = missioneOriginalHeight + 'px';
+        spacer.className = 'missione-spacer';
+        missioneBlock.parentNode.insertBefore(spacer, missioneBlock.nextSibling);
+
+        console.log('Container immediately fixed positioned (like episodi):', {
+            top: originalContainerRect.top,
+            left: originalContainerRect.left,
+            width: originalContainerRect.width,
+            height: originalContainerRect.height,
+            spacerHeight: missioneOriginalHeight
+        });
+
+        const elementData = originalElementPositions.map((elementPos, index) => {
+            const { element } = elementPos;
+
+            // REVERSE STAGGER: last elements animate first (bottom to top)
+            const totalElements = elements.length;
+            const reverseIndex = totalElements - 1 - index;
+
+            // Calculate position relative to the ORIGINAL container position (before it was fixed)
+            const relativeTop = elementPos.top - originalContainerTop;
+            const relativeLeft = elementPos.left - originalContainerRect.left;
+
+            // Use relative positioning within responsive container
+            element.style.position = 'relative';
             element.style.top = '';
             element.style.left = '';
-            element.style.transform = '';
-            element.style.width = '';
-            element.style.height = '';
-            element.style.opacity = '';
-            element.style.visibility = '';
-            element.style.zIndex = '';
-            element.style.display = '';
-            element.style.flexDirection = '';
-            element.style.justifyContent = '';
-            element.style.alignItems = '';
-            element.style.textAlign = '';
-            element.style.maxWidth = '';
-            element.style.transition = '';
+            element.style.width = '100%';
+            element.style.height = 'auto';
+            element.style.textAlign = 'center';
+            // Spacing is handled by CSS rules
 
-            // Reset font sizes to default
-            const h3 = element.querySelector('h3');
-            const p = element.querySelector('p');
-            if (h3) {
-                h3.style.fontSize = '';
-                h3.style.lineHeight = '';
-                h3.style.margin = '';
-            }
-            if (p) {
-                p.style.fontSize = '';
-                p.style.lineHeight = '';
-                p.style.margin = '';
+            // Start elements hidden below their own line (reduced movement)
+            element.style.transform = 'translateY(30px)';
+            element.style.opacity = '0';
+            element.style.visibility = 'visible';
+
+            // Add classes for tracking
+            element.classList.add('missione-animated');
+            element.dataset.animationIndex = index;
+            element.dataset.reverseIndex = reverseIndex;
+
+            console.log(`Element ${index} (reverse order ${reverseIndex}): positioned at top:${relativeTop}px, left:${relativeLeft}px, original was top:${elementPos.top}px`);
+
+            return {
+                element,
+                relativeTop,
+                relativeLeft,
+                index,
+                reverseIndex
+            };
+        });
+
+        // Calculate scroll trigger positions - 75% through episodi EXIT animation
+        const episodiDeadzoneEnd = 1450; // From episodi configuration
+        const episodiExitEnd = 2450;
+        const episodiExitDuration = episodiExitEnd - episodiDeadzoneEnd; // 1000px
+
+        // Start at 75% through episodi EXIT animation (not entire episodi section)
+        const entranceStart = episodiDeadzoneEnd + (episodiExitDuration * 0.75); // 1450 + 750 = 2200px
+        const entranceEnd = entranceStart + 750; // 750px entrance duration (2.5x longer)
+        const deadzoneEnd = entranceEnd + 250;   // 250px deadzone (same as episodi)
+        const exitEnd = deadzoneEnd + 750;       // 750px exit duration (2.5x longer)
+
+        console.log('Missione scroll positions (Lenis-driven):', {
+            entranceStart,
+            entranceEnd,
+            deadzoneEnd,
+            exitEnd,
+            episodiExitStart: episodiDeadzoneEnd,
+            episodiExitEnd: episodiExitEnd,
+            startsAt75PercentOfEpisodiExit: true
+        });
+
+        // Font size auto-adjustment system - calculates based on longest text of each type
+        function setupAutoFontSizing() {
+            if (!elementData || elementData.length === 0) return;
+
+            console.log('Setting up auto font sizing based on longest text of each type');
+
+            // Get available widths for each text type
+            const missioneWidth = missioneContainer.offsetWidth;
+            const h3MaxWidth = Math.floor(missioneWidth * 0.85); // 85% of missione container
+            const pMaxWidth = Math.floor(missioneWidth * 0.85);  // 85% of missione container (same as h3)
+
+            console.log('Container widths for font calculation:', {
+                missioneWidth,
+                h3MaxWidth,
+                pMaxWidth
+            });
+
+            // Collect all text elements by type
+            const h3Elements = [];
+            const pElements = [];
+
+            elementData.forEach(({ element }) => {
+                if (element.classList.contains('missione-title')) {
+                    h3Elements.push(element);
+                } else if (element.classList.contains('missione-text')) {
+                    pElements.push(element);
+                }
+            });
+
+            // Calculate optimal font sizes for each type
+            if (h3Elements.length > 0) {
+                const h3FontSize = calculateOptimalFontSize(h3Elements, h3MaxWidth, 'h3');
+                applyFontSizeToElements(h3Elements, h3FontSize, 'h3');
             }
 
-            // Remove animation classes
-            element.classList.remove('missione-animated', 'missione-positioned', 'animated', 'exiting');
-            element.removeAttribute('data-animation-index');
+            if (pElements.length > 0) {
+                const pFontSize = calculateOptimalFontSize(pElements, pMaxWidth, 'p');
+                applyFontSizeToElements(pElements, pFontSize, 'p');
+            }
+        }
+
+        // Calculate optimal font size based on longest text in the group
+        function calculateOptimalFontSize(elements, maxWidth, elementType) {
+            // Find the longest text
+            let longestText = '';
+            elements.forEach(element => {
+                const text = element.textContent.trim();
+                if (text.length > longestText.length) {
+                    longestText = text;
+                }
+            });
+
+            console.log(`Calculating font size for ${elementType} based on longest text: "${longestText.substring(0, 30)}..." (${longestText.length} chars)`);
+
+            // Binary search for optimal font size
+            const minSize = 12;
+            const maxSize = elementType === 'h3' ? 48 : 36; // Larger max for h3
+            let optimalSize = minSize;
+
+            for (let fontSize = minSize; fontSize <= maxSize; fontSize += 1) {
+                const textWidth = measureTextWidth(longestText, fontSize, elementType === 'h3' ? '600' : '400');
+                if (textWidth <= maxWidth) {
+                    optimalSize = fontSize;
+                } else {
+                    break; // This size is too big, use previous size
+                }
+            }
+
+            console.log(`Optimal ${elementType} font size: ${optimalSize}px (fits in ${maxWidth}px)`);
+            return optimalSize;
+        }
+
+        // Measure text width using canvas
+        function measureTextWidth(text, fontSize, fontWeight = '400') {
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
+            context.font = `${fontWeight} ${fontSize}px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif`;
+            return context.measureText(text).width;
+        }
+
+        // Apply calculated font size to all elements of this type
+        function applyFontSizeToElements(elements, fontSize, elementType) {
+            elements.forEach(element => {
+                element.style.fontSize = fontSize + 'px';
+                element.style.lineHeight = '1.2';
+                element.style.whiteSpace = 'nowrap';
+                element.style.display = 'block';
+                element.style.width = '100%';
+                element.style.textAlign = 'center';
+                // Apply consistent letter spacing - h3 uses same as p
+                element.style.letterSpacing = 'normal';
+                // NO overflow/ellipsis - font size prevents overflow entirely
+            });
+
+            console.log(`Applied ${fontSize}px font size to ${elements.length} ${elementType} elements (prevents overflow)`);
+        }
+
+        // Initial font sizing setup
+        setupAutoFontSizing();
+
+        // Resize handler for positioning and font size updates
+        function recalculateMissioneLayout() {
+            if (!missioneAnimationState) return;
+
+            console.log('Recalculating missione layout for viewport resize');
+
+            // 1. Recalculate font sizes for new container widths
+            setupAutoFontSizing();
+
+            // 2. Recalculate container center position vertically
+            const newViewportCenterY = window.innerHeight / 2;
+            const newContainerCenterY = newViewportCenterY - (missioneContainer.offsetHeight / 2);
+
+            // Update container position (keep it centered)
+            missioneContainer.style.top = Math.max(newContainerCenterY, 20) + 'px';
+
+            console.log('Layout recalculated:', {
+                newTop: missioneContainer.style.top,
+                viewportSize: `${window.innerWidth}x${window.innerHeight}`,
+                fontSizesUpdated: true
+            });
+        }
+
+        // Debounced resize handler for performance
+        let resizeTimeout;
+        function debouncedResizeHandler() {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(recalculateMissioneLayout, 150); // 150ms debounce
+        }
+
+        // Clean up previous resize handler
+        if (window.missioneResizeHandler) {
+            window.removeEventListener('resize', window.missioneResizeHandler);
+        }
+
+        // Add new debounced resize handler
+        window.missioneResizeHandler = debouncedResizeHandler;
+        window.addEventListener('resize', debouncedResizeHandler);
+
+        // Store state for use in updateScrollElements (called by Lenis RAF loop)
+        missioneAnimationState = {
+            elements: elementData,
+            missioneBlock,
+            missioneContainer,
+            entranceStart,
+            entranceEnd,
+            deadzoneEnd,
+            exitEnd,
+            originalContainerTop
+        };
+
+        console.log('Missione Lenis-based animations initialized successfully', {
+            elementCount: elements.length,
+            reverseStaggerOrder: 'button → middle → top',
+            detachedFromScroll: true,
+            lenisIntegrated: true,
+            responsiveContainer: true,
+            scrollingText: true,
+            containerWidth: 'clamp(320px, 90vw, 800px)',
+            positioning: 'relative with consistent spacing',
+            animations: '30px peek-through + horizontal text scroll'
         });
     }
 
-    // Clean up any resize handlers
-    if (window.missioneResizeHandler) {
-        window.removeEventListener('resize', window.missioneResizeHandler);
-        window.missioneResizeHandler = null;
-    }
-
-    // Reset animation state
-    missioneAnimationState = null;
-
-    console.log('Missione section restored to original state (no special animations)');
+    // Start initialization attempts
+    attemptInitialization();
 }
 
 // Optimized episodi parallax with batched DOM updates
@@ -2098,11 +2378,108 @@ function updateEpisodiParallax(scrollY, elements) {
     contentArea.style.transform = contentTransform;
 }
 
-// Update missione animations - RESTORED TO ORIGINAL (NO ANIMATIONS)
+// Update missione animations - LENIS-DRIVEN 3-PHASE SYSTEM
 function updateMissioneAnimations(scrollY, animationState) {
-    // No special animations for missione section
-    // Section works with standard document flow and CSS
-    return;
+    if (!animationState) return;
+
+    const { elements, entranceStart, entranceEnd, deadzoneEnd, exitEnd, missioneContainer } = animationState;
+
+    if (!elements || elements.length === 0) return;
+
+    // Animation parameters
+    const elementAnimationDuration = 500; // Each element animates over 500px (2.5x longer)
+    const staggerOffset = 50; // 50px stagger between elements
+    const moveDistance = 30; // 30px movement (subtle peek-through effect like reference)
+
+    // CONTAINER VISIBILITY CONTROL - hide section before entry and after exit
+    const currentVisibility = missioneContainer.style.visibility;
+
+    if (scrollY < entranceStart) {
+        // Before animation sequence - hide entire section
+        if (currentVisibility !== 'hidden') {
+            missioneContainer.style.visibility = 'hidden';
+            missioneContainer.style.opacity = '0';
+            console.log('Missione section hidden (before entry trigger)');
+        }
+    } else if (scrollY > exitEnd) {
+        // After animation sequence - hide entire section
+        if (currentVisibility !== 'hidden') {
+            missioneContainer.style.visibility = 'hidden';
+            missioneContainer.style.opacity = '0';
+            console.log('Missione section hidden (after exit sequence)');
+        }
+    } else {
+        // During animation sequence - show section at entranceStart (elements still hidden, ready for gradual emergence)
+        if (currentVisibility !== 'visible') {
+            missioneContainer.style.visibility = 'visible';
+            missioneContainer.style.opacity = '1';
+            console.log('Missione section visible (animation sequence active)');
+        }
+    }
+
+    elements.forEach((elementData) => {
+        const { element, reverseIndex } = elementData;
+
+        // Calculate staggered timing for this element (reverse order - button first)
+        const elementEntranceStart = entranceStart + (reverseIndex * staggerOffset);
+        const elementEntranceEnd = elementEntranceStart + elementAnimationDuration;
+
+        const elementExitStart = deadzoneEnd + (reverseIndex * staggerOffset);
+        const elementExitEnd = elementExitStart + elementAnimationDuration;
+
+        if (scrollY < elementEntranceStart) {
+            // Phase 1: Before entrance - hidden below its own line
+            element.style.transform = 'translateY(30px)';
+            element.style.opacity = '0';
+            element.classList.remove('animated', 'exiting');
+
+        } else if (scrollY >= elementEntranceStart && scrollY <= elementEntranceEnd) {
+            // Phase 2: Entrance animation - peek through its own line
+            const progress = (scrollY - elementEntranceStart) / elementAnimationDuration;
+            const easedProgress = 1 - Math.pow(1 - progress, 3); // Ease-out cubic
+
+            const translateY = moveDistance * (1 - easedProgress); // 30px → 0px
+            const opacity = easedProgress; // 0 → 1
+
+            element.style.transform = `translateY(${translateY}px)`;
+            element.style.opacity = opacity;
+
+            if (!element.classList.contains('animated')) {
+                element.classList.add('animated');
+                console.log(`Element ${elementData.index} (reverse order ${reverseIndex}) peeking through line at scroll ${scrollY}`);
+            }
+
+        } else if (scrollY > elementEntranceEnd && scrollY <= elementExitStart) {
+            // Phase 3: Deadzone - fully visible at natural position
+            element.style.transform = 'translateY(0px)';
+            element.style.opacity = '1';
+            element.classList.add('animated');
+            element.classList.remove('exiting');
+
+        } else if (scrollY > elementExitStart && scrollY <= elementExitEnd) {
+            // Phase 4: Exit animation - disappear behind its own line
+            const progress = (scrollY - elementExitStart) / elementAnimationDuration;
+            const easedProgress = 1 - Math.pow(1 - progress, 3); // Same easing as entrance
+
+            const translateY = -moveDistance * easedProgress; // 0px → -30px
+            const opacity = 1 - easedProgress; // 1 → 0
+
+            element.style.transform = `translateY(${translateY}px)`;
+            element.style.opacity = opacity;
+
+            if (!element.classList.contains('exiting')) {
+                element.classList.add('exiting');
+                console.log(`Element ${elementData.index} (reverse order ${reverseIndex}) disappearing behind line at scroll ${scrollY}`);
+            }
+
+        } else if (scrollY > elementExitEnd) {
+            // Phase 5: After exit - hidden above its own line
+            element.style.transform = 'translateY(-30px)';
+            element.style.opacity = '0';
+            element.classList.remove('animated');
+            element.classList.add('exiting');
+        }
+    });
 }
 
 // Update hero animations - RESTORED TO USE DECOUPLED SCROLL SYSTEM
