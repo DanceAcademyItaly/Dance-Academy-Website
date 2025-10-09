@@ -2019,7 +2019,7 @@ function initMissioneAnimations() {
         missioneContainer.style.top = Math.max(containerCenterY, 20) + 'px'; // Ensure minimum 20px from top
         missioneContainer.style.left = '50%';
         missioneContainer.style.transform = 'translateX(-50%)'; // Center horizontally
-        missioneContainer.style.width = 'clamp(320px, 90vw, 800px)'; // RESPONSIVE width
+        missioneContainer.style.width = 'clamp(320px, 95vw, 1400px)'; // RESPONSIVE width (wider max for desktop)
         missioneContainer.style.height = 'auto'; // Let content determine height
         missioneContainer.style.zIndex = '1000';
 
@@ -2070,11 +2070,15 @@ function initMissioneAnimations() {
             const relativeTop = elementPos.top - originalContainerTop;
             const relativeLeft = elementPos.left - originalContainerRect.left;
 
+            // Determine element type for specific styling
+            const isButton = element.classList.contains('missione-button');
+
             // Use relative positioning within responsive container
             element.style.position = 'relative';
             element.style.top = '';
             element.style.left = '';
-            element.style.width = '100%';
+            // Button width: fit-content (based on text), Text elements: 100%
+            element.style.width = isButton ? 'fit-content' : '100%';
             element.style.height = 'auto';
             element.style.textAlign = 'center';
             // Spacing is handled by CSS rules
@@ -2125,17 +2129,22 @@ function initMissioneAnimations() {
         function setupAutoFontSizing() {
             if (!elementData || elementData.length === 0) return;
 
-            console.log('Setting up auto font sizing based on longest text of each type');
+            const isMobile = window.innerWidth <= 768;
+            console.log(`Setting up font sizing (${isMobile ? 'mobile' : 'desktop'} - auto-calculated based on longest text)`);
 
-            // Get available widths for each text type
-            const missioneWidth = missioneContainer.offsetWidth;
-            const h3MaxWidth = Math.floor(missioneWidth * 0.85); // 85% of missione container
-            const pMaxWidth = Math.floor(missioneWidth * 0.85);  // 85% of missione container (same as h3)
+            // Calculate max widths based on container's actual width
+            // Use fixed padding approach for more generous sizing on larger screens
+            const containerWidth = missioneContainer.offsetWidth;
+            const horizontalPadding = 60; // 30px on each side
+            const h3MaxWidth = containerWidth - horizontalPadding;
+            const pMaxWidth = containerWidth - horizontalPadding;
 
             console.log('Container widths for font calculation:', {
-                missioneWidth,
+                containerWidth,
+                horizontalPadding,
                 h3MaxWidth,
-                pMaxWidth
+                pMaxWidth,
+                isMobile
             });
 
             // Collect all text elements by type
@@ -2151,19 +2160,34 @@ function initMissioneAnimations() {
             });
 
             // Calculate optimal font sizes for each type
-            if (h3Elements.length > 0) {
-                const h3FontSize = calculateOptimalFontSize(h3Elements, h3MaxWidth, 'h3');
-                applyFontSizeToElements(h3Elements, h3FontSize, 'h3');
-            }
+            let h3FontSize, pFontSize;
 
-            if (pElements.length > 0) {
-                const pFontSize = calculateOptimalFontSize(pElements, pMaxWidth, 'p');
+            if (h3Elements.length > 0 && pElements.length > 0) {
+                // Calculate both sizes
+                h3FontSize = calculateOptimalFontSize(h3Elements, h3MaxWidth, 'h3');
+                pFontSize = calculateOptimalFontSize(pElements, pMaxWidth, 'p');
+
+                // ENFORCE HIERARCHY: h3 must be larger than p
+                if (pFontSize >= h3FontSize) {
+                    pFontSize = Math.floor(h3FontSize * 0.85); // p is 85% of h3
+                    console.log(`Hierarchy enforced: p reduced to ${pFontSize}px (85% of h3 ${h3FontSize}px)`);
+                }
+
+                applyFontSizeToElements(h3Elements, h3FontSize, 'h3');
+                applyFontSizeToElements(pElements, pFontSize, 'p');
+            } else if (h3Elements.length > 0) {
+                h3FontSize = calculateOptimalFontSize(h3Elements, h3MaxWidth, 'h3');
+                applyFontSizeToElements(h3Elements, h3FontSize, 'h3');
+            } else if (pElements.length > 0) {
+                pFontSize = calculateOptimalFontSize(pElements, pMaxWidth, 'p');
                 applyFontSizeToElements(pElements, pFontSize, 'p');
             }
         }
 
         // Calculate optimal font size based on longest text in the group
         function calculateOptimalFontSize(elements, maxWidth, elementType) {
+            const isMobile = window.innerWidth <= 768;
+
             // Find the longest text
             let longestText = '';
             elements.forEach(element => {
@@ -2175,21 +2199,43 @@ function initMissioneAnimations() {
 
             console.log(`Calculating font size for ${elementType} based on longest text: "${longestText.substring(0, 30)}..." (${longestText.length} chars)`);
 
-            // Binary search for optimal font size
-            const minSize = 12;
-            const maxSize = elementType === 'h3' ? 48 : 36; // Larger max for h3
+            // Font size ranges
+            const minSize = isMobile ? 12 : 12;
+            const maxSize = isMobile ? 24 : (elementType === 'h3' ? 48 : 36);
+
+            // Use maxWidth for BOTH mobile and desktop - it's already calculated correctly
+            // maxWidth = containerWidth - horizontalPadding (accounts for actual container dimensions)
+            // For mobile: h3 uses full width, p uses 95% of available width
+            const singleLineWidth = isMobile
+                ? (elementType === 'h3' ? maxWidth : Math.floor(maxWidth * 0.95))
+                : maxWidth;
+
+            // Mobile can use 2 lines, desktop uses 1 line
+            const maxAllowedWidth = isMobile ? (singleLineWidth * 2) : singleLineWidth;
+
             let optimalSize = minSize;
 
+            // Find largest font size where longest text fits in allowed space
             for (let fontSize = minSize; fontSize <= maxSize; fontSize += 1) {
                 const textWidth = measureTextWidth(longestText, fontSize, elementType === 'h3' ? '600' : '400');
-                if (textWidth <= maxWidth) {
+
+                // Account for letter-spacing: h3 has 0.08em letter spacing
+                // Each character adds 0.08em, so total added width ≈ (text.length * fontSize * 0.08)
+                const letterSpacingWidth = elementType === 'h3' ? (longestText.length * fontSize * 0.08) : 0;
+                const totalWidth = textWidth + letterSpacingWidth;
+
+                if (totalWidth <= maxAllowedWidth) {
                     optimalSize = fontSize;
                 } else {
                     break; // This size is too big, use previous size
                 }
             }
 
-            console.log(`Optimal ${elementType} font size: ${optimalSize}px (fits in ${maxWidth}px)`);
+            const finalTextWidth = measureTextWidth(longestText, optimalSize, elementType === 'h3' ? '600' : '400');
+            const linesUsed = finalTextWidth / singleLineWidth;
+
+            console.log(`Optimal ${elementType} font size: ${optimalSize}px (${isMobile ? `mobile, uses ${linesUsed.toFixed(2)} lines` : `desktop, fits in ${finalTextWidth}px / ${maxWidth}px`})`);
+
             return optimalSize;
         }
 
@@ -2203,19 +2249,45 @@ function initMissioneAnimations() {
 
         // Apply calculated font size to all elements of this type
         function applyFontSizeToElements(elements, fontSize, elementType) {
+            const isMobile = window.innerWidth <= 768;
+
             elements.forEach(element => {
                 element.style.fontSize = fontSize + 'px';
-                element.style.lineHeight = '1.2';
-                element.style.whiteSpace = 'nowrap';
-                element.style.display = 'block';
-                element.style.width = '100%';
+                element.style.lineHeight = '1.3';
                 element.style.textAlign = 'center';
-                // Apply consistent letter spacing - h3 uses same as p
-                element.style.letterSpacing = 'normal';
-                // NO overflow/ellipsis - font size prevents overflow entirely
+                element.style.letterSpacing = elementType === 'h3' ? '0.08em' : 'normal';
+
+                if (isMobile) {
+                    // Mobile: Allow wrapping to max 2 lines
+                    // h3: 100% of container, p: 95% of container (different widths for visual distinction)
+                    // NO ELLIPSIS - font size ensures ALL text fits
+                    element.style.whiteSpace = 'normal';
+                    element.style.width = elementType === 'h3' ? '100%' : '95%';
+                    element.style.maxWidth = elementType === 'h3' ? '100%' : '95%';
+                    element.style.display = 'block';
+                    element.style.overflow = 'visible';
+                    element.style.wordWrap = 'break-word';
+                    element.style.overflowWrap = 'break-word';
+                    // Clear any webkit line clamp properties
+                    element.style.webkitLineClamp = '';
+                    element.style.webkitBoxOrient = '';
+                    element.style.textOverflow = '';
+                } else {
+                    // Desktop: Single line, no wrap
+                    element.style.whiteSpace = 'nowrap';
+                    element.style.width = '100%';
+                    element.style.maxWidth = '100%';
+                    element.style.display = 'block';
+                    element.style.overflow = 'visible';
+                    element.style.wordWrap = 'normal';
+                    element.style.overflowWrap = 'normal';
+                    element.style.webkitLineClamp = '';
+                    element.style.webkitBoxOrient = '';
+                    element.style.textOverflow = '';
+                }
             });
 
-            console.log(`Applied ${fontSize}px font size to ${elements.length} ${elementType} elements (prevents overflow)`);
+            console.log(`Applied ${fontSize}px font size to ${elements.length} ${elementType} elements (${isMobile ? `mobile: ${elementType === 'h3' ? '100%' : '95%'} of container, natural wrap to max ~2 lines, NO ellipsis` : 'desktop: single line nowrap'})`);
         }
 
         // Initial font sizing setup
@@ -2278,10 +2350,10 @@ function initMissioneAnimations() {
             detachedFromScroll: true,
             lenisIntegrated: true,
             responsiveContainer: true,
-            scrollingText: true,
-            containerWidth: 'clamp(320px, 90vw, 800px)',
-            positioning: 'relative with consistent spacing',
-            animations: '30px peek-through + horizontal text scroll'
+            fontSizing: 'auto-calculated with 60px padding',
+            containerWidth: 'clamp(320px, 95vw, 1400px)',
+            positioning: 'fixed container, relative elements',
+            animations: '30px peek-through entrance/exit'
         });
     }
 
@@ -2436,7 +2508,7 @@ function updateMissioneAnimations(scrollY, animationState) {
         } else if (scrollY >= elementEntranceStart && scrollY <= elementEntranceEnd) {
             // Phase 2: Entrance animation - peek through its own line
             const progress = (scrollY - elementEntranceStart) / elementAnimationDuration;
-            const easedProgress = 1 - Math.pow(1 - progress, 3); // Ease-out cubic
+            const easedProgress = 1 - Math.pow(1 - progress, 1.3); // Ease-out with exponent 1.3
 
             const translateY = moveDistance * (1 - easedProgress); // 30px → 0px
             const opacity = easedProgress; // 0 → 1
@@ -2459,7 +2531,7 @@ function updateMissioneAnimations(scrollY, animationState) {
         } else if (scrollY > elementExitStart && scrollY <= elementExitEnd) {
             // Phase 4: Exit animation - disappear behind its own line
             const progress = (scrollY - elementExitStart) / elementAnimationDuration;
-            const easedProgress = 1 - Math.pow(1 - progress, 3); // Same easing as entrance
+            const easedProgress = Math.pow(progress, 1.25); // Ease-in (same as hero easeInFast)
 
             const translateY = -moveDistance * easedProgress; // 0px → -30px
             const opacity = 1 - easedProgress; // 1 → 0
