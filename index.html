@@ -583,65 +583,173 @@
         }
 
 
-        /* Candidati Block - Container System */
+        /* Candidati Block - Card Stack Animation System */
         .candidati-block {
             min-height: 100vh;
-            padding: clamp(40px, 8vh, 80px) clamp(20px, 5vw, 40px);
+            margin: 0;
+            padding: 0 clamp(20px, 5vw, 40px) clamp(15px, 2vh, 25px);
             display: flex;
+            flex-direction: column;
             align-items: center;
-            justify-content: center;
-            overflow-x: hidden;
+            justify-content: flex-start;
+            /* position set by JavaScript to 'fixed' */
+            overflow: hidden;
         }
 
-        .form-container {
-            max-width: min(600px, 90vw);
-            width: 100%;
-            max-height: 90vh;
-            overflow-y: auto;
-            margin: 0 auto;
-        }
-
-        .form-container h2 {
-            font-size: var(--text-4xl);
+        /* Title - animated via JS */
+        .candidati-title {
+            font-size: clamp(1.5rem, 3vw + 1vh, 2.5rem);
             font-weight: 300;
             letter-spacing: var(--letter-spacing-widest);
             text-transform: uppercase;
-            margin-bottom: 50px;
+            margin-bottom: clamp(12px, 1.8vh, 24px);
             text-align: center;
+            opacity: 0;
         }
 
-        .form-section {
-            margin-bottom: 40px;
+        /* Card deck container */
+        .card-deck-container {
+            position: relative;
+            width: 100%;
+            /* Height and padding-bottom set dynamically by JavaScript */
+            /* Extends from title to near submit button with viewport-based gap */
         }
 
-        .form-section-title {
-            font-size: var(--text-xs);
+        /* Individual form cards - CLASSIC GLASSMORPHISM */
+        .form-card {
+            position: absolute;
+            left: 50%;
+            top: 0;
+            /* Glassmorphism: lighter background with blur */
+            background: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(12px) saturate(180%);
+            -webkit-backdrop-filter: blur(12px) saturate(180%);
+            /* Slightly stronger border for glass effect */
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            border-radius: 2px;
+            opacity: 0;
+            overflow: hidden;
+            /* Refined shadows for frosted glass look */
+            box-shadow:
+                0 8px 32px rgba(0, 0, 0, 0.5),
+                0 4px 16px rgba(0, 0, 0, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.15);
+            /* Grid layout: header | content | navigation */
+            display: grid;
+            grid-template-rows: auto 1fr auto;
+            /* Height set dynamically by JavaScript to fill available space */
+            /* Prevents cards from extending beyond viewport */
+            min-height: 400px; /* Minimum usable height */
+        }
+
+        /* Card header */
+        .card-header {
+            border-bottom: 1px solid var(--border-light);
+            padding-bottom: 8px; /* Minimal spacing */
+            margin-bottom: 0; /* No margin - grid controls spacing */
+        }
+
+        .card-title {
+            font-size: clamp(1rem, 1.5vw + 0.5vh, 1.75rem);
+            font-weight: 300;
+            letter-spacing: var(--letter-spacing-widest);
+            text-transform: uppercase;
+            text-align: center;
+            margin: 0;
+            color: var(--text-primary);
+        }
+
+        /* Card content area - grid layout, minimal spacing, top-aligned */
+        .card-content {
+            overflow: visible; /* No scrolling - content will fit */
+            display: grid;
+            grid-template-columns: 1fr; /* Single column by default (mobile) */
+            grid-auto-rows: auto; /* Rows size to content */
+            gap: 6px; /* Minimal vertical gap between fields */
+            align-content: start; /* Align to top */
+            padding-top: 10px; /* Minimal spacing from header */
+        }
+
+        /* Card navigation - grid with 2 columns for consistent alignment */
+        .card-navigation {
+            display: grid;
+            grid-template-columns: 1fr 1fr; /* Always 2 columns */
+            gap: 10px; /* Minimal gap between buttons */
+            padding-top: 10px; /* Minimal top padding */
+            margin-top: 0; /* No margin - grid row gap handles spacing */
+            border-top: 1px solid var(--border-light);
+        }
+
+        /* Single button in navigation: align to correct column */
+        .card-navigation button[data-direction="prev"]:only-child {
+            grid-column: 1; /* Left column */
+        }
+
+        .card-navigation button[data-direction="next"]:only-child {
+            grid-column: 2; /* Right column */
+        }
+
+        /* When prev is hidden (first card), align next to right */
+        .card-navigation button[data-direction="prev"][style*="display: none"] ~ button[data-direction="next"],
+        .card-navigation button[data-direction="prev"][style*="display:none"] ~ button[data-direction="next"] {
+            grid-column: 2; /* Right column */
+        }
+
+        /* When next is hidden (last card), align prev to left */
+        .card-navigation button[data-direction="next"][style*="display: none"] ~ button[data-direction="prev"],
+        .card-navigation button[data-direction="next"][style*="display:none"] ~ button[data-direction="prev"] {
+            grid-column: 1; /* Left column (default, but explicit) */
+        }
+
+        .card-nav-button {
+            /* No flex - grid child now */
+            width: 100%; /* Fill grid cell */
+            padding: clamp(10px, 1.5vh, 14px) clamp(16px, 2.5vw, 28px);
+            background: var(--bg-medium);
+            border: 1px solid var(--border-default);
+            color: var(--text-secondary);
             text-transform: uppercase;
             letter-spacing: var(--letter-spacing-wider);
-            color: var(--text-secondary);
-            margin-bottom: 20px;
-            padding-bottom: 10px;
-            border-bottom: 1px solid var(--border-light);
+            font-size: clamp(9px, 1vw + 0.3vh, 12px);
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: inherit;
+            font-weight: 300;
         }
 
+        .card-nav-button:hover {
+            color: var(--text-primary);
+            border-color: var(--border-hover);
+            transform: translateY(-1px);
+        }
+
+        .card-nav-button .btn-symbol {
+            opacity: 0.5;
+            font-weight: 200;
+        }
+
+        /* Form groups and inputs */
         .form-group {
-            margin-bottom: 15px;
+            margin-bottom: 0; /* No margin - grid gap controls spacing */
             position: relative;
+            width: 100%; /* Fill column */
         }
 
         .form-group input,
         .form-group select,
         .form-group textarea {
-            width: 100%;
-            padding: 20px;
+            width: 100%; /* Fill parent */
+            box-sizing: border-box;
+            padding: clamp(12px, 1.5vh, 16px) clamp(14px, 2vw, 18px);
             background: var(--bg-strong);
             border: 1px solid var(--border-default);
             color: var(--text-secondary);
             font-family: inherit;
-            font-size: var(--text-sm);
+            font-size: clamp(10px, 1vw + 0.2vh, 13px);
             text-transform: uppercase;
-            letter-spacing: var(--letter-spacing-wider);
+            letter-spacing: var(--letter-spacing-wide);
             transition: all 0.3s;
+            display: block; /* Ensure full width */
         }
 
         .form-group input::placeholder,
@@ -666,13 +774,15 @@
         }
 
         .form-group textarea {
-            min-height: 80px;
+            min-height: clamp(60px, 8vh, 80px);
+            max-height: clamp(120px, 18vh, 200px);
             resize: vertical;
             text-transform: none;
         }
 
         .form-group textarea.tall {
-            min-height: 160px;
+            min-height: clamp(80px, 12vh, 120px);
+            max-height: clamp(150px, 22vh, 250px);
         }
 
         .form-group select {
@@ -685,50 +795,118 @@
             padding-right: 45px;
         }
 
-        .form-info {
-            padding: 16px 20px;
-            background: rgba(0, 0, 0, 0.3);
-            border: 1px solid var(--border-default);
-            font-size: var(--text-xs);
-            letter-spacing: var(--letter-spacing-wide);
-            color: var(--text-secondary);
-            margin: 15px 0;
+        /* Required field asterisk - positioned inside input on the right */
+        .form-group:has(input.required)::after,
+        .form-group:has(select.required)::after {
+            content: '*';
+            position: absolute;
+            right: clamp(14px, 2vw, 18px);
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--accent);
+            font-size: clamp(11px, 1.1vw + 0.3vh, 14px);
+            pointer-events: none;
+            z-index: 1;
         }
 
-        .form-submit {
-            width: 100%;
-            padding: 18px 45px;
+        /* Asterisk for select fields - position before dropdown arrow */
+        .form-group:has(select.required)::after {
+            right: clamp(40px, 4vw, 50px);
+        }
+
+        /* Asterisk for textarea fields - position at top right */
+        .form-group:has(textarea.required)::after {
+            content: '*';
+            position: absolute;
+            right: clamp(14px, 2vw, 18px);
+            top: clamp(16px, 2vh, 22px);
+            transform: none;
+            color: var(--accent);
+            font-size: clamp(11px, 1.1vw + 0.3vh, 14px);
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .form-info {
+            padding: clamp(10px, 1.5vh, 14px) clamp(12px, 2vw, 16px);
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border-default);
+            font-size: clamp(9px, 0.9vw + 0.2vh, 11px);
+            letter-spacing: var(--letter-spacing-wide);
+            color: var(--text-secondary);
+            margin: 0; /* No margin - grid gap controls spacing */
+            line-height: 1.4;
+            width: 100%; /* Fill column */
+            box-sizing: border-box;
+        }
+
+        /* Submit button container */
+        .submit-button-container {
+            position: fixed;
+            bottom: 5vh;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            z-index: 1001;
+        }
+
+        .submit-button {
+            display: inline-block; /* Match missione-button */
             background: var(--bg-medium);
             border: 1px solid var(--border-default);
             color: var(--text-secondary);
+            /* Match missione-button padding */
+            padding: clamp(12px, 2vh, 20px) clamp(25px, 4vw, 50px);
             text-transform: uppercase;
-            letter-spacing: var(--letter-spacing-widest);
-            font-size: var(--text-base);
+            /* Match missione-button letter-spacing */
+            letter-spacing: clamp(1px, 0.3vw, 3px);
+            /* Match missione-button font-size */
+            font-size: clamp(10px, 1.5vw + 0.5vh, 14px);
+            text-decoration: none;
             cursor: pointer;
             transition: all 0.3s;
-            margin-top: 30px;
+            font-family: inherit;
+            font-weight: 300;
+            /* Match missione-button max-width */
+            max-width: 300px;
+            text-align: center;
         }
 
-        .form-submit:hover {
+        .submit-button:hover {
+            background: var(--bg-strong); /* Match missione-button hover */
             color: var(--text-primary);
-            border-color: var(--border-hover);
-            transform: translateY(-2px);
+            transform: translateY(-1px);
         }
 
-        /* Required asterisk styling */
-        .form-group .required-label {
-            position: absolute;
-            right: 10px;
-            top: 10px;
-            color: var(--accent);
-            font-weight: bold;
-            pointer-events: none;
-            z-index: 10;
-            font-size: var(--text-sm);
+        /* Desktop layout (two-column grid) */
+        @media (min-width: 769px) {
+            .form-card {
+                width: clamp(550px, 70vw, 900px);
+                padding: clamp(20px, 2.5vh, 32px) clamp(25px, 3vw, 40px);
+            }
+
+            .card-content {
+                grid-template-columns: 1fr 1fr; /* 2 columns on desktop */
+                gap: 6px 12px; /* Minimal row gap, moderate column gap */
+            }
+
+            /* Full-width elements span both columns */
+            .card-content .form-info,
+            .card-content .form-group.full-width {
+                grid-column: 1 / -1;
+            }
         }
 
-        .form-group select + .required-label {
-            right: 40px;
+        /* Mobile layout (single column) */
+        @media (max-width: 768px) {
+            .form-card {
+                width: clamp(300px, 88vw, 400px);
+                padding: clamp(18px, 2.5vh, 25px) clamp(18px, 4vw, 25px);
+                /* Height set dynamically by JavaScript */
+            }
+
+            /* card-content stays as grid with 1 column (from base styles) */
+            /* gap: 6px from base styles - minimal spacing */
         }
 
         /* Contatti Block - Container System */
@@ -1018,28 +1196,6 @@
                 padding: clamp(15px, 5vh, 60px) clamp(10px, 3vw, 15px);
             }
 
-            /* Form mobile */
-            .candidati-block {
-                padding: 60px 15px;
-            }
-
-            .form-container h2 {
-                margin-bottom: 30px;
-            }
-
-
-            .form-group input,
-            .form-group select,
-            .form-group textarea {
-                padding: 12px;
-                letter-spacing: var(--letter-spacing-wide);
-            }
-
-            .form-submit {
-                padding: 15px 30px;
-                letter-spacing: var(--letter-spacing-wider);
-            }
-
             /* Contatti mobile */
             .contatti-block {
                 padding: 60px 15px;
@@ -1103,124 +1259,188 @@
 
         <!-- Candidati -->
         <div class="candidati-block block" data-block="candidati">
-            <div class="form-container">
-                <h2>Candidati</h2>
+            <h2 class="candidati-title">Candidati</h2>
+
+            <div class="card-deck-container">
                 <form id="candidatiForm">
-                    <!-- Scuola -->
-                    <div class="form-section">
-                        <div class="form-section-title">SCUOLA</div>
-                        <div class="form-group">
-                            <input type="text" name="nomeScuola" placeholder="Nome della scuola *" class="required" required>
+                    <!-- Card 0: Scuola -->
+                    <div class="form-card" data-card="0">
+                        <div class="card-header">
+                            <h3 class="card-title">Scuola</h3>
                         </div>
-                        <div class="form-group">
-                            <input type="text" name="citta" placeholder="Città *" class="required" required>
+                        <div class="card-content">
+                            <div class="form-group">
+                                <input type="text" name="nomeScuola" placeholder="Nome della scuola" class="required" required>
+                            </div>
+                            <div class="form-group">
+                                <input type="text" name="citta" placeholder="Città" class="required" required>
+                            </div>
+                            <div class="form-group">
+                                <input type="text" name="provincia" placeholder="Provincia" class="required" required>
+                            </div>
+                            <div class="form-group">
+                                <input type="text" name="indirizzo" placeholder="Indirizzo completo" class="required" required>
+                            </div>
+                            <div class="form-group">
+                                <input type="number" name="annoFondazione" placeholder="Anno di fondazione" class="required" min="1900" max="2024" required>
+                            </div>
+                            <div class="form-group">
+                                <select name="numeroAllievi" class="required" required>
+                                    <option value="">Numero di allievi attivi</option>
+                                    <option value="<50">Meno di 50</option>
+                                    <option value="50-100">50-100</option>
+                                    <option value="100-200">100-200</option>
+                                    <option value="200-500">200-500</option>
+                                    <option value="500+">Oltre 500</option>
+                                </select>
+                            </div>
                         </div>
-                        <div class="form-group">
-                            <input type="text" name="provincia" placeholder="Provincia *" class="required" required>
-                        </div>
-                        <div class="form-group">
-                            <input type="text" name="indirizzo" placeholder="Indirizzo completo *" class="required" required>
-                        </div>
-                        <div class="form-group">
-                            <input type="number" name="annoFondazione" placeholder="Anno di fondazione *" class="required" min="1900" max="2024" required>
-                        </div>
-                        <div class="form-group">
-                            <select name="numeroAllievi" class="required" required>
-                                <option value="">Numero di allievi attivi *</option>
-                                <option value="<50">Meno di 50</option>
-                                <option value="50-100">50-100</option>
-                                <option value="100-200">100-200</option>
-                                <option value="200-500">200-500</option>
-                                <option value="500+">Oltre 500</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <!-- Referente -->
-                    <div class="form-section">
-                        <div class="form-section-title">REFERENTE</div>
-                        <div class="form-group">
-                            <input type="text" name="nome" placeholder="Nome *" class="required" required>
-                        </div>
-                        <div class="form-group">
-                            <input type="text" name="cognome" placeholder="Cognome *" class="required" required>
-                        </div>
-                        <div class="form-group">
-                            <select name="ruolo" class="required" required>
-                                <option value="">Ruolo *</option>
-                                <option value="proprietario">Proprietario/a</option>
-                                <option value="direttore">Direttore/direttrice artistico/a</option>
-                                <option value="amministratore">Amministratore/amministratrice</option>
-                                <option value="insegnante">Insegnante principal</option>
-                                <option value="altro">Altro</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <input type="email" name="email" placeholder="E-mail *" class="required" required>
-                        </div>
-                        <div class="form-group">
-                            <input type="tel" name="telefono" placeholder="N. telefono *" class="required" required>
+                        <div class="card-navigation">
+                            <button type="button" class="card-nav-button" data-direction="prev">
+                                <span class="btn-symbol">&laquo;</span> INDIETRO
+                            </button>
+                            <button type="button" class="card-nav-button" data-direction="next">
+                                AVANTI <span class="btn-symbol">&raquo;</span>
+                            </button>
                         </div>
                     </div>
 
-                    <!-- Profilo Artistico -->
-                    <div class="form-section">
-                        <div class="form-section-title">PROFILO ARTISTICO</div>
-                        <div class="form-group">
-                            <input type="text" name="discipline" placeholder="Discipline insegnate *" class="required" required>
+                    <!-- Card 1: Referente -->
+                    <div class="form-card" data-card="1">
+                        <div class="card-header">
+                            <h3 class="card-title">Referente</h3>
                         </div>
-                        <div class="form-group">
-                            <textarea name="riconoscimenti" placeholder="Riconoscimenti e risultati principali (ultimi 3 anni)" class="tall"></textarea>
+                        <div class="card-content">
+                            <div class="form-group">
+                                <input type="text" name="nome" placeholder="Nome" class="required" required>
+                            </div>
+                            <div class="form-group">
+                                <input type="text" name="cognome" placeholder="Cognome" class="required" required>
+                            </div>
+                            <div class="form-group">
+                                <select name="ruolo" class="required" required>
+                                    <option value="">Ruolo</option>
+                                    <option value="proprietario">Proprietario/a</option>
+                                    <option value="direttore">Direttore/direttrice artistico/a</option>
+                                    <option value="amministratore">Amministratore/amministratrice</option>
+                                    <option value="insegnante">Insegnante principal</option>
+                                    <option value="altro">Altro</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <input type="email" name="email" placeholder="E-mail" class="required" required>
+                            </div>
+                            <div class="form-group">
+                                <input type="tel" name="telefono" placeholder="N. telefono" class="required" required>
+                            </div>
                         </div>
-                        <div class="form-group">
-                            <textarea name="unicita" placeholder="Cosa rende unica la vostra scuola? *" class="tall required" required></textarea>
-                        </div>
-                    </div>
-
-                    <!-- Presenza Online -->
-                    <div class="form-section">
-                        <div class="form-section-title">PRESENZA ONLINE</div>
-                        <div class="form-group">
-                            <input type="url" name="sitoWeb" placeholder="Sito web">
-                        </div>
-                        <div class="form-group">
-                            <input type="text" name="instagram" placeholder="Instagram">
-                        </div>
-                        <div class="form-group">
-                            <input type="text" name="facebook" placeholder="Facebook">
-                        </div>
-                        <div class="form-group">
-                            <input type="text" name="contenutiSocial" placeholder="Attualmente create contenuti per i social? *" class="required" required>
-                        </div>
-                    </div>
-
-                    <!-- Il Vostro Interesse -->
-                    <div class="form-section">
-                        <div class="form-section-title">IL VOSTRO INTERESSE</div>
-                        <div class="form-group">
-                            <textarea name="perche" placeholder="Perché volete partecipare a Dance Academy? *" class="tall required" required></textarea>
-                        </div>
-                        <div class="form-group">
-                            <select name="disponibilita" class="required" required>
-                                <option value="">Disponibilità per le riprese *</option>
-                                <option value="subito">Da subito</option>
-                                <option value="1mese">Entro 1 mese</option>
-                                <option value="2mesi">Entro 2 mesi</option>
-                                <option value="3mesi">Entro 3 mesi</option>
-                                <option value="concordare">Da concordare</option>
-                            </select>
-                        </div>
-                        <div class="form-info">
-                            Le riprese richiedono 1-2 giorni presso la vostra sede. Il nostro team gestirà tutta la produzione tecnica.
-                        </div>
-                        <div class="form-group">
-                            <textarea name="altreInfo" placeholder="Altre informazioni che vorreste condividere" class="tall"></textarea>
+                        <div class="card-navigation">
+                            <button type="button" class="card-nav-button" data-direction="prev">
+                                <span class="btn-symbol">&laquo;</span> INDIETRO
+                            </button>
+                            <button type="button" class="card-nav-button" data-direction="next">
+                                AVANTI <span class="btn-symbol">&raquo;</span>
+                            </button>
                         </div>
                     </div>
 
-                    <button type="submit" class="form-submit">INVIA CANDIDATURA</button>
+                    <!-- Card 2: Profilo Artistico -->
+                    <div class="form-card" data-card="2">
+                        <div class="card-header">
+                            <h3 class="card-title">Profilo Artistico</h3>
+                        </div>
+                        <div class="card-content">
+                            <div class="form-group full-width">
+                                <input type="text" name="discipline" placeholder="Discipline insegnate" class="required" required>
+                            </div>
+                            <div class="form-group full-width">
+                                <textarea name="riconoscimenti" placeholder="Riconoscimenti e risultati principali (ultimi 3 anni)" class="tall"></textarea>
+                            </div>
+                            <div class="form-group full-width">
+                                <textarea name="unicita" placeholder="Cosa rende unica la vostra scuola?" class="tall required" required></textarea>
+                            </div>
+                        </div>
+                        <div class="card-navigation">
+                            <button type="button" class="card-nav-button" data-direction="prev">
+                                <span class="btn-symbol">&laquo;</span> INDIETRO
+                            </button>
+                            <button type="button" class="card-nav-button" data-direction="next">
+                                AVANTI <span class="btn-symbol">&raquo;</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Card 3: Presenza Online -->
+                    <div class="form-card" data-card="3">
+                        <div class="card-header">
+                            <h3 class="card-title">Presenza Online</h3>
+                        </div>
+                        <div class="card-content">
+                            <div class="form-group">
+                                <input type="url" name="sitoWeb" placeholder="Sito web">
+                            </div>
+                            <div class="form-group">
+                                <input type="text" name="instagram" placeholder="Instagram">
+                            </div>
+                            <div class="form-group">
+                                <input type="text" name="facebook" placeholder="Facebook">
+                            </div>
+                            <div class="form-group">
+                                <input type="text" name="contenutiSocial" placeholder="Attualmente create contenuti per i social?" class="required" required>
+                            </div>
+                        </div>
+                        <div class="card-navigation">
+                            <button type="button" class="card-nav-button" data-direction="prev">
+                                <span class="btn-symbol">&laquo;</span> INDIETRO
+                            </button>
+                            <button type="button" class="card-nav-button" data-direction="next">
+                                AVANTI <span class="btn-symbol">&raquo;</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Card 4: Il Vostro Interesse -->
+                    <div class="form-card" data-card="4">
+                        <div class="card-header">
+                            <h3 class="card-title">Il Vostro Interesse</h3>
+                        </div>
+                        <div class="card-content">
+                            <div class="form-group full-width">
+                                <textarea name="perche" placeholder="Perché volete partecipare a Dance Academy?" class="tall required" required></textarea>
+                            </div>
+                            <div class="form-group">
+                                <select name="disponibilita" class="required" required>
+                                    <option value="">Disponibilità per le riprese</option>
+                                    <option value="subito">Da subito</option>
+                                    <option value="1mese">Entro 1 mese</option>
+                                    <option value="2mesi">Entro 2 mesi</option>
+                                    <option value="3mesi">Entro 3 mesi</option>
+                                    <option value="concordare">Da concordare</option>
+                                </select>
+                            </div>
+                            <div class="form-info">
+                                Le riprese richiedono 1-2 giorni presso la vostra sede. Il nostro team gestirà tutta la produzione tecnica.
+                            </div>
+                            <div class="form-group full-width">
+                                <textarea name="altreInfo" placeholder="Altre informazioni che vorreste condividere" class="tall"></textarea>
+                            </div>
+                        </div>
+                        <div class="card-navigation">
+                            <button type="button" class="card-nav-button" data-direction="prev">
+                                <span class="btn-symbol">&laquo;</span> INDIETRO
+                            </button>
+                            <button type="button" class="card-nav-button" data-direction="next">
+                                AVANTI <span class="btn-symbol">&raquo;</span>
+                            </button>
+                        </div>
+                    </div>
                 </form>
             </div>
+        </div>
+
+        <!-- Submit button - outside candidati-block so position:fixed works relative to viewport -->
+        <div class="submit-button-container">
+            <button type="submit" form="candidatiForm" class="submit-button">INVIA CANDIDATURA</button>
         </div>
 
         <!-- Contatti -->

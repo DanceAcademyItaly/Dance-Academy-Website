@@ -317,6 +317,9 @@ function initEnhancedScrollSystem() {
         // Initialize missione animations now that Lenis is ready
         initMissioneAnimations();
 
+        // Initialize candidati card stack now that Lenis is ready
+        initCandidatiCardStack();
+
     } catch (error) {
         console.error('Error initializing Lenis:', error);
         initBasicScroll(); // Fallback to basic scroll
@@ -746,6 +749,11 @@ function updateScrollElements(scrollY) {
     // Update missione animations if initialized
     if (missioneAnimationState) {
         updateMissioneAnimations(scrollY, missioneAnimationState);
+    }
+
+    // Update candidati card stack if initialized
+    if (candidatiCardState) {
+        updateCandidatiCardStack(scrollY, candidatiCardState);
     }
 }
 
@@ -1784,6 +1792,9 @@ let heroAnimationState = null;
 // Missione animation state
 let missioneAnimationState = null;
 
+// Candidati card stack animation state
+let candidatiCardState = null;
+
 // Initialize episodi parallax system - RESTORED ORIGINAL APPROACH
 function initEpisodiParallax() {
     // Only enable on desktop
@@ -2361,6 +2372,423 @@ function initMissioneAnimations() {
     attemptInitialization();
 }
 
+// Initialize candidati card stack system - SCROLL-DECOUPLED 3-PHASE ANIMATION
+function initCandidatiCardStack() {
+    console.log('🚀🚀🚀 CANDIDATI INIT START - CHECKING IF THIS RUNS 🚀🚀🚀');
+
+    // Query DOM elements
+    const candidatiSection = document.querySelector('.candidati-block');
+    console.log('🔍 Found candidatiSection:', candidatiSection);
+
+    const candidatiTitle = candidatiSection?.querySelector('.candidati-title');
+    const cards = candidatiSection?.querySelectorAll('.form-card');
+
+    console.log('🔎 Looking for submit button with document.querySelector...');
+    const submitButtonContainer = document.querySelector('.submit-button-container');
+    console.log('🔎 Found submit button?', submitButtonContainer);
+    console.log('🔎 All buttons in document:', document.querySelectorAll('button'));
+
+    const cardDeckContainer = candidatiSection?.querySelector('.card-deck-container');
+
+    console.log('🔍 Element check:', {
+        candidatiSection: !!candidatiSection,
+        candidatiTitle: !!candidatiTitle,
+        cardsCount: cards?.length,
+        submitButtonContainer: !!submitButtonContainer,
+        cardDeckContainer: !!cardDeckContainer
+    });
+
+    // Validate elements (button is optional since it's outside block now)
+    if (!candidatiSection || !candidatiTitle || !cards || cards.length !== 5 || !cardDeckContainer) {
+        console.error('❌❌❌ VALIDATION FAILED - EARLY RETURN', {
+            candidatiSection: !!candidatiSection,
+            candidatiTitle: !!candidatiTitle,
+            cards: cards?.length,
+            cardDeckContainer: !!cardDeckContainer
+        });
+        return;
+    }
+
+    console.log('✅ Validation passed, continuing...');
+
+    const totalCards = cards.length;
+
+    // SCROLL DECOUPLING: Get original position BEFORE fixing to viewport
+    const originalRect = candidatiSection.getBoundingClientRect();
+    const originalTop = originalRect.top + window.scrollY;
+
+    // Fix candidati-block to viewport (decouple from page scroll)
+    // Position to match episodi spacing: header + comfortable gap
+    const topPosition = 60; // Closer to top for better spacing
+
+    console.log('⚙️ BEFORE setting styles, computed position:', window.getComputedStyle(candidatiSection).position);
+
+    // Force positioning with explicit inline styles - set each property individually
+    candidatiSection.style.setProperty('position', 'fixed', 'important');
+    candidatiSection.style.setProperty('top', `${topPosition}px`, 'important');
+    candidatiSection.style.setProperty('left', '50%', 'important');
+    candidatiSection.style.setProperty('transform', 'translateX(-50%)', 'important');
+    candidatiSection.style.setProperty('width', `${originalRect.width}px`, 'important');
+    candidatiSection.style.setProperty('z-index', '1000', 'important');
+    candidatiSection.style.setProperty('margin', '0', 'important'); // Kill the margin!
+    candidatiSection.style.visibility = 'hidden';
+    candidatiSection.style.opacity = '0';
+
+    console.log('⚙️ AFTER setting styles:', {
+        inlinePosition: candidatiSection.style.position,
+        inlineTop: candidatiSection.style.top,
+        computedPosition: window.getComputedStyle(candidatiSection).position,
+        computedTop: window.getComputedStyle(candidatiSection).top,
+        topPosition
+    });
+
+    console.log('🔥 Block positioned at:', topPosition + 'px from top');
+    console.log('🔥 Computed values:', {
+        position: window.getComputedStyle(candidatiSection).position,
+        top: window.getComputedStyle(candidatiSection).top,
+        left: window.getComputedStyle(candidatiSection).left,
+        transform: window.getComputedStyle(candidatiSection).transform
+    });
+
+    // Add spacer to maintain document scroll range (600vh total - increased for more separation)
+    const totalScrollRange = window.innerHeight * 6; // 600vh (extra space before contatti)
+    const spacer = document.createElement('div');
+    spacer.style.height = totalScrollRange + 'px';
+    spacer.className = 'candidati-spacer';
+    candidatiSection.parentNode.insertBefore(spacer, candidatiSection.nextSibling);
+
+    console.log('Candidati spacer added:', {
+        height: totalScrollRange,
+        inVH: '600vh'
+    });
+
+    // Calculate scroll ranges - START AT FIXED POSITION 3800px
+    const titleEntranceStart = 3800;
+
+    console.log('Candidati timing: starting at fixed position 3800px:', {
+        missioneExitEnd: missioneAnimationState?.exitEnd || 'N/A',
+        candidatiStart: titleEntranceStart
+    });
+
+    // Phase 1: Title entrance (50vh)
+    const titleEntranceEnd = titleEntranceStart + window.innerHeight * 0.5;
+
+    // Phase 2: Card entrance (150vh)
+    const cardEntranceStart = titleEntranceEnd;
+    const cardEntranceDuration = window.innerHeight * 1.5;
+    const cardEntranceEnd = cardEntranceStart + cardEntranceDuration;
+
+    // Phase 3: Deadzone (200vh)
+    const cardDeadzoneDuration = window.innerHeight * 2;
+    const cardDeadzoneEnd = cardEntranceEnd + cardDeadzoneDuration;
+
+    console.log('Candidati scroll ranges (decoupled):', {
+        titleEntranceStart,
+        titleEntranceEnd,
+        cardEntranceStart,
+        cardEntranceEnd,
+        cardDeadzoneEnd,
+        totalScrollRange: cardDeadzoneEnd - titleEntranceStart,
+        missioneExitStart: missioneAnimationState?.deadzoneEnd || 'N/A'
+    });
+
+    // Calculate vertical spacing & heights for card positioning
+    // Note: Title and submit button are OUTSIDE card-deck-container
+    // Title: sibling above (handles own spacing via CSS margin-bottom)
+    // Submit button: fixed at bottom of viewport
+    // Cards: absolutely positioned inside card-deck-container
+
+    // Function to calculate and set container and card heights dynamically
+    function calculateAndSetCardHeight() {
+        // Get viewport height
+        const viewportHeight = window.innerHeight;
+
+        // candidati-block is fixed at top: 60px
+        const blockTopPosition = 60;
+
+        // Get computed styles for dynamic values
+        const blockComputedStyle = window.getComputedStyle(candidatiSection);
+        const titleComputedStyle = window.getComputedStyle(candidatiTitle);
+
+        // Block padding-top
+        const blockPaddingTop = parseFloat(blockComputedStyle.paddingTop) || 0;
+
+        // Title dimensions
+        const titleHeight = candidatiTitle.offsetHeight;
+        const titleMarginBottom = parseFloat(titleComputedStyle.marginBottom) || 0;
+
+        // Submit button dimensions (if exists)
+        let submitButtonHeight = 0;
+        let submitButtonBottomMargin = 0;
+        if (submitButtonContainer) {
+            submitButtonHeight = submitButtonContainer.offsetHeight;
+            // Submit button is at bottom: 5vh
+            submitButtonBottomMargin = viewportHeight * 0.05;
+        }
+
+        // Gap between container and submit button (viewport-based, matches title margin concept)
+        const containerToButtonGap = Math.max(titleMarginBottom, viewportHeight * 0.02); // Use title margin or 2vh minimum
+
+        // Calculate where card-deck-container starts (relative to block)
+        // Container starts after: block padding + title + title margin
+        const containerStartY = blockPaddingTop + titleHeight + titleMarginBottom;
+
+        // Calculate where card-deck-container should end (relative to viewport)
+        // End at: viewport height - submit button space - gap
+        const containerEndY = viewportHeight - blockTopPosition - submitButtonHeight - submitButtonBottomMargin - containerToButtonGap;
+
+        // Container height = end - start
+        const containerHeight = containerEndY - containerStartY;
+
+        // Set container padding-bottom equal to title margin-bottom
+        const containerPaddingBottom = titleMarginBottom;
+        cardDeckContainer.style.paddingBottom = containerPaddingBottom + 'px';
+
+        // Calculate card height = container height - padding-bottom
+        const cardHeight = containerHeight - containerPaddingBottom;
+
+        // Ensure minimum usable height (400px as defined in CSS)
+        const finalCardHeight = Math.max(400, cardHeight);
+
+        // Set container height
+        cardDeckContainer.style.height = containerHeight + 'px';
+
+        console.log('📐 Container & card height calculation:', {
+            viewportHeight,
+            blockTopPosition,
+            blockPaddingTop,
+            titleHeight,
+            titleMarginBottom,
+            submitButtonHeight,
+            submitButtonBottomMargin,
+            containerToButtonGap,
+            containerStartY,
+            containerEndY,
+            containerHeight,
+            containerPaddingBottom,
+            calculatedCardHeight: cardHeight,
+            finalCardHeight
+        });
+
+        // Set height on all cards
+        cards.forEach(card => {
+            card.style.height = finalCardHeight + 'px';
+        });
+
+        return { containerHeight, cardHeight: finalCardHeight };
+    }
+
+    // Function to optimize card internal sizing to fit without scrolling
+    function optimizeCardInternalSizing(cardHeight) {
+        console.log('🎯 Starting card internal sizing optimization');
+
+        // Temporarily make all cards visible for measurement
+        const originalStyles = [];
+        cards.forEach((card, index) => {
+            originalStyles[index] = {
+                transform: card.style.transform,
+                opacity: card.style.opacity
+            };
+            card.style.transform = 'translate(-50%, 0)';
+            card.style.opacity = '1';
+        });
+
+        // Measure each card's natural content height
+        const cardMeasurements = [];
+        cards.forEach((card, index) => {
+            const header = card.querySelector('.card-header');
+            const content = card.querySelector('.card-content');
+            const navigation = card.querySelector('.card-navigation');
+
+            const headerHeight = header.offsetHeight;
+            const navigationHeight = navigation.offsetHeight;
+            const contentHeight = content.scrollHeight; // Natural content height
+
+            const totalNaturalHeight = headerHeight + contentHeight + navigationHeight;
+
+            cardMeasurements.push({
+                index,
+                card,
+                content,
+                headerHeight,
+                navigationHeight,
+                contentHeight,
+                totalNaturalHeight,
+                formGroups: content.querySelectorAll('.form-group').length,
+                textareas: content.querySelectorAll('textarea').length,
+                inputs: content.querySelectorAll('input, select').length
+            });
+
+            console.log(`Card ${index} natural height: ${totalNaturalHeight}px (header: ${headerHeight}, content: ${contentHeight}, nav: ${navigationHeight})`);
+        });
+
+        // Find busiest card (tallest natural content height)
+        const busiestCard = cardMeasurements.reduce((max, current) =>
+            current.totalNaturalHeight > max.totalNaturalHeight ? current : max
+        );
+
+        console.log(`🏆 Busiest card: ${busiestCard.index} with ${busiestCard.totalNaturalHeight}px natural height`);
+
+        // Calculate available space for content in actual card height
+        const availableContentHeight = cardHeight - busiestCard.headerHeight - busiestCard.navigationHeight;
+
+        console.log(`📏 Available content height: ${availableContentHeight}px (from card height ${cardHeight}px)`);
+
+        // Calculate how much we need to shrink textareas if busiest card doesn't fit
+        if (busiestCard.contentHeight > availableContentHeight) {
+            const excessHeight = busiestCard.contentHeight - availableContentHeight;
+            const textareasInBusiestCard = busiestCard.content.querySelectorAll('textarea');
+
+            if (textareasInBusiestCard.length > 0) {
+                // Distribute height reduction across all textareas
+                const reductionPerTextarea = excessHeight / textareasInBusiestCard.length;
+
+                // Apply textarea height reduction to ALL cards
+                cards.forEach(card => {
+                    card.querySelectorAll('textarea').forEach(textarea => {
+                        const currentHeight = parseFloat(window.getComputedStyle(textarea).height) || 80;
+                        const newHeight = Math.max(60, currentHeight - reductionPerTextarea); // Min 60px
+                        textarea.style.height = newHeight + 'px';
+                        textarea.style.minHeight = newHeight + 'px';
+                        textarea.style.maxHeight = newHeight + 'px';
+                        textarea.style.resize = 'none'; // Prevent manual resizing
+                    });
+                });
+
+                console.log(`✂️ Reduced textarea heights by ${reductionPerTextarea.toFixed(1)}px each`);
+            }
+        } else {
+            console.log(`✅ Content fits naturally - no size adjustments needed`);
+        }
+
+        // Restore original visibility styles
+        cards.forEach((card, index) => {
+            card.style.transform = originalStyles[index].transform;
+            card.style.opacity = originalStyles[index].opacity;
+        });
+
+        console.log('🎯 Card internal sizing optimization complete');
+    }
+
+    // Calculate initial heights
+    const { containerHeight, cardHeight } = calculateAndSetCardHeight();
+
+    // Optimize card internal sizing to fit without scrolling
+    optimizeCardInternalSizing(cardHeight);
+
+    // Cards start at top of their container (no offset needed)
+    const cardTopPosition = 0;
+
+    // Initialize card positions (hidden off-screen right)
+    cards.forEach((card, index) => {
+        card.style.left = '50%';
+        card.style.top = cardTopPosition + 'px';
+        card.style.transform = 'translate(-50%, 0) translateX(100vw)';
+        card.style.opacity = '0';
+        card.dataset.cardIndex = index;
+    });
+
+    // Initialize title (hidden below viewport)
+    const titleHiddenY = window.innerHeight + 100;
+    candidatiTitle.style.transform = `translateY(${titleHiddenY}px)`;
+    candidatiTitle.style.opacity = '0';
+
+    // Initialize submit button (fixed at bottom, just hidden)
+    if (submitButtonContainer) {
+        submitButtonContainer.style.transform = 'translateX(-50%)';
+        submitButtonContainer.style.opacity = '0';
+    }
+
+    // Helper functions
+    function calculateCardOffsets() {
+        return { x: 0, y: 0 };
+    }
+
+    const sidebarEasing = t => 1 - Math.pow(1 - t, 2.5);
+    const contentEasing = t => 1 - Math.pow(1 - t, 1.8);
+
+    let currentCardIndex = 0;
+
+    function updateNavigationButtons() {
+        cards.forEach((card, index) => {
+            const prevButton = card.querySelector('[data-direction="prev"]');
+            const nextButton = card.querySelector('[data-direction="next"]');
+
+            if (prevButton) {
+                prevButton.style.display = (index === 0) ? 'none' : 'block';
+            }
+            if (nextButton) {
+                nextButton.style.display = (index === totalCards - 1) ? 'none' : 'block';
+            }
+        });
+    }
+
+    // Attach navigation click listeners
+    cards.forEach((card, index) => {
+        const prevButton = card.querySelector('[data-direction="prev"]');
+        const nextButton = card.querySelector('[data-direction="next"]');
+
+        if (prevButton) {
+            prevButton.addEventListener('click', () => {
+                if (currentCardIndex > 0) {
+                    currentCardIndex--;
+                    updateNavigationButtons();
+                }
+            });
+        }
+
+        if (nextButton) {
+            nextButton.addEventListener('click', () => {
+                if (currentCardIndex < totalCards - 1) {
+                    currentCardIndex++;
+                    updateNavigationButtons();
+                }
+            });
+        }
+    });
+
+    updateNavigationButtons();
+
+    // Store state globally
+    candidatiCardState = {
+        candidatiSection,
+        candidatiTitle,
+        submitButtonContainer,
+        cards,
+        cardDeckContainer,
+        titleEntranceStart,
+        titleEntranceEnd,
+        cardEntranceStart,
+        cardEntranceEnd,
+        cardDeadzoneEnd,
+        totalCards,
+        currentCardIndex,
+        calculateCardOffsets,
+        updateNavigationButtons,
+        calculateAndSetCardHeight,  // Store for resize recalculation
+        optimizeCardInternalSizing, // Store for resize recalculation
+        sidebarEasing,
+        contentEasing,
+        titleHiddenY,
+        cardTopPosition
+    };
+
+    // Add resize handler for responsive container and card height recalculation
+    let resizeTimeout;
+    const handleResize = () => {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(() => {
+            console.log('🔄 Viewport resized - recalculating everything');
+            const { cardHeight: newCardHeight } = calculateAndSetCardHeight();
+            optimizeCardInternalSizing(newCardHeight);
+        }, 150); // Debounce 150ms
+    };
+
+    window.addEventListener('resize', handleResize);
+
+    console.log('Candidati card stack initialized successfully (scroll-decoupled, synced with missione exit, responsive height)');
+}
+
 // Optimized episodi parallax with batched DOM updates
 function updateEpisodiParallax(scrollY, elements) {
     if (!episodiParallaxConfig.enabled || window.innerWidth <= 768) return;
@@ -2552,6 +2980,163 @@ function updateMissioneAnimations(scrollY, animationState) {
             element.classList.add('exiting');
         }
     });
+}
+
+// Update candidati card stack animations - SCROLL-DECOUPLED 3-PHASE SYSTEM
+function updateCandidatiCardStack(scrollY, cardState) {
+    if (!cardState) return;
+
+    // Destructure state
+    const {
+        candidatiSection,
+        candidatiTitle,
+        submitButtonContainer,
+        cards,
+        titleEntranceStart,
+        titleEntranceEnd,
+        cardEntranceStart,
+        cardEntranceEnd,
+        cardDeadzoneEnd,
+        totalCards,
+        calculateCardOffsets,
+        sidebarEasing,
+        contentEasing,
+        titleHiddenY
+    } = cardState;
+
+    // VISIBILITY CONTROL - hide section before entry and after exit
+    if (scrollY < titleEntranceStart) {
+        if (candidatiSection.style.visibility !== 'hidden') {
+            candidatiSection.style.visibility = 'hidden';
+            candidatiSection.style.opacity = '0';
+        }
+        return;
+    } else if (scrollY > cardDeadzoneEnd) {
+        if (candidatiSection.style.visibility !== 'hidden') {
+            candidatiSection.style.visibility = 'hidden';
+            candidatiSection.style.opacity = '0';
+        }
+        return;
+    } else {
+        if (candidatiSection.style.visibility !== 'visible') {
+            candidatiSection.style.visibility = 'visible';
+            candidatiSection.style.opacity = '1';
+        }
+    }
+
+    // PHASE 1: Title entrance animation (50vh)
+    if (scrollY >= titleEntranceStart && scrollY <= titleEntranceEnd) {
+        const progress = (scrollY - titleEntranceStart) / (titleEntranceEnd - titleEntranceStart);
+        const easedProgress = sidebarEasing(progress);
+        const translateY = titleHiddenY * (1 - easedProgress);
+        const opacity = easedProgress;
+
+        candidatiTitle.style.transform = `translateY(${translateY}px)`;
+        candidatiTitle.style.opacity = opacity;
+
+    } else if (scrollY < titleEntranceStart) {
+        candidatiTitle.style.transform = `translateY(${titleHiddenY}px)`;
+        candidatiTitle.style.opacity = '0';
+
+    } else if (scrollY > titleEntranceEnd) {
+        candidatiTitle.style.transform = 'translateY(0px)';
+        candidatiTitle.style.opacity = '1';
+    }
+
+    // Calculate stack offsets
+    const offsets = calculateCardOffsets();
+    const totalOffsetX = (totalCards - 1) * offsets.x;
+    const centerOffsetX = -totalOffsetX / 2;
+
+    // PHASE 2: Card progressive reveal (150vh)
+    if (scrollY >= cardEntranceStart && scrollY <= cardEntranceEnd) {
+        const totalProgress = (scrollY - cardEntranceStart) / (cardEntranceEnd - cardEntranceStart);
+
+        // Animate each card with staggered timing
+        cards.forEach((card, index) => {
+            const cardEntranceFraction = index / totalCards;
+            const cardCompleteFraction = (index + 1) / totalCards;
+
+            let cardProgress = 0;
+            if (totalProgress >= cardEntranceFraction) {
+                if (totalProgress <= cardCompleteFraction) {
+                    const fractionRange = cardCompleteFraction - cardEntranceFraction;
+                    cardProgress = fractionRange > 0 ? (totalProgress - cardEntranceFraction) / fractionRange : 1;
+                } else {
+                    cardProgress = 1;
+                }
+            }
+
+            const easedCardProgress = sidebarEasing(cardProgress);
+            const cardOffsetX = centerOffsetX + (index * offsets.x);
+            const translateXVw = 100 * (1 - easedCardProgress);
+            const opacity = easedCardProgress;
+
+            card.style.transform = `translate(calc(-50% + ${cardOffsetX}px), 0) translateX(${translateXVw}vw)`;
+            card.style.opacity = opacity;
+
+            // Update current card index when card is >50% visible
+            if (cardProgress > 0.5 && index > cardState.currentCardIndex) {
+                cardState.currentCardIndex = index;
+                cardState.updateNavigationButtons();
+            }
+        });
+
+        // Submit button animation (starts at 80% of phase)
+        const submitStartFraction = Math.max(0.7, (totalCards - 1) / totalCards);
+        let submitProgress = 0;
+        if (totalProgress >= submitStartFraction) {
+            submitProgress = (totalProgress - submitStartFraction) / (1 - submitStartFraction);
+            submitProgress = Math.min(1, Math.max(0, submitProgress));
+        }
+
+        const easedSubmitProgress = contentEasing(submitProgress);
+        const submitOpacity = easedSubmitProgress;
+
+        if (submitButtonContainer) {
+            submitButtonContainer.style.transform = 'translateX(-50%)';
+            submitButtonContainer.style.opacity = submitOpacity;
+        }
+
+    } else if (scrollY < cardEntranceStart) {
+        // Before phase 2 - all cards hidden
+        cards.forEach((card, index) => {
+            const cardOffsetX = centerOffsetX + (index * offsets.x);
+            card.style.transform = `translate(calc(-50% + ${cardOffsetX}px), 0) translateX(100vw)`;
+            card.style.opacity = '0';
+        });
+
+        if (submitButtonContainer) {
+            submitButtonContainer.style.transform = 'translateX(-50%)';
+            submitButtonContainer.style.opacity = '0';
+        }
+    }
+
+    // PHASE 3: Deadzone (interaction phase, 200vh)
+    else if (scrollY > cardEntranceEnd && scrollY <= cardDeadzoneEnd) {
+        const deadzoneProgress = (scrollY - cardEntranceEnd) / (cardDeadzoneEnd - cardEntranceEnd);
+        const targetCardIndex = Math.floor(deadzoneProgress * totalCards);
+
+        // All cards at final position
+        cards.forEach((card, index) => {
+            const cardOffsetX = centerOffsetX + (index * offsets.x);
+            card.style.transform = `translate(calc(-50% + ${cardOffsetX}px), 0) translateX(0vw)`;
+            card.style.opacity = '1';
+        });
+
+        // Update current card based on deadzone scroll
+        const newCardIndex = Math.min(Math.max(0, targetCardIndex), totalCards - 1);
+        if (newCardIndex !== cardState.currentCardIndex) {
+            cardState.currentCardIndex = newCardIndex;
+            cardState.updateNavigationButtons();
+        }
+
+        // Submit button at final position
+        if (submitButtonContainer) {
+            submitButtonContainer.style.transform = 'translateX(-50%)';
+            submitButtonContainer.style.opacity = '1';
+        }
+    }
 }
 
 // Update hero animations - RESTORED TO USE DECOUPLED SCROLL SYSTEM
