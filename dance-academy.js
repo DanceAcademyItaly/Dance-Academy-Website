@@ -2899,9 +2899,10 @@ function updateCandidatiCardStack(scrollY, cardState) {
 
     // Destructure state
     const {
-        candidatiSection,
+        candidatiTitleWrapper,
         candidatiTitle,
         submitButtonContainer,
+        cardWrappers,
         cards,
         titleEntranceStart,
         titleEntranceEnd,
