@@ -2484,8 +2484,9 @@ function initCandidatiCardStack() {
         const cardAreaEndY = viewportHeight - submitButtonHeight - submitButtonBottomMargin;
         const availableHeight = cardAreaEndY - cardAreaStartY;
 
-        // Ensure minimum usable height (400px as defined in CSS)
-        const finalCardHeight = Math.max(400, availableHeight);
+        // Use available height (don't force 400px minimum if there isn't space)
+        // CSS min-height: 400px will apply when there IS space, but we prioritize fitting
+        const finalCardHeight = Math.max(300, availableHeight); // Absolute minimum 300px for usability
 
         console.log('📐 Card height calculation (new structure):', {
             viewportHeight,
@@ -2500,9 +2501,11 @@ function initCandidatiCardStack() {
             finalCardHeight
         });
 
-        // Set position on all card WRAPPERS (position cards below title)
+        // Set position AND height on all card WRAPPERS
+        // Wrappers are the fixed positioned elements with glassmorphism
         cardWrappers.forEach(wrapper => {
             wrapper.style.top = cardAreaStartY + 'px';
+            wrapper.style.height = finalCardHeight + 'px'; // Constrain wrapper height to available space
         });
 
         // Set height on all cards (inside wrappers)
