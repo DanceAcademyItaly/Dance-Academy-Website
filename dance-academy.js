@@ -2473,15 +2473,17 @@ function initCandidatiCardStack() {
         // Submit button dimensions
         let submitButtonHeight = 0;
         let submitButtonBottomMargin = 0;
+        let submitButtonTopGap = 0;
         if (submitButtonContainer) {
             submitButtonHeight = submitButtonContainer.offsetHeight;
             submitButtonBottomMargin = viewportHeight * 0.05; // 5vh
+            submitButtonTopGap = Math.max(10, viewportHeight * 0.015); // Min 10px, ~1.5vh gap above button
         }
 
         // Calculate available vertical space for cards
         // From: title bottom to: submit button top (with gap)
         const cardAreaStartY = fixedTopPosition + titleHeight + titleMarginBottom;
-        const cardAreaEndY = viewportHeight - submitButtonHeight - submitButtonBottomMargin;
+        const cardAreaEndY = viewportHeight - submitButtonHeight - submitButtonBottomMargin - submitButtonTopGap;
         const availableHeight = cardAreaEndY - cardAreaStartY;
 
         // Use available height (don't force 400px minimum if there isn't space)
@@ -2495,6 +2497,7 @@ function initCandidatiCardStack() {
             titleMarginBottom,
             submitButtonHeight,
             submitButtonBottomMargin,
+            submitButtonTopGap,
             cardAreaStartY,
             cardAreaEndY,
             availableHeight,
