@@ -2620,11 +2620,30 @@ function initCandidatiCardStack() {
 
     let currentCardIndex = 0;
 
-    function updateNavigationButtons() {
-        cards.forEach((card, index) => {
+    function updateNavigationButtons(hideNonCurrent = false) {
+        // Show/hide card wrappers and update button visibility
+        cardWrappers.forEach((wrapper, index) => {
+            const card = cards[index];
             const prevButton = card.querySelector('[data-direction="prev"]');
             const nextButton = card.querySelector('[data-direction="next"]');
 
+            // During deadzone/manual navigation, hide non-current cards
+            // During scroll animations, keep all visible
+            if (hideNonCurrent) {
+                if (index === currentCardIndex) {
+                    wrapper.style.visibility = 'visible';
+                    wrapper.style.pointerEvents = 'auto';
+                } else {
+                    wrapper.style.visibility = 'hidden';
+                    wrapper.style.pointerEvents = 'none';
+                }
+            } else {
+                // During scroll animations, keep all visible
+                wrapper.style.visibility = 'visible';
+                wrapper.style.pointerEvents = 'auto';
+            }
+
+            // Update button visibility
             if (prevButton) {
                 prevButton.style.display = (index === 0) ? 'none' : 'block';
             }
@@ -2643,7 +2662,7 @@ function initCandidatiCardStack() {
             prevButton.addEventListener('click', () => {
                 if (currentCardIndex > 0) {
                     currentCardIndex--;
-                    updateNavigationButtons();
+                    updateNavigationButtons(true); // Hide non-current cards during manual navigation
                 }
             });
         }
@@ -2652,7 +2671,7 @@ function initCandidatiCardStack() {
             nextButton.addEventListener('click', () => {
                 if (currentCardIndex < totalCards - 1) {
                     currentCardIndex++;
-                    updateNavigationButtons();
+                    updateNavigationButtons(true); // Hide non-current cards during manual navigation
                 }
             });
         }
@@ -3030,7 +3049,7 @@ function updateCandidatiCardStack(scrollY, cardState) {
         const newCardIndex = Math.min(Math.max(0, targetCardIndex), totalCards - 1);
         if (newCardIndex !== cardState.currentCardIndex) {
             cardState.currentCardIndex = newCardIndex;
-            cardState.updateNavigationButtons();
+            cardState.updateNavigationButtons(true); // Hide non-current cards during deadzone
         }
 
         // Submit button at final position
