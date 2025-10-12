@@ -584,51 +584,60 @@
 
 
         /* Candidati Block - Card Stack Animation System */
-        .candidati-block {
-            min-height: 100vh;
-            margin: 0;
-            padding: 0 clamp(20px, 5vw, 40px) clamp(15px, 2vh, 25px);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: flex-start;
-            /* position set by JavaScript to 'fixed' */
-            overflow: hidden;
+        /* Candidati spacer - for scroll range */
+        .candidati-spacer {
+            height: 600vh; /* Set dynamically by JS, this is initial */
+            width: 1px;
+            visibility: hidden;
         }
 
-        /* Title - animated via JS */
+        /* Title wrapper - independent fixed element */
+        .candidati-title-wrapper {
+            position: fixed;
+            top: 60px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 110; /* Above all cards */
+            opacity: 0; /* Controlled by JS */
+        }
+
         .candidati-title {
             font-size: clamp(1.5rem, 3vw + 1vh, 2.5rem);
             font-weight: 300;
             letter-spacing: var(--letter-spacing-widest);
             text-transform: uppercase;
-            margin-bottom: clamp(12px, 1.8vh, 24px);
             text-align: center;
-            opacity: 0;
+            margin: 0;
         }
 
-        /* Card deck container */
-        .card-deck-container {
-            position: relative;
-            width: 100%;
-            /* Height and padding-bottom set dynamically by JavaScript */
-            /* Extends from title to near submit button with viewport-based gap */
+        /* Card wrappers - independent fixed elements with stacked z-indexes */
+        .candidati-card-wrapper {
+            position: fixed;
+            top: 60px;
+            left: 50%;
+            transform: translate(-50%, 0); /* Adjusted by JS for animation */
+            opacity: 0; /* Controlled by JS */
         }
+
+        /* Individual cards get incrementing z-indexes via JS */
+        .candidati-card-wrapper[data-card="0"] { z-index: 100; }
+        .candidati-card-wrapper[data-card="1"] { z-index: 101; }
+        .candidati-card-wrapper[data-card="2"] { z-index: 102; }
+        .candidati-card-wrapper[data-card="3"] { z-index: 103; }
+        .candidati-card-wrapper[data-card="4"] { z-index: 104; }
 
         /* Individual form cards - GLASSMORPHISM WITH DIRECT BACKDROP-FILTER */
         .form-card {
-            position: absolute;
-            left: 50%;
-            top: 0;
+            /* Position relative (wrapper handles fixed positioning) */
+            position: relative;
             /* Semi-transparent background for glassmorphic effect */
             background: rgba(0, 0, 0, 0.3);
-            /* Direct backdrop-filter - now works without isolated stacking context */
+            /* Direct backdrop-filter - now works! Cards are siblings to video in root stacking context */
             backdrop-filter: blur(12px) saturate(180%);
             -webkit-backdrop-filter: blur(12px) saturate(180%);
             /* Subtle border for definition */
             border: 1px solid rgba(255, 255, 255, 0.25);
             border-radius: 2px;
-            opacity: 0;
             overflow: hidden;
             /* 5-layer shadow system for enhanced depth perception */
             box-shadow:
@@ -855,7 +864,7 @@
             left: 50%;
             transform: translateX(-50%);
             opacity: 0;
-            z-index: 1001;
+            z-index: 111; /* Above all cards (100-104) and title (110) */
         }
 
         .submit-button {
@@ -1265,188 +1274,201 @@
             <div id="missioneContainer" class="missione-container"></div>
         </div>
 
-        <!-- Candidati -->
-        <div class="candidati-block block" data-block="candidati">
+        <!-- Candidati - Restructured for direct backdrop-filter support -->
+        <!-- Spacer for scroll range -->
+        <div class="candidati-spacer"></div>
+
+        <!-- Form element as ID reference only -->
+        <form id="candidatiForm" style="display: none;"></form>
+
+        <!-- Title wrapper (independent fixed element) -->
+        <div class="candidati-title-wrapper">
             <h2 class="candidati-title">Candidati</h2>
+        </div>
 
-            <div class="card-deck-container">
-                <form id="candidatiForm">
-                    <!-- Card 0: Scuola -->
-                    <div class="form-card" data-card="0">
-                        <div class="card-header">
-                            <h3 class="card-title">Scuola</h3>
-                        </div>
-                        <div class="card-content">
-                            <div class="form-group">
-                                <input type="text" name="nomeScuola" placeholder="Nome della scuola" class="required" required>
-                            </div>
-                            <div class="form-group">
-                                <input type="text" name="citta" placeholder="Città" class="required" required>
-                            </div>
-                            <div class="form-group">
-                                <input type="text" name="provincia" placeholder="Provincia" class="required" required>
-                            </div>
-                            <div class="form-group">
-                                <input type="text" name="indirizzo" placeholder="Indirizzo completo" class="required" required>
-                            </div>
-                            <div class="form-group">
-                                <input type="number" name="annoFondazione" placeholder="Anno di fondazione" class="required" min="1900" max="2024" required>
-                            </div>
-                            <div class="form-group">
-                                <select name="numeroAllievi" class="required" required>
-                                    <option value="">Numero di allievi attivi</option>
-                                    <option value="<50">Meno di 50</option>
-                                    <option value="50-100">50-100</option>
-                                    <option value="100-200">100-200</option>
-                                    <option value="200-500">200-500</option>
-                                    <option value="500+">Oltre 500</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="card-navigation">
-                            <button type="button" class="card-nav-button" data-direction="prev">
-                                <span class="btn-symbol">&laquo;</span> INDIETRO
-                            </button>
-                            <button type="button" class="card-nav-button" data-direction="next">
-                                AVANTI <span class="btn-symbol">&raquo;</span>
-                            </button>
-                        </div>
+        <!-- Card 0 wrapper (independent fixed element, z-index: 100) -->
+        <div class="candidati-card-wrapper" data-card="0">
+            <div class="form-card">
+                <div class="card-header">
+                    <h3 class="card-title">Scuola</h3>
+                </div>
+                <div class="card-content">
+                    <div class="form-group">
+                        <input type="text" name="nomeScuola" placeholder="Nome della scuola" class="required" form="candidatiForm" required>
                     </div>
-
-                    <!-- Card 1: Referente -->
-                    <div class="form-card" data-card="1">
-                        <div class="card-header">
-                            <h3 class="card-title">Referente</h3>
-                        </div>
-                        <div class="card-content">
-                            <div class="form-group">
-                                <input type="text" name="nome" placeholder="Nome" class="required" required>
-                            </div>
-                            <div class="form-group">
-                                <input type="text" name="cognome" placeholder="Cognome" class="required" required>
-                            </div>
-                            <div class="form-group">
-                                <select name="ruolo" class="required" required>
-                                    <option value="">Ruolo</option>
-                                    <option value="proprietario">Proprietario/a</option>
-                                    <option value="direttore">Direttore/direttrice artistico/a</option>
-                                    <option value="amministratore">Amministratore/amministratrice</option>
-                                    <option value="insegnante">Insegnante principal</option>
-                                    <option value="altro">Altro</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <input type="email" name="email" placeholder="E-mail" class="required" required>
-                            </div>
-                            <div class="form-group">
-                                <input type="tel" name="telefono" placeholder="N. telefono" class="required" required>
-                            </div>
-                        </div>
-                        <div class="card-navigation">
-                            <button type="button" class="card-nav-button" data-direction="prev">
-                                <span class="btn-symbol">&laquo;</span> INDIETRO
-                            </button>
-                            <button type="button" class="card-nav-button" data-direction="next">
-                                AVANTI <span class="btn-symbol">&raquo;</span>
-                            </button>
-                        </div>
+                    <div class="form-group">
+                        <input type="text" name="citta" placeholder="Città" class="required" form="candidatiForm" required>
                     </div>
-
-                    <!-- Card 2: Profilo Artistico -->
-                    <div class="form-card" data-card="2">
-                        <div class="card-header">
-                            <h3 class="card-title">Profilo Artistico</h3>
-                        </div>
-                        <div class="card-content">
-                            <div class="form-group full-width">
-                                <input type="text" name="discipline" placeholder="Discipline insegnate" class="required" required>
-                            </div>
-                            <div class="form-group full-width">
-                                <textarea name="riconoscimenti" placeholder="Riconoscimenti e risultati principali (ultimi 3 anni)" class="tall"></textarea>
-                            </div>
-                            <div class="form-group full-width">
-                                <textarea name="unicita" placeholder="Cosa rende unica la vostra scuola?" class="tall required" required></textarea>
-                            </div>
-                        </div>
-                        <div class="card-navigation">
-                            <button type="button" class="card-nav-button" data-direction="prev">
-                                <span class="btn-symbol">&laquo;</span> INDIETRO
-                            </button>
-                            <button type="button" class="card-nav-button" data-direction="next">
-                                AVANTI <span class="btn-symbol">&raquo;</span>
-                            </button>
-                        </div>
+                    <div class="form-group">
+                        <input type="text" name="provincia" placeholder="Provincia" class="required" form="candidatiForm" required>
                     </div>
-
-                    <!-- Card 3: Presenza Online -->
-                    <div class="form-card" data-card="3">
-                        <div class="card-header">
-                            <h3 class="card-title">Presenza Online</h3>
-                        </div>
-                        <div class="card-content">
-                            <div class="form-group">
-                                <input type="url" name="sitoWeb" placeholder="Sito web">
-                            </div>
-                            <div class="form-group">
-                                <input type="text" name="instagram" placeholder="Instagram">
-                            </div>
-                            <div class="form-group">
-                                <input type="text" name="facebook" placeholder="Facebook">
-                            </div>
-                            <div class="form-group">
-                                <input type="text" name="contenutiSocial" placeholder="Attualmente create contenuti per i social?" class="required" required>
-                            </div>
-                        </div>
-                        <div class="card-navigation">
-                            <button type="button" class="card-nav-button" data-direction="prev">
-                                <span class="btn-symbol">&laquo;</span> INDIETRO
-                            </button>
-                            <button type="button" class="card-nav-button" data-direction="next">
-                                AVANTI <span class="btn-symbol">&raquo;</span>
-                            </button>
-                        </div>
+                    <div class="form-group">
+                        <input type="text" name="indirizzo" placeholder="Indirizzo completo" class="required" form="candidatiForm" required>
                     </div>
-
-                    <!-- Card 4: Il Vostro Interesse -->
-                    <div class="form-card" data-card="4">
-                        <div class="card-header">
-                            <h3 class="card-title">Il Vostro Interesse</h3>
-                        </div>
-                        <div class="card-content">
-                            <div class="form-group full-width">
-                                <textarea name="perche" placeholder="Perché volete partecipare a Dance Academy?" class="tall required" required></textarea>
-                            </div>
-                            <div class="form-group">
-                                <select name="disponibilita" class="required" required>
-                                    <option value="">Disponibilità per le riprese</option>
-                                    <option value="subito">Da subito</option>
-                                    <option value="1mese">Entro 1 mese</option>
-                                    <option value="2mesi">Entro 2 mesi</option>
-                                    <option value="3mesi">Entro 3 mesi</option>
-                                    <option value="concordare">Da concordare</option>
-                                </select>
-                            </div>
-                            <div class="form-info">
-                                Le riprese richiedono 1-2 giorni presso la vostra sede. Il nostro team gestirà tutta la produzione tecnica.
-                            </div>
-                            <div class="form-group full-width">
-                                <textarea name="altreInfo" placeholder="Altre informazioni che vorreste condividere" class="tall"></textarea>
-                            </div>
-                        </div>
-                        <div class="card-navigation">
-                            <button type="button" class="card-nav-button" data-direction="prev">
-                                <span class="btn-symbol">&laquo;</span> INDIETRO
-                            </button>
-                            <button type="button" class="card-nav-button" data-direction="next">
-                                AVANTI <span class="btn-symbol">&raquo;</span>
-                            </button>
-                        </div>
+                    <div class="form-group">
+                        <input type="number" name="annoFondazione" placeholder="Anno di fondazione" class="required" form="candidatiForm" min="1900" max="2024" required>
                     </div>
-                </form>
+                    <div class="form-group">
+                        <select name="numeroAllievi" class="required" form="candidatiForm" required>
+                            <option value="">Numero di allievi attivi</option>
+                            <option value="<50">Meno di 50</option>
+                            <option value="50-100">50-100</option>
+                            <option value="100-200">100-200</option>
+                            <option value="200-500">200-500</option>
+                            <option value="500+">Oltre 500</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="card-navigation">
+                    <button type="button" class="card-nav-button" data-direction="prev">
+                        <span class="btn-symbol">&laquo;</span> INDIETRO
+                    </button>
+                    <button type="button" class="card-nav-button" data-direction="next">
+                        AVANTI <span class="btn-symbol">&raquo;</span>
+                    </button>
+                </div>
             </div>
         </div>
 
-        <!-- Submit button - outside candidati-block so position:fixed works relative to viewport -->
+        <!-- Card 1 wrapper (independent fixed element, z-index: 101) -->
+        <div class="candidati-card-wrapper" data-card="1">
+            <div class="form-card">
+                <div class="card-header">
+                    <h3 class="card-title">Referente</h3>
+                </div>
+                <div class="card-content">
+                    <div class="form-group">
+                        <input type="text" name="nome" placeholder="Nome" class="required" form="candidatiForm" required>
+                    </div>
+                    <div class="form-group">
+                        <input type="text" name="cognome" placeholder="Cognome" class="required" form="candidatiForm" required>
+                    </div>
+                    <div class="form-group">
+                        <select name="ruolo" class="required" form="candidatiForm" required>
+                            <option value="">Ruolo</option>
+                            <option value="proprietario">Proprietario/a</option>
+                            <option value="direttore">Direttore/direttrice artistico/a</option>
+                            <option value="amministratore">Amministratore/amministratrice</option>
+                            <option value="insegnante">Insegnante principal</option>
+                            <option value="altro">Altro</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <input type="email" name="email" placeholder="E-mail" class="required" form="candidatiForm" required>
+                    </div>
+                    <div class="form-group">
+                        <input type="tel" name="telefono" placeholder="N. telefono" class="required" form="candidatiForm" required>
+                    </div>
+                </div>
+                <div class="card-navigation">
+                    <button type="button" class="card-nav-button" data-direction="prev">
+                        <span class="btn-symbol">&laquo;</span> INDIETRO
+                    </button>
+                    <button type="button" class="card-nav-button" data-direction="next">
+                        AVANTI <span class="btn-symbol">&raquo;</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Card 2 wrapper (independent fixed element, z-index: 102) -->
+        <div class="candidati-card-wrapper" data-card="2">
+            <div class="form-card">
+                <div class="card-header">
+                    <h3 class="card-title">Profilo Artistico</h3>
+                </div>
+                <div class="card-content">
+                    <div class="form-group full-width">
+                        <input type="text" name="discipline" placeholder="Discipline insegnate" class="required" form="candidatiForm" required>
+                    </div>
+                    <div class="form-group full-width">
+                        <textarea name="riconoscimenti" placeholder="Riconoscimenti e risultati principali (ultimi 3 anni)" class="tall" form="candidatiForm"></textarea>
+                    </div>
+                    <div class="form-group full-width">
+                        <textarea name="unicita" placeholder="Cosa rende unica la vostra scuola?" class="tall required" form="candidatiForm" required></textarea>
+                    </div>
+                </div>
+                <div class="card-navigation">
+                    <button type="button" class="card-nav-button" data-direction="prev">
+                        <span class="btn-symbol">&laquo;</span> INDIETRO
+                    </button>
+                    <button type="button" class="card-nav-button" data-direction="next">
+                        AVANTI <span class="btn-symbol">&raquo;</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Card 3 wrapper (independent fixed element, z-index: 103) -->
+        <div class="candidati-card-wrapper" data-card="3">
+            <div class="form-card">
+                <div class="card-header">
+                    <h3 class="card-title">Presenza Online</h3>
+                </div>
+                <div class="card-content">
+                    <div class="form-group">
+                        <input type="url" name="sitoWeb" placeholder="Sito web" form="candidatiForm">
+                    </div>
+                    <div class="form-group">
+                        <input type="text" name="instagram" placeholder="Instagram" form="candidatiForm">
+                    </div>
+                    <div class="form-group">
+                        <input type="text" name="facebook" placeholder="Facebook" form="candidatiForm">
+                    </div>
+                    <div class="form-group">
+                        <input type="text" name="contenutiSocial" placeholder="Attualmente create contenuti per i social?" class="required" form="candidatiForm" required>
+                    </div>
+                </div>
+                <div class="card-navigation">
+                    <button type="button" class="card-nav-button" data-direction="prev">
+                        <span class="btn-symbol">&laquo;</span> INDIETRO
+                    </button>
+                    <button type="button" class="card-nav-button" data-direction="next">
+                        AVANTI <span class="btn-symbol">&raquo;</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Card 4 wrapper (independent fixed element, z-index: 104) -->
+        <div class="candidati-card-wrapper" data-card="4">
+            <div class="form-card">
+                <div class="card-header">
+                    <h3 class="card-title">Il Vostro Interesse</h3>
+                </div>
+                <div class="card-content">
+                    <div class="form-group full-width">
+                        <textarea name="perche" placeholder="Perché volete partecipare a Dance Academy?" class="tall required" form="candidatiForm" required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <select name="disponibilita" class="required" form="candidatiForm" required>
+                            <option value="">Disponibilità per le riprese</option>
+                            <option value="subito">Da subito</option>
+                            <option value="1mese">Entro 1 mese</option>
+                            <option value="2mesi">Entro 2 mesi</option>
+                            <option value="3mesi">Entro 3 mesi</option>
+                            <option value="concordare">Da concordare</option>
+                        </select>
+                    </div>
+                    <div class="form-info">
+                        Le riprese richiedono 1-2 giorni presso la vostra sede. Il nostro team gestirà tutta la produzione tecnica.
+                    </div>
+                    <div class="form-group full-width">
+                        <textarea name="altreInfo" placeholder="Altre informazioni che vorreste condividere" class="tall" form="candidatiForm"></textarea>
+                    </div>
+                </div>
+                <div class="card-navigation">
+                    <button type="button" class="card-nav-button" data-direction="prev">
+                        <span class="btn-symbol">&laquo;</span> INDIETRO
+                    </button>
+                    <button type="button" class="card-nav-button" data-direction="next">
+                        AVANTI <span class="btn-symbol">&raquo;</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Submit button wrapper (independent fixed element, z-index: 111) -->
         <div class="submit-button-container">
             <button type="submit" form="candidatiForm" class="submit-button">INVIA CANDIDATURA</button>
         </div>
