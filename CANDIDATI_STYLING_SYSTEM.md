@@ -106,66 +106,152 @@ Accent highlights:    accent (full opacity #96795c)
 
 ## 2. VISUAL EFFECTS SYSTEM
 
-### 2.1 Card Depth & Layering
+### 2.1 Card Depth & Layering - ENHANCED SHADOW SYSTEM
 
-**Multi-Layer Shadow Stack**:
+**5-Layer Shadow Stack for Dramatic Depth**:
 ```css
 .form-card {
     box-shadow:
-        /* Layer 1: Deep ambient shadow */
-        0 12px 40px rgba(0, 0, 0, 0.6),
+        /* Layer 1: Ultra-deep ambient shadow - maximum floating effect */
+        0 20px 60px rgba(0, 0, 0, 0.9),
 
-        /* Layer 2: Mid-range shadow for definition */
-        0 4px 16px rgba(0, 0, 0, 0.4),
+        /* Layer 2: Deep shadow - strong presence */
+        0 12px 32px rgba(0, 0, 0, 0.7),
 
-        /* Layer 3: Inset highlight for acrylic effect */
-        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        /* Layer 3: Mid shadow - volume definition */
+        0 6px 16px rgba(0, 0, 0, 0.5),
+
+        /* Layer 4: Edge shadow - sharp definition */
+        0 2px 8px rgba(0, 0, 0, 0.4),
+
+        /* Layer 5: Bottom inner shadow - depth enhancement */
+        inset 0 -1px 0 rgba(0, 0, 0, 0.6);
 }
 ```
 
 **Shadow Breakdown**:
 ```
-Layer 1 (Deep):
-  - Y-offset: 12px (elevated feel)
-  - Blur: 40px (soft, ambient)
-  - Opacity: 0.6 (strong presence)
-  - Purpose: Create depth from background
+Layer 1 (Ultra-Deep Ambient):
+  - Y-offset: 20px (strong elevation)
+  - Blur: 60px (very soft, far-reaching)
+  - Opacity: 0.9 (maximum presence)
+  - Purpose: Create dramatic floating effect
 
-Layer 2 (Mid):
-  - Y-offset: 4px (subtle lift)
-  - Blur: 16px (defined edges)
-  - Opacity: 0.4 (secondary depth)
-  - Purpose: Strengthen card boundary
+Layer 2 (Deep Presence):
+  - Y-offset: 12px (mid elevation)
+  - Blur: 32px (soft but defined)
+  - Opacity: 0.7 (strong secondary)
+  - Purpose: Strengthen depth perception
 
-Layer 3 (Inset):
-  - Y-offset: 1px from top
-  - Spread: 0 (thin line)
-  - Opacity: 0.1 (very subtle)
-  - Purpose: Simulated light reflection
+Layer 3 (Volume Definition):
+  - Y-offset: 6px (moderate elevation)
+  - Blur: 16px (medium softness)
+  - Opacity: 0.5 (balanced presence)
+  - Purpose: Define card volume
+
+Layer 4 (Edge Clarity):
+  - Y-offset: 2px (close to card)
+  - Blur: 8px (sharp-ish edges)
+  - Opacity: 0.4 (subtle definition)
+  - Purpose: Crisp edge definition
+
+Layer 5 (Inner Depth):
+  - Inset bottom: -1px (thin line)
+  - Opacity: 0.6 (strong internal shadow)
+  - Purpose: Enhance internal depth perception
 ```
 
 **Combined Effect**:
-- Creates "floating card" appearance
-- Simulates glass/acrylic material
-- Maintains depth without heaviness
-- Works across different backgrounds
+- Creates pronounced "floating card" appearance
+- Dramatic three-dimensional depth
+- Sharp, defined edges with soft ambient glow
+- Works beautifully against dark backgrounds
+- No top inner highlight for cleaner aesthetic
 
 ---
 
-### 2.2 Transparency & Blur
+### 2.2 Glassmorphic Blur Overlay System - STACKING CONTEXT SOLUTION
 
-**Card Background Strategy**:
+**The Stacking Context Problem**:
+- `candidati-block` has `position: fixed` with `z-index: 1000`
+- This creates an isolated stacking context
+- Cards inside cannot use `backdrop-filter` to blur video background (`z-index: -1`)
+- Solution: External blur overlay element
+
+**Blur Overlay Implementation**:
+```javascript
+// Create overlay element (outside stacking context)
+const blurOverlay = document.createElement('div');
+blurOverlay.id = 'card-blur-overlay';
+blurOverlay.style.position = 'fixed';
+blurOverlay.style.pointerEvents = 'none';
+blurOverlay.style.zIndex = '999'; // Below candidati-block (1000), above video (-1)
+blurOverlay.style.backdropFilter = 'blur(12px) saturate(180%)';
+blurOverlay.style.webkitBackdropFilter = 'blur(12px) saturate(180%)';
+blurOverlay.style.borderRadius = '2px';
+blurOverlay.style.opacity = '0';
+blurOverlay.style.transition = 'opacity 0.3s ease';
+document.body.appendChild(blurOverlay);
+```
+
+**Card Background**:
 ```css
 .form-card {
-    background: rgba(0, 0, 0, 0.4);  /* 40% opacity */
+    background: transparent; /* Blur overlay provides background effect */
+    border: 1px solid rgba(255, 255, 255, 0.25);
 }
 ```
 
-**Why 40% opacity?**:
-- Dark enough for content readability
-- Light enough to see video background
-- Balances immersion and usability
-- Creates modern "glassmorphism" aesthetic
+**Why Transparent?**:
+- Blur overlay sits behind card, providing glassmorphic background
+- Card itself is transparent to show blur effect
+- Border provides definition without blocking blur
+- Creates true glassmorphism: blurred background + transparent card
+
+**Synchronization System**:
+```javascript
+function syncBlurOverlay() {
+    // Find most visible card by opacity
+    let mostVisibleCard = null;
+    let maxOpacity = 0;
+
+    cards.forEach(card => {
+        const opacity = parseFloat(card.style.opacity) || 0;
+        if (opacity > maxOpacity) {
+            maxOpacity = opacity;
+            mostVisibleCard = card;
+        }
+    });
+
+    // Match blur overlay to card position/size/opacity
+    if (mostVisibleCard && maxOpacity > 0) {
+        const rect = mostVisibleCard.getBoundingClientRect();
+        blurOverlay.style.left = rect.left + 'px';
+        blurOverlay.style.top = rect.top + 'px';
+        blurOverlay.style.width = rect.width + 'px';
+        blurOverlay.style.height = rect.height + 'px';
+        blurOverlay.style.opacity = maxOpacity;
+    } else {
+        blurOverlay.style.opacity = '0';
+    }
+}
+```
+
+**Blur Effect Details**:
+- **Blur Amount**: 12px (medium blur for clarity)
+- **Saturation**: 180% (enhances background colors)
+- **Opacity**: Matches card opacity (synchronized fade-in/out)
+- **Updates**: Every scroll frame during card animations
+- **Performance**: Uses requestAnimationFrame via Lenis
+
+**Z-Index Stack**:
+```
+10000: Motion preference notice
+ 1000: candidati-block (isolated stacking context)
+  999: blur-overlay (glassmorphic background)
+  ... : Cards (inside candidati-block)
+   -1: Video background
+```
 
 **Input Background Strategy**:
 ```css
@@ -175,10 +261,10 @@ Layer 3 (Inset):
 ```
 
 **Why 70% opacity for inputs?**:
-- Higher contrast for better readability
-- Distinguishes input fields from card background
+- High contrast for readability over blur
+- Distinguishes input fields from transparent card
 - Creates visual hierarchy (darker = interactive)
-- Reduces distraction from video motion
+- Reduces distraction from blurred video
 
 **Form Info Background**:
 ```css
@@ -190,7 +276,7 @@ Layer 3 (Inset):
 **Why 30% opacity for info boxes?**:
 - Lighter than inputs (non-interactive)
 - Still readable but de-emphasized
-- Creates subtle background differentiation
+- Creates subtle differentiation from blur
 - Maintains visual flow
 
 ---

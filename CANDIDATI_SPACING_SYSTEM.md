@@ -303,112 +303,155 @@ function calculateCardOffsets() {
 
 ## 3. CARD INTERNAL SPACING SYSTEM
 
-### 3.1 Card Structure Layout
+### 3.1 Card Structure Layout - CSS GRID
 
-**Flexbox Column Layout**:
+**Grid Column Layout**:
 ```css
 .form-card {
-    display: flex;
-    flex-direction: column;
-    /* Creates three sections: header → content → navigation */
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    /* Creates three rows: header → expanding content → navigation */
 }
 ```
 
-**Three-Section Stack**:
-1. **Card Header** (fixed height, top)
-2. **Card Content** (flexible, grows to fill)
-3. **Card Navigation** (fixed height, bottom)
+**Three-Row Grid**:
+1. **Card Header** (`auto` height - fits content, top-aligned)
+2. **Card Content** (`1fr` - expands to fill available space)
+3. **Card Navigation** (`auto` height - fits content, bottom-aligned)
+
+**Philosophy**: Minimal spacing (6px gaps), content aligned at top, no overlap between sections.
 
 ---
 
-### 3.2 Card Header Spacing
+### 3.2 Card Header Spacing - MINIMAL
 
 ```css
 .card-header {
     /* Separator */
     border-bottom: 1px solid var(--border-light);
 
-    /* Internal spacing */
-    padding-bottom: clamp(10px, 1.5vh, 15px);
-    /* Range: 10-15px */
+    /* Internal spacing - MINIMAL */
+    padding-bottom: 8px; /* Fixed, no clamp */
+    margin-bottom: 0; /* Grid gap controls spacing */
+}
 
-    /* External spacing */
-    margin-bottom: clamp(15px, 2vh, 20px);
-    /* Range: 15-20px */
-
-    /* Does not grow/shrink */
-    flex-shrink: 0;
+.card-title {
+    font-size: clamp(1rem, 1.5vw + 0.5vh, 1.75rem);
+    font-weight: 300;
+    letter-spacing: var(--letter-spacing-widest);
+    text-transform: uppercase;
+    text-align: center;
+    margin: 0;
 }
 ```
 
 **Total vertical space consumed**:
 ```
-Card Title Height (~30-40px)
-+ padding-bottom: 10-15px
+Card Title Height (~24-35px responsive)
++ padding-bottom: 8px
 + border: 1px
-+ margin-bottom: 15-20px
-= ~56-76px total header space
+= ~33-44px total header space
 ```
 
 ---
 
-### 3.3 Card Content Spacing
+### 3.3 Card Content Spacing - MINIMAL GRID
 
 **Content Area Layout**:
 ```css
 .card-content {
-    /* Flex behavior */
-    flex: 1; /* Grows to fill available space */
-    min-height: 0; /* Allows flex shrinking */
-
-    /* Scroll behavior */
-    overflow-y: auto;
-    overflow-x: hidden;
-    padding-right: 8px; /* Scrollbar space */
+    display: grid;
+    grid-template-columns: 1fr; /* Mobile: single column */
+    gap: 6px; /* MINIMAL gap - mobile */
+    align-content: start; /* Align content to top */
+    padding-top: 10px; /* Small breathing room after header */
 }
 ```
 
-**Desktop Layout (Grid)**:
+**Desktop Layout (Two Columns)**:
 ```css
 @media (min-width: 769px) {
     .card-content {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: clamp(12px, 1.5vh, 18px) clamp(20px, 2.5vw, 30px);
-        /* Row gap: 12-18px | Column gap: 20-30px */
-        align-items: start;
+        grid-template-columns: 1fr 1fr; /* Two equal columns */
+        gap: 6px 12px; /* row-gap: 6px, column-gap: 12px */
+    }
+
+    /* Full-width elements span both columns */
+    .card-content .form-info,
+    .card-content .form-group.full-width {
+        grid-column: 1 / -1;
     }
 }
 ```
 
-**Mobile Layout (Flex)**:
+**Mobile Layout (Single Column)**:
 ```css
 @media (max-width: 768px) {
     .card-content {
-        display: flex;
-        flex-direction: column;
-        gap: clamp(10px, 1.5vh, 14px);
-        /* Single gap: 10-14px between all items */
+        grid-template-columns: 1fr; /* Single column */
+        gap: 6px; /* MINIMAL vertical gap */
     }
 }
 ```
 
-**Spacing Strategy**:
-- **Desktop**: Larger column gap (20-30px) for visual separation
-- **Desktop**: Smaller row gap (12-18px) to keep related fields together
-- **Mobile**: Consistent single gap (10-14px) for vertical rhythm
+**Spacing Strategy - MINIMAL**:
+- **Desktop**: Small row gap (6px), moderate column gap (12px)
+- **Mobile**: Minimal single gap (6px) for tight vertical spacing
+- **Philosophy**: Content aligned at top, minimal spacing between elements
+- **No scrolling**: Internal sizing optimization ensures content fits without overflow
 
 ---
 
-### 3.4 Form Group Spacing
+### 3.4 Card Navigation Spacing - MINIMAL GRID
+
+**Navigation Container**:
+```css
+.card-navigation {
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* Always 2 columns */
+    gap: 10px; /* Small gap between buttons */
+    padding-top: 10px; /* Small breathing room above buttons */
+}
+```
+
+**Button Alignment Logic**:
+```css
+/* Single button in first card: align right */
+.card-navigation button[data-direction="next"]:only-child {
+    grid-column: 2; /* Right column */
+}
+
+/* When prev is hidden (first card), align next to right */
+.card-navigation button[data-direction="prev"][style*="display: none"]
+  ~ button[data-direction="next"] {
+    grid-column: 2;
+}
+
+/* When next is hidden (last card), align prev to left */
+.card-navigation button[data-direction="next"][style*="display: none"]
+  ~ button[data-direction="prev"] {
+    grid-column: 1;
+}
+```
+
+**Buttons**:
+```css
+.card-nav-button {
+    width: 100%; /* Fill grid cell */
+    padding: clamp(10px, 1.5vh, 14px) clamp(16px, 2.5vw, 28px);
+}
+```
+
+---
+
+### 3.5 Form Group Spacing - MINIMAL
 
 **Form Group Container**:
 ```css
 .form-group {
-    margin-bottom: clamp(10px, 1.5vh, 14px);
-    /* Only applies on mobile (overridden by grid gap on desktop) */
-
-    position: relative; /* For asterisk positioning */
+    margin-bottom: 0; /* Grid gap controls spacing */
+    position: relative; /* For validation indicators */
+    width: 100%; /* Fill column */
 }
 ```
 

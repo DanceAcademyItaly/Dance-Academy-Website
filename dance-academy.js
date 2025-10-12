@@ -2429,7 +2429,8 @@ function initCandidatiCardStack() {
     candidatiSection.style.setProperty('left', '50%', 'important');
     candidatiSection.style.setProperty('transform', 'translateX(-50%)', 'important');
     candidatiSection.style.setProperty('width', `${originalRect.width}px`, 'important');
-    candidatiSection.style.setProperty('z-index', '1000', 'important');
+    // Removed z-index to allow cards to use backdrop-filter on video background
+    // candidatiSection.style.setProperty('z-index', '1000', 'important');
     candidatiSection.style.setProperty('margin', '0', 'important'); // Kill the margin!
     candidatiSection.style.visibility = 'hidden';
     candidatiSection.style.opacity = '0';
