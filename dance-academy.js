@@ -2915,43 +2915,32 @@ function updateCandidatiCardStack(scrollY, cardState) {
         titleHiddenY
     } = cardState;
 
-    // VISIBILITY CONTROL - hide section before entry and after exit
+    // No visibility control needed - elements are independent and always in layout
+    // Early return if before candidati section starts
     if (scrollY < titleEntranceStart) {
-        if (candidatiSection.style.visibility !== 'hidden') {
-            candidatiSection.style.visibility = 'hidden';
-            candidatiSection.style.opacity = '0';
-        }
         return;
     } else if (scrollY > cardDeadzoneEnd) {
-        if (candidatiSection.style.visibility !== 'hidden') {
-            candidatiSection.style.visibility = 'hidden';
-            candidatiSection.style.opacity = '0';
-        }
         return;
-    } else {
-        if (candidatiSection.style.visibility !== 'visible') {
-            candidatiSection.style.visibility = 'visible';
-            candidatiSection.style.opacity = '1';
-        }
     }
 
     // PHASE 1: Title entrance animation (50vh)
+    // Animate candidatiTitleWrapper (position: fixed)
     if (scrollY >= titleEntranceStart && scrollY <= titleEntranceEnd) {
         const progress = (scrollY - titleEntranceStart) / (titleEntranceEnd - titleEntranceStart);
         const easedProgress = sidebarEasing(progress);
         const translateY = titleHiddenY * (1 - easedProgress);
         const opacity = easedProgress;
 
-        candidatiTitle.style.transform = `translateY(${translateY}px)`;
-        candidatiTitle.style.opacity = opacity;
+        candidatiTitleWrapper.style.transform = `translate(-50%, ${translateY}px)`;
+        candidatiTitleWrapper.style.opacity = opacity;
 
     } else if (scrollY < titleEntranceStart) {
-        candidatiTitle.style.transform = `translateY(${titleHiddenY}px)`;
-        candidatiTitle.style.opacity = '0';
+        candidatiTitleWrapper.style.transform = `translate(-50%, ${titleHiddenY}px)`;
+        candidatiTitleWrapper.style.opacity = '0';
 
     } else if (scrollY > titleEntranceEnd) {
-        candidatiTitle.style.transform = 'translateY(0px)';
-        candidatiTitle.style.opacity = '1';
+        candidatiTitleWrapper.style.transform = 'translate(-50%, 0px)';
+        candidatiTitleWrapper.style.opacity = '1';
     }
 
     // Calculate stack offsets
@@ -2960,11 +2949,12 @@ function updateCandidatiCardStack(scrollY, cardState) {
     const centerOffsetX = -totalOffsetX / 2;
 
     // PHASE 2: Card progressive reveal (150vh)
+    // Animate cardWrappers (position: fixed)
     if (scrollY >= cardEntranceStart && scrollY <= cardEntranceEnd) {
         const totalProgress = (scrollY - cardEntranceStart) / (cardEntranceEnd - cardEntranceStart);
 
-        // Animate each card with staggered timing
-        cards.forEach((card, index) => {
+        // Animate each card wrapper with staggered timing
+        cardWrappers.forEach((wrapper, index) => {
             const cardEntranceFraction = index / totalCards;
             const cardCompleteFraction = (index + 1) / totalCards;
 
@@ -2983,8 +2973,8 @@ function updateCandidatiCardStack(scrollY, cardState) {
             const translateXVw = 100 * (1 - easedCardProgress);
             const opacity = easedCardProgress;
 
-            card.style.transform = `translate(calc(-50% + ${cardOffsetX}px), 0) translateX(${translateXVw}vw)`;
-            card.style.opacity = opacity;
+            wrapper.style.transform = `translate(calc(-50% + ${cardOffsetX}px), 0) translateX(${translateXVw}vw)`;
+            wrapper.style.opacity = opacity;
 
             // Update current card index when card is >50% visible
             if (cardProgress > 0.5 && index > cardState.currentCardIndex) {
@@ -3010,11 +3000,11 @@ function updateCandidatiCardStack(scrollY, cardState) {
         }
 
     } else if (scrollY < cardEntranceStart) {
-        // Before phase 2 - all cards hidden
-        cards.forEach((card, index) => {
+        // Before phase 2 - all card wrappers hidden
+        cardWrappers.forEach((wrapper, index) => {
             const cardOffsetX = centerOffsetX + (index * offsets.x);
-            card.style.transform = `translate(calc(-50% + ${cardOffsetX}px), 0) translateX(100vw)`;
-            card.style.opacity = '0';
+            wrapper.style.transform = `translate(calc(-50% + ${cardOffsetX}px), 0) translateX(100vw)`;
+            wrapper.style.opacity = '0';
         });
 
         if (submitButtonContainer) {
@@ -3028,11 +3018,11 @@ function updateCandidatiCardStack(scrollY, cardState) {
         const deadzoneProgress = (scrollY - cardEntranceEnd) / (cardDeadzoneEnd - cardEntranceEnd);
         const targetCardIndex = Math.floor(deadzoneProgress * totalCards);
 
-        // All cards at final position
-        cards.forEach((card, index) => {
+        // All card wrappers at final position
+        cardWrappers.forEach((wrapper, index) => {
             const cardOffsetX = centerOffsetX + (index * offsets.x);
-            card.style.transform = `translate(calc(-50% + ${cardOffsetX}px), 0) translateX(0vw)`;
-            card.style.opacity = '1';
+            wrapper.style.transform = `translate(calc(-50% + ${cardOffsetX}px), 0) translateX(0vw)`;
+            wrapper.style.opacity = '1';
         });
 
         // Update current card based on deadzone scroll
