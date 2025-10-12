@@ -2377,98 +2377,64 @@ function initCandidatiCardStack() {
     console.log('🚀🚀🚀 CANDIDATI INIT START - CHECKING IF THIS RUNS 🚀🚀🚀');
 
     // Query DOM elements
-    const candidatiSection = document.querySelector('.candidati-block');
-    console.log('🔍 Found candidatiSection:', candidatiSection);
-
-    const candidatiTitle = candidatiSection?.querySelector('.candidati-title');
-    const cards = candidatiSection?.querySelectorAll('.form-card');
-
-    console.log('🔎 Looking for submit button with document.querySelector...');
+    // NEW STRUCTURE: Select independent fixed elements (no parent container)
+    const candidatiSpacer = document.querySelector('.candidati-spacer');
+    const candidatiTitleWrapper = document.querySelector('.candidati-title-wrapper');
+    const candidatiTitle = candidatiTitleWrapper?.querySelector('.candidati-title');
+    const cardWrappers = document.querySelectorAll('.candidati-card-wrapper');
+    const cards = document.querySelectorAll('.candidati-card-wrapper .form-card');
     const submitButtonContainer = document.querySelector('.submit-button-container');
-    console.log('🔎 Found submit button?', submitButtonContainer);
-    console.log('🔎 All buttons in document:', document.querySelectorAll('button'));
 
-    const cardDeckContainer = candidatiSection?.querySelector('.card-deck-container');
-
-    console.log('🔍 Element check:', {
-        candidatiSection: !!candidatiSection,
+    console.log('🔍 Element check (new structure):', {
+        candidatiSpacer: !!candidatiSpacer,
+        candidatiTitleWrapper: !!candidatiTitleWrapper,
         candidatiTitle: !!candidatiTitle,
+        cardWrappersCount: cardWrappers?.length,
         cardsCount: cards?.length,
-        submitButtonContainer: !!submitButtonContainer,
-        cardDeckContainer: !!cardDeckContainer
+        submitButtonContainer: !!submitButtonContainer
     });
 
-    // Validate elements (button is optional since it's outside block now)
-    if (!candidatiSection || !candidatiTitle || !cards || cards.length !== 5 || !cardDeckContainer) {
+    // Validate elements
+    if (!candidatiSpacer || !candidatiTitleWrapper || !candidatiTitle || !cardWrappers || cardWrappers.length !== 5 || !cards || cards.length !== 5 || !submitButtonContainer) {
         console.error('❌❌❌ VALIDATION FAILED - EARLY RETURN', {
-            candidatiSection: !!candidatiSection,
+            candidatiSpacer: !!candidatiSpacer,
+            candidatiTitleWrapper: !!candidatiTitleWrapper,
             candidatiTitle: !!candidatiTitle,
+            cardWrappers: cardWrappers?.length,
             cards: cards?.length,
-            cardDeckContainer: !!cardDeckContainer
+            submitButtonContainer: !!submitButtonContainer
         });
         return;
     }
 
-    console.log('✅ Validation passed, continuing...');
+    console.log('✅ Validation passed, continuing with new structure...');
 
     const totalCards = cards.length;
 
-    // SCROLL DECOUPLING: Get original position BEFORE fixing to viewport
-    const originalRect = candidatiSection.getBoundingClientRect();
-    const originalTop = originalRect.top + window.scrollY;
+    // Get spacer position for scroll range calculation
+    const spacerRect = candidatiSpacer.getBoundingClientRect();
+    const spacerTop = spacerRect.top + window.scrollY;
 
-    // Fix candidati-block to viewport (decouple from page scroll)
-    // Position to match episodi spacing: header + comfortable gap
-    const topPosition = 60; // Closer to top for better spacing
+    // Elements are already fixed via CSS - no positioning setup needed
+    const topPosition = 60; // Fixed top position defined in CSS
 
-    console.log('⚙️ BEFORE setting styles, computed position:', window.getComputedStyle(candidatiSection).position);
+    // Set spacer height to maintain document scroll range
+    const totalScrollRange = window.innerHeight * 6; // 600vh
+    candidatiSpacer.style.height = totalScrollRange + 'px';
 
-    // Force positioning with explicit inline styles - set each property individually
-    candidatiSection.style.setProperty('position', 'fixed', 'important');
-    candidatiSection.style.setProperty('top', `${topPosition}px`, 'important');
-    candidatiSection.style.setProperty('left', '50%', 'important');
-    candidatiSection.style.setProperty('transform', 'translateX(-50%)', 'important');
-    candidatiSection.style.setProperty('width', `${originalRect.width}px`, 'important');
-    // Removed z-index to allow cards to use backdrop-filter on video background
-    // candidatiSection.style.setProperty('z-index', '1000', 'important');
-    candidatiSection.style.setProperty('margin', '0', 'important'); // Kill the margin!
-    candidatiSection.style.visibility = 'hidden';
-    candidatiSection.style.opacity = '0';
-
-    console.log('⚙️ AFTER setting styles:', {
-        inlinePosition: candidatiSection.style.position,
-        inlineTop: candidatiSection.style.top,
-        computedPosition: window.getComputedStyle(candidatiSection).position,
-        computedTop: window.getComputedStyle(candidatiSection).top,
-        topPosition
-    });
-
-    console.log('🔥 Block positioned at:', topPosition + 'px from top');
-    console.log('🔥 Computed values:', {
-        position: window.getComputedStyle(candidatiSection).position,
-        top: window.getComputedStyle(candidatiSection).top,
-        left: window.getComputedStyle(candidatiSection).left,
-        transform: window.getComputedStyle(candidatiSection).transform
-    });
-
-    // Add spacer to maintain document scroll range (600vh total - increased for more separation)
-    const totalScrollRange = window.innerHeight * 6; // 600vh (extra space before contatti)
-    const spacer = document.createElement('div');
-    spacer.style.height = totalScrollRange + 'px';
-    spacer.className = 'candidati-spacer';
-    candidatiSection.parentNode.insertBefore(spacer, candidatiSection.nextSibling);
-
-    console.log('Candidati spacer added:', {
+    console.log('Candidati spacer configured:', {
         height: totalScrollRange,
-        inVH: '600vh'
+        inVH: '600vh',
+        spacerPosition: spacerTop
     });
 
-    // Calculate scroll ranges - START AT FIXED POSITION 3800px
-    const titleEntranceStart = 3800;
+    // Calculate scroll ranges - based on spacer position
+    const titleEntranceStart = spacerTop;
 
-    console.log('Candidati timing: starting at fixed position 3800px:', {
+    console.log('Candidati timing:', {
         missioneExitEnd: missioneAnimationState?.exitEnd || 'N/A',
-        candidatiStart: titleEntranceStart
+        candidatiStart: titleEntranceStart,
+        spacerTop: spacerTop
     });
 
     // Phase 1: Title entrance (50vh)
@@ -2493,81 +2459,44 @@ function initCandidatiCardStack() {
         missioneExitStart: missioneAnimationState?.deadzoneEnd || 'N/A'
     });
 
-    // Calculate vertical spacing & heights for card positioning
-    // Note: Title and submit button are OUTSIDE card-deck-container
-    // Title: sibling above (handles own spacing via CSS margin-bottom)
-    // Submit button: fixed at bottom of viewport
-    // Cards: absolutely positioned inside card-deck-container
-
-    // Function to calculate and set container and card heights dynamically
+    // Function to calculate and set card heights dynamically
+    // NEW: Cards are independent fixed elements, no container
     function calculateAndSetCardHeight() {
-        // Get viewport height
         const viewportHeight = window.innerHeight;
-
-        // candidati-block is fixed at top: 60px
-        const blockTopPosition = 60;
-
-        // Get computed styles for dynamic values
-        const blockComputedStyle = window.getComputedStyle(candidatiSection);
-        const titleComputedStyle = window.getComputedStyle(candidatiTitle);
-
-        // Block padding-top
-        const blockPaddingTop = parseFloat(blockComputedStyle.paddingTop) || 0;
+        const fixedTopPosition = 60; // All elements fixed at top: 60px
 
         // Title dimensions
         const titleHeight = candidatiTitle.offsetHeight;
+        const titleComputedStyle = window.getComputedStyle(candidatiTitle);
         const titleMarginBottom = parseFloat(titleComputedStyle.marginBottom) || 0;
 
-        // Submit button dimensions (if exists)
+        // Submit button dimensions
         let submitButtonHeight = 0;
         let submitButtonBottomMargin = 0;
         if (submitButtonContainer) {
             submitButtonHeight = submitButtonContainer.offsetHeight;
-            // Submit button is at bottom: 5vh
-            submitButtonBottomMargin = viewportHeight * 0.05;
+            submitButtonBottomMargin = viewportHeight * 0.05; // 5vh
         }
 
-        // Gap between container and submit button (viewport-based, matches title margin concept)
-        const containerToButtonGap = Math.max(titleMarginBottom, viewportHeight * 0.02); // Use title margin or 2vh minimum
-
-        // Calculate where card-deck-container starts (relative to block)
-        // Container starts after: block padding + title + title margin
-        const containerStartY = blockPaddingTop + titleHeight + titleMarginBottom;
-
-        // Calculate where card-deck-container should end (relative to viewport)
-        // End at: viewport height - submit button space - gap
-        const containerEndY = viewportHeight - blockTopPosition - submitButtonHeight - submitButtonBottomMargin - containerToButtonGap;
-
-        // Container height = end - start
-        const containerHeight = containerEndY - containerStartY;
-
-        // Set container padding-bottom equal to title margin-bottom
-        const containerPaddingBottom = titleMarginBottom;
-        cardDeckContainer.style.paddingBottom = containerPaddingBottom + 'px';
-
-        // Calculate card height = container height - padding-bottom
-        const cardHeight = containerHeight - containerPaddingBottom;
+        // Calculate available vertical space for cards
+        // From: title bottom to: submit button top (with gap)
+        const cardAreaStartY = fixedTopPosition + titleHeight + titleMarginBottom;
+        const cardAreaEndY = viewportHeight - submitButtonHeight - submitButtonBottomMargin;
+        const availableHeight = cardAreaEndY - cardAreaStartY;
 
         // Ensure minimum usable height (400px as defined in CSS)
-        const finalCardHeight = Math.max(400, cardHeight);
+        const finalCardHeight = Math.max(400, availableHeight);
 
-        // Set container height
-        cardDeckContainer.style.height = containerHeight + 'px';
-
-        console.log('📐 Container & card height calculation:', {
+        console.log('📐 Card height calculation (new structure):', {
             viewportHeight,
-            blockTopPosition,
-            blockPaddingTop,
+            fixedTopPosition,
             titleHeight,
             titleMarginBottom,
             submitButtonHeight,
             submitButtonBottomMargin,
-            containerToButtonGap,
-            containerStartY,
-            containerEndY,
-            containerHeight,
-            containerPaddingBottom,
-            calculatedCardHeight: cardHeight,
+            cardAreaStartY,
+            cardAreaEndY,
+            availableHeight,
             finalCardHeight
         });
 
@@ -2576,23 +2505,14 @@ function initCandidatiCardStack() {
             card.style.height = finalCardHeight + 'px';
         });
 
-        return { containerHeight, cardHeight: finalCardHeight };
+        return { cardHeight: finalCardHeight };
     }
 
     // Function to optimize card internal sizing to fit without scrolling
     function optimizeCardInternalSizing(cardHeight) {
         console.log('🎯 Starting card internal sizing optimization');
 
-        // Temporarily make all cards visible for measurement
-        const originalStyles = [];
-        cards.forEach((card, index) => {
-            originalStyles[index] = {
-                transform: card.style.transform,
-                opacity: card.style.opacity
-            };
-            card.style.transform = 'translate(-50%, 0)';
-            card.style.opacity = '1';
-        });
+        // Cards are always in layout (position: relative), no need to toggle visibility
 
         // Measure each card's natural content height
         const cardMeasurements = [];
@@ -2662,37 +2582,27 @@ function initCandidatiCardStack() {
             console.log(`✅ Content fits naturally - no size adjustments needed`);
         }
 
-        // Restore original visibility styles
-        cards.forEach((card, index) => {
-            card.style.transform = originalStyles[index].transform;
-            card.style.opacity = originalStyles[index].opacity;
-        });
-
         console.log('🎯 Card internal sizing optimization complete');
     }
 
     // Calculate initial heights
-    const { containerHeight, cardHeight } = calculateAndSetCardHeight();
+    const { cardHeight } = calculateAndSetCardHeight();
 
     // Optimize card internal sizing to fit without scrolling
     optimizeCardInternalSizing(cardHeight);
 
-    // Cards start at top of their container (no offset needed)
-    const cardTopPosition = 0;
-
-    // Initialize card positions (hidden off-screen right)
-    cards.forEach((card, index) => {
-        card.style.left = '50%';
-        card.style.top = cardTopPosition + 'px';
-        card.style.transform = 'translate(-50%, 0) translateX(100vw)';
-        card.style.opacity = '0';
-        card.dataset.cardIndex = index;
+    // Initialize card WRAPPER positions (hidden off-screen right)
+    // Wrappers are position: fixed, cards inside are position: relative
+    cardWrappers.forEach((wrapper, index) => {
+        wrapper.style.transform = 'translate(-50%, 0) translateX(100vw)';
+        wrapper.style.opacity = '0';
+        wrapper.dataset.cardIndex = index;
     });
 
-    // Initialize title (hidden below viewport)
+    // Initialize title wrapper (hidden below viewport)
     const titleHiddenY = window.innerHeight + 100;
-    candidatiTitle.style.transform = `translateY(${titleHiddenY}px)`;
-    candidatiTitle.style.opacity = '0';
+    candidatiTitleWrapper.style.transform = `translate(-50%, ${titleHiddenY}px)`;
+    candidatiTitleWrapper.style.opacity = '0';
 
     // Initialize submit button (fixed at bottom, just hidden)
     if (submitButtonContainer) {
@@ -2752,11 +2662,12 @@ function initCandidatiCardStack() {
 
     // Store state globally
     candidatiCardState = {
-        candidatiSection,
+        candidatiSpacer,
+        candidatiTitleWrapper,
         candidatiTitle,
         submitButtonContainer,
+        cardWrappers,
         cards,
-        cardDeckContainer,
         titleEntranceStart,
         titleEntranceEnd,
         cardEntranceStart,
@@ -2770,8 +2681,7 @@ function initCandidatiCardStack() {
         optimizeCardInternalSizing, // Store for resize recalculation
         sidebarEasing,
         contentEasing,
-        titleHiddenY,
-        cardTopPosition
+        titleHiddenY
     };
 
     // Add resize handler for responsive container and card height recalculation
