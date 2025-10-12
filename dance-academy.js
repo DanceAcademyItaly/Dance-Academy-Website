@@ -2500,7 +2500,12 @@ function initCandidatiCardStack() {
             finalCardHeight
         });
 
-        // Set height on all cards
+        // Set position on all card WRAPPERS (position cards below title)
+        cardWrappers.forEach(wrapper => {
+            wrapper.style.top = cardAreaStartY + 'px';
+        });
+
+        // Set height on all cards (inside wrappers)
         cards.forEach(card => {
             card.style.height = finalCardHeight + 'px';
         });
