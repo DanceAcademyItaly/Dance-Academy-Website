@@ -1555,6 +1555,7 @@ function initEpisodiFixedSystem() {
     sidebarWrapper.style.width = sidebarWidth + 'px';
     contentWrapper.style.left = contentLeft + 'px';
     contentWrapper.style.width = contentWidth + 'px';
+    contentWrapper.style.right = ''; // Clear any previous right positioning
 
     // Calculate deadzone position (centered vertically with offset)
     const headerHeight = 80;
@@ -1644,6 +1645,7 @@ function handleEpisodiResize() {
     episodiAnimationState.sidebarWrapper.style.left = sidebarLeft + 'px';
     episodiAnimationState.contentWrapper.style.left = contentLeft + 'px';
     episodiAnimationState.contentWrapper.style.width = contentWidth + 'px';
+    episodiAnimationState.contentWrapper.style.right = ''; // Clear any previous right positioning
 
     // Resize accordions
     resizeAccordionsToFit();
