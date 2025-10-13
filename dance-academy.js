@@ -1527,47 +1527,26 @@ let episodiAnimationState = null;
 // Initialize episodi fixed positioning system with scroll-driven animations
 function initEpisodiFixedSystem() {
     const episodiSpacer = document.querySelector('.episodi-spacer');
-    const sidebarWrapper = document.querySelector('.episodi-sidebar-wrapper');
-    const contentWrapper = document.querySelector('.episodi-content-wrapper');
+    const containerWrapper = document.querySelector('.episodi-container-wrapper');
 
-    if (!episodiSpacer || !sidebarWrapper || !contentWrapper) {
+    if (!episodiSpacer || !containerWrapper) {
         console.error('Episodi elements not found');
         return;
     }
 
-    // Calculate centered layout positions
-    const viewportWidth = window.innerWidth;
+    // Calculate optimal sizing
+    calculateEpisodiSizing();
+
+    // Calculate animation parameters
     const viewportHeight = window.innerHeight;
-    const maxContainerWidth = Math.min(1200, viewportWidth * 0.95);
-    const sidebarWidth = 250;
-    const gap = 15; // Match original episodi-container gap
-
-    // Calculate content width (fills remaining space in container)
-    const contentWidth = maxContainerWidth - sidebarWidth - gap;
-
-    // Center the ENTIRE container (sidebar + gap + content together)
-    const containerLeft = (viewportWidth - maxContainerWidth) / 2;
-    const sidebarLeft = containerLeft;
-    const contentLeft = containerLeft + sidebarWidth + gap;
-
-    // Apply centered positioning
-    sidebarWrapper.style.left = sidebarLeft + 'px';
-    sidebarWrapper.style.width = sidebarWidth + 'px';
-    contentWrapper.style.left = contentLeft + 'px';
-    contentWrapper.style.width = contentWidth + 'px';
-    contentWrapper.style.right = ''; // Clear any previous right positioning
-
-    // Calculate deadzone position (centered vertically with offset)
     const headerHeight = 80;
     const deadzoneTop = headerHeight;
 
-    // Calculate starting positions (off-screen/bottom)
-    const sidebarStartTop = viewportHeight;
-    const contentStartTop = viewportHeight * 0.9; // Content starts closer (parallax)
+    // Calculate starting position (off-screen/bottom)
+    const startTop = viewportHeight;
 
-    // Calculate travel distances
-    const sidebarTravelDistance = sidebarStartTop - deadzoneTop;
-    const contentTravelDistance = contentStartTop - deadzoneTop;
+    // Calculate travel distance
+    const travelDistance = startTop - deadzoneTop;
 
     // Animation phase durations (in viewport heights)
     const entranceDuration = 1.2 * viewportHeight; // 1.2vh for entrance
@@ -1587,13 +1566,10 @@ function initEpisodiFixedSystem() {
 
     // Store animation state
     episodiAnimationState = {
-        sidebarWrapper,
-        contentWrapper,
+        containerWrapper,
         deadzoneTop,
-        sidebarStartTop,
-        contentStartTop,
-        sidebarTravelDistance,
-        contentTravelDistance,
+        startTop,
+        travelDistance,
         entranceStart,
         entranceEnd,
         deadzoneEnd,
@@ -1615,9 +1591,6 @@ function initEpisodiFixedSystem() {
     window.addEventListener('resize', handleEpisodiResize);
 
     console.log('Episodi fixed system initialized with animations:', {
-        containerLeft,
-        sidebarLeft,
-        contentLeft,
         entranceStart,
         entranceEnd,
         deadzoneEnd,
@@ -1626,26 +1599,115 @@ function initEpisodiFixedSystem() {
     });
 }
 
+// Calculate optimal episodi sizing based on vertical constraints
+function calculateEpisodiSizing() {
+    const containerWrapper = document.querySelector('.episodi-container-wrapper');
+    const sidebarWrapper = document.querySelector('.episodi-sidebar-wrapper');
+    const contentWrapper = document.querySelector('.episodi-content-wrapper');
+
+    if (!containerWrapper || !sidebarWrapper || !contentWrapper) return;
+
+    // Get actual sidebar width (from CSS clamp)
+    const sidebarWidth = sidebarWrapper.offsetWidth;
+    const gap = 15;
+
+    // Calculate available content width from container (min 75vw, max 95vw)
+    const viewportWidth = window.innerWidth;
+    const minContainerWidth = viewportWidth * 0.75;
+    const maxContainerWidth = viewportWidth * 0.95;
+
+    // Maximum available space for content
+    const maxAvailableContent = maxContainerWidth - sidebarWidth - gap;
+
+    // Vertical space calculations
+    const availableHeight = window.innerHeight - 160; // 80px top + 80px bottom padding
+    // Reduced overhead: video margin-bottom 15px, section margin-top 10px, header ~30px, spacing ~10px
+    const verticalOverhead = 65; // Reduced from 110
+    const effectiveHeight = availableHeight - verticalOverhead;
+
+    // Minimum coreografie video width (per video)
+    const minCoreografieWidth = 180;
+    const coreografieGaps = 40; // 2 gaps of 20px between 3 videos
+
+    // Scenario A: Try full-width video
+    let videoWidth = maxAvailableContent;
+    let videoHeight = videoWidth * 0.5625; // 16:9 aspect ratio
+    let remainingHeight = effectiveHeight - videoHeight;
+
+    // Calculate coreografie height and width from remaining vertical space
+    let coreografieVideoHeight = remainingHeight;
+    let coreografieVideoWidth = coreografieVideoHeight / 0.5625; // 16:9 aspect ratio
+
+    // Check if coreografie would be too small
+    if (coreografieVideoWidth < minCoreografieWidth) {
+        // Scenario B: Coreografie too small, reduce video width
+        coreografieVideoWidth = minCoreografieWidth;
+        coreografieVideoHeight = coreografieVideoWidth * 0.5625;
+
+        // Calculate video dimensions from remaining vertical space
+        videoHeight = effectiveHeight - coreografieVideoHeight;
+        videoWidth = videoHeight / 0.5625;
+
+        // Ensure video doesn't exceed container width
+        if (videoWidth > maxAvailableContent) {
+            videoWidth = maxAvailableContent;
+            videoHeight = videoWidth * 0.5625;
+            // Recalculate coreografie from remaining space
+            coreografieVideoHeight = effectiveHeight - videoHeight;
+            coreografieVideoWidth = coreografieVideoHeight / 0.5625;
+        }
+    }
+
+    // Calculate coreografie group width
+    const coreografieGroupWidth = (3 * coreografieVideoWidth) + coreografieGaps;
+
+    // Content wrapper should wrap the wider of video or coreografie group
+    const contentWidth = Math.max(videoWidth, coreografieGroupWidth);
+    contentWrapper.style.width = contentWidth + 'px';
+    contentWrapper.style.flexShrink = '0';
+
+    // Apply widths via CSS custom properties
+    containerWrapper.style.setProperty('--video-width', videoWidth + 'px');
+    containerWrapper.style.setProperty('--coreografie-width', coreografieVideoWidth + 'px');
+    containerWrapper.style.setProperty('--coreografie-group-width', coreografieGroupWidth + 'px');
+
+    // Ensure sidebar never wider than content
+    if (sidebarWidth > maxAvailableContent) {
+        const newSidebarWidth = Math.max(150, maxAvailableContent * 0.6);
+        sidebarWrapper.style.width = newSidebarWidth + 'px';
+    }
+
+    // Calculate centering based on CHILDREN width, not container width
+    // This ensures proper centering even when container is forced to min-width 75vw
+    const actualChildrenWidth = sidebarWidth + gap + contentWidth;
+    const leftPosition = (viewportWidth - actualChildrenWidth) / 2;
+    containerWrapper.style.left = leftPosition + 'px';
+    containerWrapper.style.transform = 'none'; // Remove CSS transform, use explicit positioning
+
+    console.log('Episodi sizing calculated:', {
+        viewportWidth,
+        maxContainerWidth,
+        sidebarWidth,
+        maxAvailableContent,
+        availableHeight,
+        effectiveHeight,
+        videoWidth,
+        videoHeight,
+        coreografieVideoWidth,
+        coreografieVideoHeight,
+        coreografieGroupWidth,
+        finalContentWidth: contentWidth,
+        actualChildrenWidth,
+        leftPosition
+    });
+}
+
 // Handle episodi resize
 function handleEpisodiResize() {
     if (!episodiAnimationState) return;
 
-    // Recalculate centered positions
-    const viewportWidth = window.innerWidth;
-    const maxContainerWidth = Math.min(1200, viewportWidth * 0.95);
-    const sidebarWidth = 250;
-    const gap = 15; // Match original episodi-container gap
-    const contentWidth = maxContainerWidth - sidebarWidth - gap;
-
-    const containerLeft = (viewportWidth - maxContainerWidth) / 2;
-    const sidebarLeft = containerLeft;
-    const contentLeft = containerLeft + sidebarWidth + gap;
-
-    // Update positions
-    episodiAnimationState.sidebarWrapper.style.left = sidebarLeft + 'px';
-    episodiAnimationState.contentWrapper.style.left = contentLeft + 'px';
-    episodiAnimationState.contentWrapper.style.width = contentWidth + 'px';
-    episodiAnimationState.contentWrapper.style.right = ''; // Clear any previous right positioning
+    // Recalculate optimal sizing
+    calculateEpisodiSizing();
 
     // Resize accordions
     resizeAccordionsToFit();
@@ -1659,49 +1721,53 @@ function updateEpisodiAnimations(scrollY) {
     if (!episodiAnimationState) return;
 
     const {
-        sidebarWrapper,
-        contentWrapper,
+        containerWrapper,
         deadzoneTop,
-        sidebarStartTop,
-        contentStartTop,
-        sidebarTravelDistance,
-        contentTravelDistance,
+        startTop,
+        travelDistance,
         entranceStart,
         entranceEnd,
         deadzoneEnd,
         exitEnd
     } = episodiAnimationState;
 
-    let sidebarTop, contentTop, sidebarOpacity, contentOpacity, sidebarTransform, contentTransform;
+    // Get child wrappers for parallax transforms
+    const sidebarWrapper = containerWrapper.querySelector('.episodi-sidebar-wrapper');
+    const contentWrapper = containerWrapper.querySelector('.episodi-content-wrapper');
+
+    let containerTop, opacity, sidebarTransform, contentTransform;
 
     if (scrollY < entranceStart) {
-        // Before entrance - elements off-screen
-        sidebarTop = sidebarStartTop;
-        contentTop = contentStartTop;
-        sidebarOpacity = contentOpacity = 0;
-        sidebarTransform = contentTransform = 'translateX(0)';
+        // Before entrance - container off-screen
+        containerTop = startTop;
+        opacity = 0;
+        sidebarTransform = 'translateY(0)';
+        contentTransform = 'translateY(0)';
 
     } else if (scrollY <= entranceEnd) {
-        // Phase 1: Entrance - parallax movement (sidebar slower, content faster)
+        // Phase 1: Entrance - container slides up, children have parallax transforms
         const progress = (scrollY - entranceStart) / (entranceEnd - entranceStart);
+        const easing = 1 - Math.pow(1 - progress, 3); // Ease-out-cubic
 
-        // Differential easing for parallax effect
-        const sidebarEasing = 1 - Math.pow(1 - progress, 4); // Slower (ease-out-quart)
-        const contentEasing = 1 - Math.pow(1 - progress, 3); // Faster (ease-out-cubic)
-
-        sidebarTop = sidebarStartTop - (sidebarTravelDistance * sidebarEasing);
-        contentTop = contentStartTop - (contentTravelDistance * contentEasing);
+        containerTop = startTop - (travelDistance * easing);
 
         // Fade in during first 30% of entrance
-        sidebarOpacity = contentOpacity = Math.min(1, progress / 0.3);
-        sidebarTransform = contentTransform = 'translateX(0)';
+        opacity = Math.min(1, progress / 0.3);
+
+        // Parallax effect: sidebar lags behind, content leads
+        const parallaxAmount = 50; // pixels
+        const sidebarLag = parallaxAmount * (1 - progress);
+        const contentLead = -parallaxAmount * (1 - progress);
+
+        sidebarTransform = `translateY(${sidebarLag}px)`;
+        contentTransform = `translateY(${contentLead}px)`;
 
     } else if (scrollY <= deadzoneEnd) {
-        // Phase 2: Deadzone - elements stay fixed at deadzone position
-        sidebarTop = deadzoneTop;
-        contentTop = deadzoneTop;
-        sidebarOpacity = contentOpacity = 1;
-        sidebarTransform = contentTransform = 'translateX(0)';
+        // Phase 2: Deadzone - container fixed at deadzone position
+        containerTop = deadzoneTop;
+        opacity = 1;
+        sidebarTransform = 'translateY(0)';
+        contentTransform = 'translateY(0)';
 
     } else if (scrollY <= exitEnd) {
         // Phase 3: Exit - horizontal slide out with fade
@@ -1709,7 +1775,6 @@ function updateEpisodiAnimations(scrollY) {
         const exitEasing = Math.pow(exitProgress, 1.25); // Ease-in for exit
 
         // Fade out (starts at 20%, fully faded at 70%)
-        let opacity = 1;
         if (exitProgress >= 0.2) {
             if (exitProgress >= 0.7) {
                 opacity = 0;
@@ -1717,6 +1782,8 @@ function updateEpisodiAnimations(scrollY) {
                 const fadeProgress = (exitProgress - 0.2) / 0.5;
                 opacity = 1 - Math.pow(fadeProgress, 0.5);
             }
+        } else {
+            opacity = 1;
         }
 
         // Horizontal slide (sidebar left, content right)
@@ -1724,29 +1791,25 @@ function updateEpisodiAnimations(scrollY) {
         const sidebarMoveX = -moveDistance * exitEasing;
         const contentMoveX = moveDistance * exitEasing;
 
-        sidebarTop = deadzoneTop;
-        contentTop = deadzoneTop;
-        sidebarOpacity = contentOpacity = opacity;
+        containerTop = deadzoneTop;
         sidebarTransform = `translateX(${sidebarMoveX}vw)`;
         contentTransform = `translateX(${contentMoveX}vw)`;
 
     } else {
         // After exit - fully hidden
-        sidebarTop = deadzoneTop;
-        contentTop = deadzoneTop;
-        sidebarOpacity = contentOpacity = 0;
+        containerTop = deadzoneTop;
+        opacity = 0;
         sidebarTransform = 'translateX(-60vw)';
         contentTransform = 'translateX(60vw)';
     }
 
-    // Apply animations
-    sidebarWrapper.style.top = sidebarTop + 'px';
-    sidebarWrapper.style.opacity = sidebarOpacity;
-    sidebarWrapper.style.transform = sidebarTransform;
+    // Apply animations to parent container
+    containerWrapper.style.top = containerTop + 'px';
+    containerWrapper.style.opacity = opacity;
 
-    contentWrapper.style.top = contentTop + 'px';
-    contentWrapper.style.opacity = contentOpacity;
-    contentWrapper.style.transform = contentTransform;
+    // Apply child transforms for parallax/exit effects
+    if (sidebarWrapper) sidebarWrapper.style.transform = sidebarTransform;
+    if (contentWrapper) contentWrapper.style.transform = contentTransform;
 }
 
 // Resize accordions to fit viewport dynamically

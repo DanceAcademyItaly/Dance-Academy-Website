@@ -313,26 +313,35 @@
             visibility: hidden;
         }
 
-        /* Episodi Sidebar Wrapper - Fixed positioning (centered by JS) */
-        .episodi-sidebar-wrapper {
+        /* Episodi Container Wrapper - Parent container (centered, fixed) */
+        .episodi-container-wrapper {
             position: fixed;
             top: 80px;
-            /* left, width set by JS for centered layout */
+            left: 50%;
+            transform: translateX(-50%);
             max-height: calc(100vh - 160px);
+            min-width: 75vw;
+            max-width: 95vw;
             z-index: 105;
             opacity: 0;
             /* No transition - JS handles animations */
+            display: flex;
+            gap: 15px;
         }
 
-        /* Episodi Content Wrapper - Fixed positioning (centered by JS) */
+        /* Episodi Sidebar Wrapper - Child of container */
+        .episodi-sidebar-wrapper {
+            width: clamp(150px, 18vw, 250px);
+            height: 100%;
+            flex-shrink: 0;
+        }
+
+        /* Episodi Content Wrapper - Child of container */
         .episodi-content-wrapper {
-            position: fixed;
-            top: 80px;
-            /* left, right set by JS for centered layout */
-            max-height: calc(100vh - 160px);
-            z-index: 106;
-            opacity: 0;
-            /* No transition - JS handles animations */
+            height: 100%;
+            flex: 1;
+            min-width: 0;
+            /* Max-width set by JS based on vertical constraints */
         }
 
         /* Sidebar - No overflow, dynamic sizing */
@@ -354,7 +363,7 @@
             justify-content: center;
             text-transform: uppercase;
             letter-spacing: var(--letter-spacing-wider);
-            font-size: var(--text-sm);
+            font-size: clamp(0.65rem, 0.6rem + 0.8vw, 0.875rem); /* Scales with viewport for sidebar */
             color: var(--text-secondary);
             cursor: pointer;
             background: rgba(0, 0, 0, 0.3);
@@ -398,9 +407,9 @@
         .episodio-item {
             text-transform: uppercase;
             letter-spacing: var(--letter-spacing-wide);
-            font-size: var(--text-xs);
+            font-size: clamp(0.6rem, 0.55rem + 0.6vw, 0.875rem); /* Scales with viewport for sidebar */
             color: var(--text-secondary);
-            padding: 16px 20px;
+            padding: clamp(12px, 1.2vw, 16px) clamp(14px, 1.5vw, 20px);
             background: var(--bg-dark);
             border-left: 2px solid transparent;
             cursor: pointer;
@@ -432,18 +441,20 @@
         }
 
         .episodio-content.active {
-            display: block;
-            width: fit-content;
+            display: flex;
+            flex-direction: column;
+            align-items: center; /* Center video and coreografie horizontally */
+            width: 100%; /* Fill content wrapper */
         }
 
         .video-principale {
-            width: 100%;
+            width: var(--video-width, 100%);
             max-width: 100%;
             min-width: 0;
             aspect-ratio: 16/9;
             background: var(--bg-dark);
             border: 1px solid var(--border-default);
-            margin-bottom: clamp(15px, 3vh, 30px);
+            margin-bottom: clamp(7px, 1.5vh, 15px); /* Reduced margin-bottom by 50% */
             flex-shrink: 0;
         }
 
@@ -454,14 +465,12 @@
         }
 
         .coreografie-section {
-            margin-top: clamp(10px, 2vh, 20px);
+            margin-top: clamp(5px, 1vh, 10px); /* Reduced by 50% */
             display: flex;
             flex-direction: column;
-            width: 100%;
-            max-width: 100%;
-            min-width: 0;
-            flex: 1;
-            min-height: 0;
+            align-items: center; /* Center children horizontally */
+            width: auto; /* Size to content, not full width */
+            flex-shrink: 0;
         }
 
         .coreografie-header {
@@ -469,24 +478,26 @@
             letter-spacing: var(--letter-spacing-wider);
             font-size: var(--text-sm);
             color: var(--text-secondary);
-            margin-bottom: 15px;
-            padding-bottom: 8px;
+            margin-bottom: 7px; /* Reduced by ~50% */
+            padding-bottom: 4px; /* Reduced by 50% */
             border-bottom: 1px solid var(--border-light);
             flex-shrink: 0;
-            width: 100%;
+            align-self: stretch; /* Stretch to match grid width */
+            text-align: center; /* Center the text */
         }
 
         .coreografie-grid {
             display: flex;
             gap: 20px;
             flex-shrink: 0;
-            width: 100%;
+            width: fit-content; /* Size to actual number of cards */
         }
 
         .coreo-card {
             background: var(--bg-medium);
             border: 1px solid var(--border-default);
-            flex: 1;
+            width: var(--coreografie-width, calc(33.333% - 13.333px)); /* Individual width or fallback */
+            flex-shrink: 0;
             transition: all 0.3s;
         }
 
@@ -506,7 +517,7 @@
         }
 
         .coreo-title {
-            padding: 15px;
+            padding: 5px; /* Reduced by ~2/3 (was 15px) */
             font-size: var(--text-xs);
             text-transform: uppercase;
             letter-spacing: var(--letter-spacing-wide);
@@ -1286,16 +1297,19 @@
     </div>
 
     <!-- Episodi - Restructured for direct backdrop-filter support -->
-    <!-- Fixed elements at body level as siblings to video -->
+    <!-- Fixed container at body level as sibling to video -->
 
-    <!-- Sidebar wrapper (independent fixed element) -->
-    <div class="episodi-sidebar-wrapper">
-        <aside class="sidebar" id="sidebar"></aside>
-    </div>
+    <!-- Parent container (centered fixed element) -->
+    <div class="episodi-container-wrapper">
+        <!-- Sidebar wrapper -->
+        <div class="episodi-sidebar-wrapper">
+            <aside class="sidebar" id="sidebar"></aside>
+        </div>
 
-    <!-- Content wrapper (independent fixed element) -->
-    <div class="episodi-content-wrapper">
-        <div class="content-area" id="contentArea"></div>
+        <!-- Content wrapper -->
+        <div class="episodi-content-wrapper">
+            <div class="content-area" id="contentArea"></div>
+        </div>
     </div>
 
     <!-- Candidati - Restructured for direct backdrop-filter support -->
