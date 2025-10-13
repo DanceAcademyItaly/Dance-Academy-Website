@@ -2661,6 +2661,75 @@ function initCandidatiCardStack() {
     const sidebarEasing = t => 1 - Math.pow(1 - t, 2.5);
     const contentEasing = t => 1 - Math.pow(1 - t, 1.8);
 
+    // Card fade-out configuration - tunable system for progressive card disappearance
+    // HOW IT WORKS: Card N fades out while card N+fadeOffset is entering
+    // EXAMPLE: With fadeOffset=2, card 0 fades while card 2 enters, card 1 fades while card 3 enters, etc.
+    const cardFadeOutConfig = {
+        enabled: true,
+        // How many cards ahead triggers the fade-out (2 = card N fades when card N+2 enters)
+        fadeOffset: 2,
+        // Progress range of trigger card during which the fade occurs
+        fadeStartThreshold: 0.0,  // Fade starts when trigger card is at 0% of its entrance
+        fadeEndThreshold: 1.0,    // Fade completes when trigger card is at 100% of its entrance
+        // Easing function for the fade (t = 0 to 1, where 0 = full opacity, 1 = min opacity)
+        // Examples: (t) => t (linear), (t) => Math.pow(t, 2) (ease-in), (t) => 1 - Math.pow(1 - t, 2) (ease-out)
+        fadeEasing: (t) => t,
+        // Minimum opacity for faded cards (0 = fully transparent, 0.1 = slightly visible)
+        minOpacity: 0,
+        // Whether to also fade the card's shadow (true = shadow fades with card)
+        fadeShadow: true
+    };
+
+    // Helper function to calculate fade-out multiplier for a card based on overall entrance progress
+    // This multiplier persists across all phases (entrance, deadzone, exit)
+    // Returns 1.0 (no fade) to minOpacity (fully faded)
+    function calculateCardFadeOutMultiplier(cardIndex, totalProgress) {
+        if (!cardFadeOutConfig.enabled) return 1.0;
+
+        const triggerCardIndex = cardIndex + cardFadeOutConfig.fadeOffset;
+
+        // If no trigger card exists (e.g., last cards), no fade-out
+        if (triggerCardIndex >= totalCards) return 1.0;
+
+        const triggerCardEntranceFraction = triggerCardIndex / totalCards;
+        const triggerCardCompleteFraction = (triggerCardIndex + 1) / totalCards;
+
+        // Calculate trigger card's entrance progress
+        let triggerCardProgress = 0;
+        if (totalProgress >= triggerCardEntranceFraction) {
+            if (totalProgress <= triggerCardCompleteFraction) {
+                const fractionRange = triggerCardCompleteFraction - triggerCardEntranceFraction;
+                triggerCardProgress = fractionRange > 0 ? (totalProgress - triggerCardEntranceFraction) / fractionRange : 1;
+            } else {
+                triggerCardProgress = 1;
+            }
+        }
+
+        // Apply fade-out if trigger card is within fade thresholds
+        if (triggerCardProgress >= cardFadeOutConfig.fadeStartThreshold &&
+            triggerCardProgress <= cardFadeOutConfig.fadeEndThreshold) {
+
+            // Calculate fade progress within threshold range
+            const thresholdRange = cardFadeOutConfig.fadeEndThreshold - cardFadeOutConfig.fadeStartThreshold;
+            const fadeProgress = thresholdRange > 0
+                ? (triggerCardProgress - cardFadeOutConfig.fadeStartThreshold) / thresholdRange
+                : 1;
+
+            // Apply easing to fade progress
+            const easedFadeProgress = cardFadeOutConfig.fadeEasing(Math.max(0, Math.min(1, fadeProgress)));
+
+            // Interpolate from 1.0 (full) to minOpacity (faded)
+            return 1 - (easedFadeProgress * (1 - cardFadeOutConfig.minOpacity));
+
+        } else if (triggerCardProgress > cardFadeOutConfig.fadeEndThreshold) {
+            // Trigger card has passed fade range - return min opacity
+            return cardFadeOutConfig.minOpacity;
+        }
+
+        // Trigger card hasn't reached fade start - no fade
+        return 1.0;
+    }
+
     let currentCardIndex = 0;
 
     function updateNavigationButtons(hideNonCurrent = false) {
@@ -2750,7 +2819,9 @@ function initCandidatiCardStack() {
         optimizeCardInternalSizing, // Store for resize recalculation
         sidebarEasing,
         contentEasing,
-        titleHiddenY
+        titleHiddenY,
+        cardFadeOutConfig,  // Card fade-out configuration
+        calculateCardFadeOutMultiplier  // Helper function for persistent fade-out
     };
 
     // Add resize handler for responsive container and card height recalculation
@@ -3009,7 +3080,9 @@ function updateCandidatiCardStack(scrollY, cardState) {
         calculateCardOffsets,
         sidebarEasing,
         contentEasing,
-        titleHiddenY
+        titleHiddenY,
+        cardFadeOutConfig,
+        calculateCardFadeOutMultiplier
     } = cardState;
 
     // No visibility control needed - elements are independent and always in layout
@@ -3094,11 +3167,20 @@ function updateCandidatiCardStack(scrollY, cardState) {
             const cardOffsetX = centerOffsetX + (index * offsets.x);
             const translateXVw = 100 * (1 - easedCardProgress);
 
+            // Calculate entrance opacity
+            const entranceOpacity = easedCardProgress;
+
+            // Calculate persistent fade-out multiplier (based on trigger card's progress)
+            const fadeOutMultiplier = calculateCardFadeOutMultiplier(index, totalProgress);
+
+            // Final opacity = entrance * fade-out
+            const finalOpacity = entranceOpacity * fadeOutMultiplier;
+
             return {
                 wrapper,
                 visibility: 'visible',
                 transform: `translate(calc(-50% + ${cardOffsetX}px), 0) translateX(${translateXVw}vw)`,
-                opacity: easedCardProgress,
+                opacity: finalOpacity,
                 cardProgress,
                 index
             };
@@ -3109,6 +3191,19 @@ function updateCandidatiCardStack(scrollY, cardState) {
             wrapper.style.visibility = visibility;
             wrapper.style.transform = transform;
             wrapper.style.opacity = opacity;
+
+            // Apply shadow fade if enabled
+            if (cardFadeOutConfig.enabled && cardFadeOutConfig.fadeShadow) {
+                // Scale shadow opacity to match card opacity (shadow fades with card)
+                const shadowOpacity = opacity;
+                wrapper.style.boxShadow = `
+                    0 20px 60px rgba(0, 0, 0, ${0.9 * shadowOpacity}),
+                    0 12px 32px rgba(0, 0, 0, ${0.7 * shadowOpacity}),
+                    0 6px 16px rgba(0, 0, 0, ${0.5 * shadowOpacity}),
+                    0 2px 8px rgba(0, 0, 0, ${0.4 * shadowOpacity}),
+                    inset 0 -1px 0 rgba(0, 0, 0, ${0.6 * shadowOpacity})
+                `;
+            }
         });
 
         // Update current card index (find highest card >50% visible)
@@ -3151,13 +3246,17 @@ function updateCandidatiCardStack(scrollY, cardState) {
         }
 
     } else if (scrollY < cardEntranceStart) {
-        // Before phase 2 - all card wrappers hidden (OPTIMIZED BATCHED)
-        const cardUpdates = cardWrappers.map((wrapper, index) => ({
-            wrapper,
-            visibility: 'visible',
-            transform: `translate(calc(-50% + ${centerOffsetX + (index * offsets.x)}px), 0) translateX(100vw)`,
-            opacity: '0'
-        }));
+        // Before phase 2 - all card wrappers hidden off-screen (OPTIMIZED BATCHED)
+        const cardUpdates = cardWrappers.map((wrapper, index) => {
+            const cardOffsetX = centerOffsetX + (index * offsets.x);
+
+            return {
+                wrapper,
+                visibility: 'visible',
+                transform: `translate(calc(-50% + ${cardOffsetX}px), 0) translateX(100vw)`,
+                opacity: 0  // Hidden (entrance hasn't started)
+            };
+        });
 
         cardUpdates.forEach(({ wrapper, visibility, transform, opacity }) => {
             wrapper.style.visibility = visibility;
@@ -3186,17 +3285,37 @@ function updateCandidatiCardStack(scrollY, cardState) {
     // PHASE 3: Deadzone (interaction phase, 200vh) - OPTIMIZED BATCHED DOM UPDATES
     else if (scrollY > cardEntranceEnd && scrollY <= cardDeadzoneEnd) {
         // All card wrappers at final position (OPTIMIZED BATCHED)
-        const cardUpdates = cardWrappers.map((wrapper, index) => ({
-            wrapper,
-            visibility: 'visible',
-            transform: `translate(calc(-50% + ${centerOffsetX + (index * offsets.x)}px), 0) translateX(0vw)`,
-            opacity: '1'
-        }));
+        // Maintain fade-out state from Phase 2 (totalProgress = 1.0 at end of entrance)
+        const cardUpdates = cardWrappers.map((wrapper, index) => {
+            const cardOffsetX = centerOffsetX + (index * offsets.x);
+
+            // Calculate persistent fade-out multiplier at end of entrance (totalProgress = 1.0)
+            const fadeOutMultiplier = calculateCardFadeOutMultiplier(index, 1.0);
+
+            return {
+                wrapper,
+                visibility: 'visible',
+                transform: `translate(calc(-50% + ${cardOffsetX}px), 0) translateX(0vw)`,
+                opacity: fadeOutMultiplier  // Maintain fade-out state
+            };
+        });
 
         cardUpdates.forEach(({ wrapper, visibility, transform, opacity }) => {
             wrapper.style.visibility = visibility;
             wrapper.style.transform = transform;
             wrapper.style.opacity = opacity;
+
+            // Apply shadow fade if enabled
+            if (cardFadeOutConfig.enabled && cardFadeOutConfig.fadeShadow) {
+                const shadowOpacity = opacity;
+                wrapper.style.boxShadow = `
+                    0 20px 60px rgba(0, 0, 0, ${0.9 * shadowOpacity}),
+                    0 12px 32px rgba(0, 0, 0, ${0.7 * shadowOpacity}),
+                    0 6px 16px rgba(0, 0, 0, ${0.5 * shadowOpacity}),
+                    0 2px 8px rgba(0, 0, 0, ${0.4 * shadowOpacity}),
+                    inset 0 -1px 0 rgba(0, 0, 0, ${0.6 * shadowOpacity})
+                `;
+            }
         });
 
         // Maintain the last card from Phase 2 (don't reset to card 0)
@@ -3226,40 +3345,67 @@ function updateCandidatiCardStack(scrollY, cardState) {
     }
 
     // PHASE 4: Exit animation (scale down, fade out, video blur to black) - OPTIMIZED BATCHED DOM UPDATES
+    // Cards that already faded out (opacity = 0) stay at 0 (already "exited")
+    // Cards still visible fade from their fade-out state to 0
     else if (scrollY > cardDeadzoneEnd && scrollY <= exitAnimationEnd) {
         const exitProgress = (scrollY - cardDeadzoneEnd) / (exitAnimationEnd - cardDeadzoneEnd);
         const easedExitProgress = contentEasing(exitProgress);
 
-        // Scale and fade out all elements simultaneously (subtle scale)
+        // Scale for all elements (subtle scale)
         const scale = 1 - (easedExitProgress * 0.05); // Scale from 1.0 to 0.95 (subtle)
-        const opacity = 1 - easedExitProgress; // Fade from 1 to 0
 
-        // Reuse offsets already calculated above (no redundant calculation)
+        // Exit fade multiplier: 1 (start of exit) to 0 (end of exit)
+        const exitFadeMultiplier = 1 - easedExitProgress;
 
-        // Apply exit animation to title
+        // Apply exit animation to title (always visible, so fades from 1 to 0)
         candidatiTitleWrapper.style.visibility = 'visible';
         candidatiTitleWrapper.style.transform = `translate(-50%, 0px) scale(${scale})`;
-        candidatiTitleWrapper.style.opacity = opacity;
+        candidatiTitleWrapper.style.opacity = exitFadeMultiplier;
 
         // Apply exit animation to all card wrappers (OPTIMIZED BATCHED)
-        const cardUpdates = cardWrappers.map((wrapper, index) => ({
-            wrapper,
-            visibility: 'visible',
-            transform: `translate(calc(-50% + ${centerOffsetX + (index * offsets.x)}px), 0) translateX(0vw) scale(${scale})`,
-            opacity
-        }));
+        // Cards fade from their fade-out state to 0
+        const cardUpdates = cardWrappers.map((wrapper, index) => {
+            const cardOffsetX = centerOffsetX + (index * offsets.x);
+
+            // Get the card's fade-out state at end of entrance (totalProgress = 1.0)
+            const fadeOutMultiplier = calculateCardFadeOutMultiplier(index, 1.0);
+
+            // Final opacity = fade-out state × exit fade
+            // If card already faded (fadeOutMultiplier = 0), it stays at 0 (no exit animation needed)
+            // If card is visible (fadeOutMultiplier > 0), it fades proportionally to 0
+            const finalOpacity = fadeOutMultiplier * exitFadeMultiplier;
+
+            return {
+                wrapper,
+                visibility: 'visible',
+                transform: `translate(calc(-50% + ${cardOffsetX}px), 0) translateX(0vw) scale(${scale})`,
+                opacity: finalOpacity
+            };
+        });
 
         cardUpdates.forEach(({ wrapper, visibility, transform, opacity }) => {
             wrapper.style.visibility = visibility;
             wrapper.style.transform = transform;
             wrapper.style.opacity = opacity;
+
+            // Apply shadow fade proportional to card opacity
+            if (cardFadeOutConfig.enabled && cardFadeOutConfig.fadeShadow) {
+                const shadowOpacity = opacity;
+                wrapper.style.boxShadow = `
+                    0 20px 60px rgba(0, 0, 0, ${0.9 * shadowOpacity}),
+                    0 12px 32px rgba(0, 0, 0, ${0.7 * shadowOpacity}),
+                    0 6px 16px rgba(0, 0, 0, ${0.5 * shadowOpacity}),
+                    0 2px 8px rgba(0, 0, 0, ${0.4 * shadowOpacity}),
+                    inset 0 -1px 0 rgba(0, 0, 0, ${0.6 * shadowOpacity})
+                `;
+            }
         });
 
-        // Apply exit animation to submit button
+        // Apply exit animation to submit button (fades from 1 to 0 like title)
         if (submitButtonContainer) {
             submitButtonContainer.style.visibility = 'visible';
             submitButtonContainer.style.transform = `translateX(-50%) scale(${scale})`;
-            submitButtonContainer.style.opacity = opacity;
+            submitButtonContainer.style.opacity = exitFadeMultiplier;
         }
 
         // Progressively blur and darken video to black
