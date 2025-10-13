@@ -6,52 +6,26 @@
 1. **HTML restructured** - Cards are now independent fixed elements
 2. **CSS updated** - Proper z-index stacking (100-104 for cards, 110 title, 111 submit)
 3. **JavaScript Phase 1** - Element references updated, container code removed
-4. **JavaScript Phase 2** - Scroll animations updated to target wrappers
-
-### 🔄 In Progress:
-Scroll animations are 95% done. Only need to handle one edge case.
+4. **JavaScript Phase 2** - Scroll animations updated to target wrappers, destructuring fixed
+5. **Navigation fixed** - Uses visibility:hidden during deadzone, all visible during scroll animations
+6. **Backdrop-filter fixed** - Moved to wrapper level to blur video background correctly
+7. **CRITICAL: DOM restructuring** - Moved candidati elements outside scroll-container to body level
 
 ### ⚠️ Remaining Tasks:
 
-#### 1. Check for Old `candidatiSection` References
-The old `candidatiSection` variable may still be referenced somewhere. Need to search and remove:
+#### ✅ 1. Check for Old `candidatiSection` References - COMPLETED
+No remaining references found.
 
-```bash
-# Search for it:
-grep -n "candidatiSection\." dance-academy.js
-```
+#### ✅ 2. Commit Phase 2 - COMPLETED
+Committed as 55085f8.
 
-**Expected locations:**
-- Around line 2930-2936 in `updateScrollElements` function
-- These lines try to show/hide candidatiSection which no longer exists
+#### ✅ 3. Fix Navigation and Backdrop-filter - COMPLETED
+Committed as d450149.
 
-**Fix:** Simply delete those lines - they're not needed anymore.
+#### ✅ 4. Fix DOM Structure - COMPLETED
+Committed as 234ac6b - Moved candidati outside scroll-container.
 
-#### 2. Commit Final Changes
-
-```bash
-git add dance-academy.js
-git commit -m "Complete candidati refactoring Phase 2: scroll animations
-
-Update all scroll animations to target cardWrappers and candidatiTitleWrapper
-instead of old container-based elements.
-
-Changes:
-- Title animations now target candidatiTitleWrapper
-- Card animations now target cardWrappers (not individual cards)
-- All three phases updated: entrance, before-entrance, deadzone
-- Remove old candidatiSection visibility toggling
-
-Result: Cards are now independent fixed elements at body level,
-siblings to video background. backdrop-filter on first card can now
-blur the video background successfully.
-
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
-
-Co-Authored-By: Claude <noreply@anthropic.com>"
-```
-
-#### 3. Test Functionality
+#### 5. Test Functionality - IN PROGRESS
 
 Open index.html and verify:
 1. ✅ Scroll to candidati section
@@ -85,11 +59,19 @@ document.querySelector('video')
 
 ## Architecture Summary
 
-**New Structure (Working):**
+**New Structure (Working) - FINAL:**
 ```
 body
-├─ video (z-index: -1, fixed) ← Background
-├─ candidati-spacer (relative) ← Scroll range
+├─ header
+├─ intro-overlay
+├─ video (z-index: -1, fixed) ← Background, direct child of body
+├─ main.scroll-container
+│   ├─ hero-block
+│   ├─ episodi-block
+│   ├─ missione-block
+│   ├─ candidati-spacer (relative, .block, data-block="candidati") ← Scroll range for candidati
+│   └─ contatti-block
+├─ </main>
 ├─ candidati-title-wrapper (fixed, z: 110) ← Can blur video!
 ├─ candidati-card-wrapper[0] (fixed, z: 100) ← Can blur video!
 ├─ candidati-card-wrapper[1] (fixed, z: 101) ← Can blur video + card 0!
@@ -99,11 +81,17 @@ body
 └─ submit-button-container (fixed, z: 111) ← Above everything
 ```
 
+**Key Architecture Points:**
+- candidati-spacer is INSIDE scroll-container (creates scroll range in correct position)
+- candidati-spacer has `.block data-block="candidati"` for scroll tracking
+- Fixed candidati elements (title, cards, button) are OUTSIDE scroll-container (for backdrop-filter)
+- This hybrid structure allows scroll tracking AND backdrop-filter to work
+
 **Why This Works:**
-- All elements are siblings in DOM
-- All in same root stacking context
-- `backdrop-filter` on any card can reach video background
-- Higher z-index cards can blur lower z-index cards
+- Video and candidati elements are TRUE siblings (direct children of body)
+- All in same root stacking context (not nested in scroll-container)
+- `backdrop-filter` on wrapper can blur video background across same stacking context
+- Higher z-index cards can blur lower z-index cards + video
 
 ## Key Code Locations
 
@@ -148,3 +136,26 @@ document.querySelector('.candidati-card-wrapper[data-card="0"]').style.backdropF
 ✅ **First card shows blur effect on video background**
 ✅ Cards stack properly with incrementing z-indexes
 ✅ All functionality from before refactoring still works
+
+## Critical Bug Fixed - Variable Scope Mismatch
+
+**Root Cause:** Two separate `currentCardIndex` variables were out of sync:
+- Local variable (used by `updateNavigationButtons()` via closure) - never updated during scroll
+- State property `cardState.currentCardIndex` - updated during scroll, never read
+
+**Result:** Card 4 would disappear at end of animation because `updateNavigationButtons()` always saw `currentCardIndex = 0`
+
+**Proper Fix:**
+1. Update LOCAL variable during Phase 2 entrance animation (not state property)
+2. Don't call `updateNavigationButtons()` during Phase 2 - it's not needed and causes performance issues
+3. Only call `updateNavigationButtons(true)` during Phase 3 (deadzone) and manual navigation
+
+**Changes:**
+- Line 3014: `currentCardIndex = index` - update local variable silently during entrance
+- Line 3014: Removed `updateNavigationButtons()` call - not needed during Phase 2
+- Line 3059: `updateNavigationButtons(true)` - only called when entering deadzone to hide non-current cards
+
+**Why This Works:**
+- During Phase 2: currentCardIndex tracks progress (0→4), but UI doesn't change (all cards visible)
+- Entering Phase 3: currentCardIndex = 4, so card 4 stays visible
+- Manual navigation: Updates currentCardIndex and calls updateNavigationButtons(true) to switch cards

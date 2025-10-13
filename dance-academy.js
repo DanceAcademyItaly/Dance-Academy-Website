@@ -1521,7 +1521,10 @@ function switchEpisode(episodeId) {
     });
 }
 
-// Initialize episodi fixed positioning system
+// Episodi animation state
+let episodiAnimationState = null;
+
+// Initialize episodi fixed positioning system with scroll-driven animations
 function initEpisodiFixedSystem() {
     const episodiSpacer = document.querySelector('.episodi-spacer');
     const sidebarWrapper = document.querySelector('.episodi-sidebar-wrapper');
@@ -1532,40 +1535,214 @@ function initEpisodiFixedSystem() {
         return;
     }
 
-    // Set spacer height (episodi visible for 100vh of scroll)
-    const spacerHeight = window.innerHeight;
-    episodiSpacer.style.height = spacerHeight + 'px';
+    // Calculate centered layout positions
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+    const maxContainerWidth = Math.min(1200, viewportWidth * 0.95);
+    const sidebarWidth = 250;
+    const gap = 20;
 
-    // Track scroll position for visibility
-    function updateEpisodiVisibility() {
-        const spacerTop = episodiSpacer.offsetTop;
-        const spacerBottom = spacerTop + spacerHeight;
-        const scrollY = window.scrollY;
+    // Center the container
+    const containerLeft = (viewportWidth - maxContainerWidth) / 2;
+    const sidebarLeft = containerLeft;
+    const contentLeft = containerLeft + sidebarWidth + gap;
+    const contentRight = containerLeft;
 
-        const isVisible = scrollY >= spacerTop - window.innerHeight * 0.2 && scrollY < spacerBottom + window.innerHeight * 0.2;
+    // Apply centered positioning
+    sidebarWrapper.style.left = sidebarLeft + 'px';
+    sidebarWrapper.style.width = sidebarWidth + 'px';
+    contentWrapper.style.left = contentLeft + 'px';
+    contentWrapper.style.right = contentRight + 'px';
 
-        sidebarWrapper.classList.toggle('visible', isVisible);
-        contentWrapper.classList.toggle('visible', isVisible);
-    }
+    // Calculate deadzone position (centered vertically with offset)
+    const headerHeight = 80;
+    const deadzoneTop = headerHeight;
+
+    // Calculate starting positions (off-screen/bottom)
+    const sidebarStartTop = viewportHeight;
+    const contentStartTop = viewportHeight * 0.9; // Content starts closer (parallax)
+
+    // Calculate travel distances
+    const sidebarTravelDistance = sidebarStartTop - deadzoneTop;
+    const contentTravelDistance = contentStartTop - deadzoneTop;
+
+    // Animation phase durations (in viewport heights)
+    const entranceDuration = 1.2 * viewportHeight; // 1.2vh for entrance
+    const deadzoneDuration = 0.5 * viewportHeight; // 0.5vh deadzone
+    const exitDuration = 1.0 * viewportHeight; // 1vh for exit
+
+    // Set spacer height to cover all phases
+    const totalScrollRange = entranceDuration + deadzoneDuration + exitDuration;
+    episodiSpacer.style.height = totalScrollRange + 'px';
+
+    // Calculate scroll positions for each phase
+    const spacerTop = episodiSpacer.offsetTop;
+    const entranceStart = spacerTop;
+    const entranceEnd = entranceStart + entranceDuration;
+    const deadzoneEnd = entranceEnd + deadzoneDuration;
+    const exitEnd = deadzoneEnd + exitDuration;
+
+    // Store animation state
+    episodiAnimationState = {
+        sidebarWrapper,
+        contentWrapper,
+        deadzoneTop,
+        sidebarStartTop,
+        contentStartTop,
+        sidebarTravelDistance,
+        contentTravelDistance,
+        entranceStart,
+        entranceEnd,
+        deadzoneEnd,
+        exitEnd
+    };
 
     // Update on scroll (through Lenis)
     if (lenis) {
-        lenis.on('scroll', updateEpisodiVisibility);
+        lenis.on('scroll', () => updateEpisodiAnimations(window.scrollY));
     }
 
-    // Initial check
-    updateEpisodiVisibility();
+    // Initial animation update
+    updateEpisodiAnimations(window.scrollY);
 
     // Dynamic accordion sizing
     resizeAccordionsToFit();
 
     // Add resize handler
-    window.addEventListener('resize', resizeAccordionsToFit);
+    window.addEventListener('resize', handleEpisodiResize);
 
-    console.log('Episodi fixed system initialized:', {
-        spacerHeight,
-        spacerTop: episodiSpacer.offsetTop
+    console.log('Episodi fixed system initialized with animations:', {
+        containerLeft,
+        sidebarLeft,
+        contentLeft,
+        entranceStart,
+        entranceEnd,
+        deadzoneEnd,
+        exitEnd,
+        totalScrollRange
     });
+}
+
+// Handle episodi resize
+function handleEpisodiResize() {
+    if (!episodiAnimationState) return;
+
+    // Recalculate centered positions
+    const viewportWidth = window.innerWidth;
+    const maxContainerWidth = Math.min(1200, viewportWidth * 0.95);
+    const sidebarWidth = 250;
+    const gap = 20;
+
+    const containerLeft = (viewportWidth - maxContainerWidth) / 2;
+    const sidebarLeft = containerLeft;
+    const contentLeft = containerLeft + sidebarWidth + gap;
+    const contentRight = containerLeft;
+
+    // Update positions
+    episodiAnimationState.sidebarWrapper.style.left = sidebarLeft + 'px';
+    episodiAnimationState.contentWrapper.style.left = contentLeft + 'px';
+    episodiAnimationState.contentWrapper.style.right = contentRight + 'px';
+
+    // Resize accordions
+    resizeAccordionsToFit();
+
+    // Update current animation frame
+    updateEpisodiAnimations(window.scrollY);
+}
+
+// Update episodi animations based on scroll position
+function updateEpisodiAnimations(scrollY) {
+    if (!episodiAnimationState) return;
+
+    const {
+        sidebarWrapper,
+        contentWrapper,
+        deadzoneTop,
+        sidebarStartTop,
+        contentStartTop,
+        sidebarTravelDistance,
+        contentTravelDistance,
+        entranceStart,
+        entranceEnd,
+        deadzoneEnd,
+        exitEnd
+    } = episodiAnimationState;
+
+    let sidebarTop, contentTop, sidebarOpacity, contentOpacity, sidebarTransform, contentTransform;
+
+    if (scrollY < entranceStart) {
+        // Before entrance - elements off-screen
+        sidebarTop = sidebarStartTop;
+        contentTop = contentStartTop;
+        sidebarOpacity = contentOpacity = 0;
+        sidebarTransform = contentTransform = 'translateX(0)';
+
+    } else if (scrollY <= entranceEnd) {
+        // Phase 1: Entrance - parallax movement (sidebar slower, content faster)
+        const progress = (scrollY - entranceStart) / (entranceEnd - entranceStart);
+
+        // Differential easing for parallax effect
+        const sidebarEasing = 1 - Math.pow(1 - progress, 4); // Slower (ease-out-quart)
+        const contentEasing = 1 - Math.pow(1 - progress, 3); // Faster (ease-out-cubic)
+
+        sidebarTop = sidebarStartTop - (sidebarTravelDistance * sidebarEasing);
+        contentTop = contentStartTop - (contentTravelDistance * contentEasing);
+
+        // Fade in during first 30% of entrance
+        sidebarOpacity = contentOpacity = Math.min(1, progress / 0.3);
+        sidebarTransform = contentTransform = 'translateX(0)';
+
+    } else if (scrollY <= deadzoneEnd) {
+        // Phase 2: Deadzone - elements stay fixed at deadzone position
+        sidebarTop = deadzoneTop;
+        contentTop = deadzoneTop;
+        sidebarOpacity = contentOpacity = 1;
+        sidebarTransform = contentTransform = 'translateX(0)';
+
+    } else if (scrollY <= exitEnd) {
+        // Phase 3: Exit - horizontal slide out with fade
+        const exitProgress = (scrollY - deadzoneEnd) / (exitEnd - deadzoneEnd);
+        const exitEasing = Math.pow(exitProgress, 1.25); // Ease-in for exit
+
+        // Fade out (starts at 20%, fully faded at 70%)
+        let opacity = 1;
+        if (exitProgress >= 0.2) {
+            if (exitProgress >= 0.7) {
+                opacity = 0;
+            } else {
+                const fadeProgress = (exitProgress - 0.2) / 0.5;
+                opacity = 1 - Math.pow(fadeProgress, 0.5);
+            }
+        }
+
+        // Horizontal slide (sidebar left, content right)
+        const moveDistance = 60; // vw
+        const sidebarMoveX = -moveDistance * exitEasing;
+        const contentMoveX = moveDistance * exitEasing;
+
+        sidebarTop = deadzoneTop;
+        contentTop = deadzoneTop;
+        sidebarOpacity = contentOpacity = opacity;
+        sidebarTransform = `translateX(${sidebarMoveX}vw)`;
+        contentTransform = `translateX(${contentMoveX}vw)`;
+
+    } else {
+        // After exit - fully hidden
+        sidebarTop = deadzoneTop;
+        contentTop = deadzoneTop;
+        sidebarOpacity = contentOpacity = 0;
+        sidebarTransform = 'translateX(-60vw)';
+        contentTransform = 'translateX(60vw)';
+    }
+
+    // Apply animations
+    sidebarWrapper.style.top = sidebarTop + 'px';
+    sidebarWrapper.style.opacity = sidebarOpacity;
+    sidebarWrapper.style.transform = sidebarTransform;
+
+    contentWrapper.style.top = contentTop + 'px';
+    contentWrapper.style.opacity = contentOpacity;
+    contentWrapper.style.transform = contentTransform;
 }
 
 // Resize accordions to fit viewport dynamically
