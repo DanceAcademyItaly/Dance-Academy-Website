@@ -1542,17 +1542,19 @@ function initEpisodiFixedSystem() {
     const sidebarWidth = 250;
     const gap = 20;
 
-    // Center the container
+    // Calculate content width (fills remaining space in container)
+    const contentWidth = maxContainerWidth - sidebarWidth - gap;
+
+    // Center the ENTIRE container (sidebar + gap + content together)
     const containerLeft = (viewportWidth - maxContainerWidth) / 2;
     const sidebarLeft = containerLeft;
     const contentLeft = containerLeft + sidebarWidth + gap;
-    const contentRight = containerLeft;
 
     // Apply centered positioning
     sidebarWrapper.style.left = sidebarLeft + 'px';
     sidebarWrapper.style.width = sidebarWidth + 'px';
     contentWrapper.style.left = contentLeft + 'px';
-    contentWrapper.style.right = contentRight + 'px';
+    contentWrapper.style.width = contentWidth + 'px';
 
     // Calculate deadzone position (centered vertically with offset)
     const headerHeight = 80;
@@ -1632,16 +1634,16 @@ function handleEpisodiResize() {
     const maxContainerWidth = Math.min(1200, viewportWidth * 0.95);
     const sidebarWidth = 250;
     const gap = 20;
+    const contentWidth = maxContainerWidth - sidebarWidth - gap;
 
     const containerLeft = (viewportWidth - maxContainerWidth) / 2;
     const sidebarLeft = containerLeft;
     const contentLeft = containerLeft + sidebarWidth + gap;
-    const contentRight = containerLeft;
 
     // Update positions
     episodiAnimationState.sidebarWrapper.style.left = sidebarLeft + 'px';
     episodiAnimationState.contentWrapper.style.left = contentLeft + 'px';
-    episodiAnimationState.contentWrapper.style.right = contentRight + 'px';
+    episodiAnimationState.contentWrapper.style.width = contentWidth + 'px';
 
     // Resize accordions
     resizeAccordionsToFit();
