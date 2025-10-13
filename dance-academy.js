@@ -1540,7 +1540,7 @@ function initEpisodiFixedSystem() {
     const viewportHeight = window.innerHeight;
     const maxContainerWidth = Math.min(1200, viewportWidth * 0.95);
     const sidebarWidth = 250;
-    const gap = 20;
+    const gap = 15; // Match original episodi-container gap
 
     // Calculate content width (fills remaining space in container)
     const contentWidth = maxContainerWidth - sidebarWidth - gap;
@@ -1634,7 +1634,7 @@ function handleEpisodiResize() {
     const viewportWidth = window.innerWidth;
     const maxContainerWidth = Math.min(1200, viewportWidth * 0.95);
     const sidebarWidth = 250;
-    const gap = 20;
+    const gap = 15; // Match original episodi-container gap
     const contentWidth = maxContainerWidth - sidebarWidth - gap;
 
     const containerLeft = (viewportWidth - maxContainerWidth) / 2;
