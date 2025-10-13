@@ -928,7 +928,7 @@
             padding: clamp(40px, 8vh, 80px) clamp(20px, 5vw, 40px);
             display: grid;
             place-items: center;
-            background: rgba(0, 0, 0, 0.6);
+            background: transparent;
             overflow: hidden;
         }
 
@@ -1269,6 +1269,9 @@
             <div id="missioneContainer" class="missione-container"></div>
         </div>
 
+        <!-- Candidati spacer - creates scroll range for candidati section -->
+        <!-- Actual candidati elements (title, cards, button) are fixed at body level below -->
+        <div class="candidati-spacer block" data-block="candidati"></div>
 
         <div class="contatti-block block" data-block="contatti">
             <div id="contattiContainer" class="contatti-container"></div>
@@ -1276,8 +1279,7 @@
     </main>
 
         <!-- Candidati - Restructured for direct backdrop-filter support -->
-        <!-- Spacer for scroll range -->
-        <div class="candidati-spacer"></div>
+        <!-- Fixed elements (title, cards, button) at body level as siblings to video -->
 
         <!-- Form element as ID reference only -->
         <form id="candidatiForm" style="display: none;"></form>
