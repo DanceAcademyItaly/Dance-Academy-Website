@@ -264,15 +264,6 @@
             to { opacity: 1; }
         }
 
-        /* Scroll Container */
-        .scroll-container {
-            opacity: 0;
-        }
-
-        .scroll-container.animate {
-            animation: fadeIn 0.5s ease-in forwards;
-        }
-
         /* Blocks */
         .block {
             position: relative;
@@ -315,31 +306,55 @@
             max-width: 100%;
         }
 
-        /* Episodi Block - Container System */
-        .episodi-block {
-            min-height: 100vh;
-            padding: clamp(40px, 8vh, 80px) clamp(20px, 5vw, 40px);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
+        /* Episodi Spacer - Creates scroll range */
+        .episodi-spacer {
+            height: 100vh; /* Set dynamically by JS */
+            width: 1px;
+            visibility: hidden;
         }
 
-        .episodi-container {
-            display: grid;
-            grid-template-columns: minmax(200px, 250px) auto;
-            gap: 15px;
-            max-width: min(1200px, 95vw);
-            max-height: 85vh;
-            overflow: hidden;
+        /* Episodi Sidebar Wrapper - Fixed positioning */
+        .episodi-sidebar-wrapper {
+            position: fixed;
+            top: 80px;
+            left: 40px;
+            width: 250px;
+            max-height: calc(100vh - 160px);
+            z-index: 105;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s, visibility 0.3s;
         }
 
+        .episodi-sidebar-wrapper.visible {
+            opacity: 1;
+            visibility: visible;
+        }
 
-        /* Sidebar */
+        /* Episodi Content Wrapper - Fixed positioning */
+        .episodi-content-wrapper {
+            position: fixed;
+            top: 80px;
+            left: 310px; /* 40px margin + 250px sidebar + 20px gap */
+            right: 40px;
+            max-height: calc(100vh - 160px);
+            z-index: 106;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s, visibility 0.3s;
+        }
+
+        .episodi-content-wrapper.visible {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        /* Sidebar - No overflow, dynamic sizing */
         .sidebar {
-            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 0; /* No gap, accordions sized to fit */
             height: 100%;
-            max-height: 100%;
         }
 
         .stagione-accordion {
@@ -347,7 +362,10 @@
         }
 
         .accordion-header {
-            padding: 20px;
+            /* Height and padding set dynamically by JS */
+            display: flex;
+            align-items: center;
+            justify-content: center;
             text-transform: uppercase;
             letter-spacing: var(--letter-spacing-wider);
             font-size: var(--text-sm);
@@ -415,13 +433,12 @@
             transform: translateX(5px);
         }
 
-        /* Content Area */
+        /* Content Area - Fixed wrapper handles overflow */
         .content-area {
             display: flex;
             flex-direction: column;
             height: 100%;
-            max-height: 100%;
-            overflow: auto;
+            overflow-y: auto; /* Allow scrolling for episode content */
         }
 
         .episodio-content {
@@ -1257,39 +1274,45 @@
         <source src="" type="video/mp4">
     </video>
 
-    <!-- Scroll Container -->
-    <main class="scroll-container">
-        <!-- Hero -->
-        <div class="hero-block block" data-block="hero">
-            <div class="hero-container">
-                <img id="heroLogo" src="" alt="Dance Academy" class="hero-logo">
-                <p id="heroSubtitle" class="hero-text"></p>
-            </div>
+    <!-- Hero -->
+    <div class="hero-block block" data-block="hero">
+        <div class="hero-container">
+            <img id="heroLogo" src="" alt="Dance Academy" class="hero-logo">
+            <p id="heroSubtitle" class="hero-text"></p>
         </div>
+    </div>
 
-        <!-- Episodi -->
-        <div class="episodi-block block" data-block="episodi">
-            <div class="episodi-container">
-                <aside class="sidebar" id="sidebar"></aside>
-                <div class="content-area" id="contentArea"></div>
-            </div>
-        </div>
+    <!-- Episodi spacer - creates scroll range for episodi section -->
+    <!-- Actual episodi elements (sidebar, content) are fixed at body level below -->
+    <div class="episodi-spacer block" data-block="episodi"></div>
 
-        <!-- Missione -->
-        <div class="missione-block block" data-block="missione">
-            <div id="missioneContainer" class="missione-container"></div>
-        </div>
+    <!-- Missione -->
+    <div class="missione-block block" data-block="missione">
+        <div id="missioneContainer" class="missione-container"></div>
+    </div>
 
-        <!-- Candidati spacer - creates scroll range for candidati section -->
-        <!-- Actual candidati elements (title, cards, button) are fixed at body level below -->
-        <div class="candidati-spacer block" data-block="candidati"></div>
+    <!-- Candidati spacer - creates scroll range for candidati section -->
+    <!-- Actual candidati elements (title, cards, button) are fixed at body level below -->
+    <div class="candidati-spacer block" data-block="candidati"></div>
 
-        <div class="contatti-block block" data-block="contatti">
-            <div id="contattiContainer" class="contatti-container"></div>
-        </div>
-    </main>
+    <div class="contatti-block block" data-block="contatti">
+        <div id="contattiContainer" class="contatti-container"></div>
+    </div>
 
-        <!-- Candidati - Restructured for direct backdrop-filter support -->
+    <!-- Episodi - Restructured for direct backdrop-filter support -->
+    <!-- Fixed elements at body level as siblings to video -->
+
+    <!-- Sidebar wrapper (independent fixed element) -->
+    <div class="episodi-sidebar-wrapper">
+        <aside class="sidebar" id="sidebar"></aside>
+    </div>
+
+    <!-- Content wrapper (independent fixed element) -->
+    <div class="episodi-content-wrapper">
+        <div class="content-area" id="contentArea"></div>
+    </div>
+
+    <!-- Candidati - Restructured for direct backdrop-filter support -->
         <!-- Fixed elements (title, cards, button) at body level as siblings to video -->
 
         <!-- Form element as ID reference only -->

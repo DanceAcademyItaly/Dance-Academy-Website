@@ -309,9 +309,9 @@ function initEnhancedScrollSystem() {
         // Preserve episode navigation
         preserveEpisodeNavigation();
 
-        // Initialize episodi parallax now that Lenis is ready
+        // Initialize episodi fixed system now that Lenis is ready
         if (hasEpisodes) {
-            initEpisodiParallax();
+            initEpisodiFixedSystem();
         }
 
         // Initialize missione animations now that Lenis is ready
@@ -1303,10 +1303,9 @@ function populateContent() {
     
     // Episodes
     if (hasEpisodes) {
-        document.querySelector('.episodi-block').style.display = 'flex';
         populateEpisodes();
 
-        // Initialize episodi parallax after content is populated (will be called when Lenis is ready)
+        // Initialize episodi fixed system (will be called when Lenis is ready)
 
         // Update visible blocks after showing episodes
         updateVisibleBlocks();
@@ -1516,9 +1515,88 @@ function switchEpisode(episodeId) {
     document.querySelectorAll('.episodio-item').forEach(item => {
         item.classList.toggle('active', item.dataset.episodio == episodeId);
     });
-    
+
     document.querySelectorAll('.episodio-content').forEach(content => {
         content.classList.toggle('active', content.dataset.content == episodeId);
+    });
+}
+
+// Initialize episodi fixed positioning system
+function initEpisodiFixedSystem() {
+    const episodiSpacer = document.querySelector('.episodi-spacer');
+    const sidebarWrapper = document.querySelector('.episodi-sidebar-wrapper');
+    const contentWrapper = document.querySelector('.episodi-content-wrapper');
+
+    if (!episodiSpacer || !sidebarWrapper || !contentWrapper) {
+        console.error('Episodi elements not found');
+        return;
+    }
+
+    // Set spacer height (episodi visible for 100vh of scroll)
+    const spacerHeight = window.innerHeight;
+    episodiSpacer.style.height = spacerHeight + 'px';
+
+    // Track scroll position for visibility
+    function updateEpisodiVisibility() {
+        const spacerTop = episodiSpacer.offsetTop;
+        const spacerBottom = spacerTop + spacerHeight;
+        const scrollY = window.scrollY;
+
+        const isVisible = scrollY >= spacerTop - window.innerHeight * 0.2 && scrollY < spacerBottom + window.innerHeight * 0.2;
+
+        sidebarWrapper.classList.toggle('visible', isVisible);
+        contentWrapper.classList.toggle('visible', isVisible);
+    }
+
+    // Update on scroll (through Lenis)
+    if (lenis) {
+        lenis.on('scroll', updateEpisodiVisibility);
+    }
+
+    // Initial check
+    updateEpisodiVisibility();
+
+    // Dynamic accordion sizing
+    resizeAccordionsToFit();
+
+    // Add resize handler
+    window.addEventListener('resize', resizeAccordionsToFit);
+
+    console.log('Episodi fixed system initialized:', {
+        spacerHeight,
+        spacerTop: episodiSpacer.offsetTop
+    });
+}
+
+// Resize accordions to fit viewport dynamically
+function resizeAccordionsToFit() {
+    const sidebar = document.querySelector('.episodi-sidebar-wrapper .sidebar');
+    if (!sidebar) return;
+
+    const accordions = sidebar.querySelectorAll('.accordion-header');
+    if (accordions.length === 0) return;
+
+    // Calculate available height
+    const sidebarWrapper = document.querySelector('.episodi-sidebar-wrapper');
+    const availableHeight = sidebarWrapper.offsetHeight;
+
+    // Divide equally among accordions
+    const itemHeight = availableHeight / accordions.length;
+
+    // Apply sizing
+    accordions.forEach(accordion => {
+        accordion.style.height = itemHeight + 'px';
+        accordion.style.minHeight = itemHeight + 'px';
+
+        // Scale padding based on height
+        const padding = Math.max(8, Math.min(20, itemHeight * 0.1));
+        accordion.style.padding = padding + 'px';
+    });
+
+    console.log('Accordions resized:', {
+        count: accordions.length,
+        availableHeight,
+        itemHeight: itemHeight.toFixed(2)
     });
 }
 
@@ -1560,14 +1638,13 @@ function initializeScrollSystem() {
                 // Start animations immediately when video starts
                 const introOverlay = document.querySelector('.intro-overlay');
                 const introText = document.getElementById('introText');
-                const scrollContainer = document.querySelector('.scroll-container');
                 const videoBg = document.getElementById('videoBg');
-                
+
                 // Start intro animations
                 introLogo.classList.add('animate');
                 introOverlay.classList.add('animate');
                 if (introText) introText.classList.add('animate');
-                
+
                 // Start background video and its animation after intro (5s from video start)
                 setTimeout(() => {
                     if (videoBg) {
@@ -1575,13 +1652,6 @@ function initializeScrollSystem() {
                         videoBg.play().catch(e => console.log('Background video autoplay prevented'));
                     }
                 }, 5000);
-                
-                // Show scroll container (4.5s from video start)
-                setTimeout(() => {
-                    if (scrollContainer) {
-                        scrollContainer.classList.add('animate');
-                    }
-                }, 4500);
                 
                 // Enable scrolling when intro is complete (5.5s from video start)
                 setTimeout(() => {
@@ -1602,14 +1672,12 @@ function initializeScrollSystem() {
                 // If autoplay fails, still start animations and enable scrolling
                 const introOverlay = document.querySelector('.intro-overlay');
                 const introText = document.getElementById('introText');
-                const scrollContainer = document.querySelector('.scroll-container');
                 const videoBg = document.getElementById('videoBg');
-                
+
                 // Start animations anyway
                 introLogo.classList.add('animate');
                 if (introOverlay) introOverlay.classList.add('animate');
                 if (introText) introText.classList.add('animate');
-                if (scrollContainer) scrollContainer.classList.add('animate');
                 if (videoBg) videoBg.classList.add('animate');
                 
                 setTimeout(() => {
