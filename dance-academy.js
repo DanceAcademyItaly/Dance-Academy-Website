@@ -738,9 +738,6 @@ function updateScrollElements(scrollY) {
     // Update progress bar with raw scroll (keep original behavior)
     updateProgressBar(scrollY);
 
-    // Update hero animations (now handled by decoupled system)
-    updateHeroAnimations(scrollY);
-
     // Update episodi parallax if initialized
     if (episodiParallaxState) {
         updateEpisodiParallax(scrollY, episodiParallaxState);
@@ -2120,17 +2117,30 @@ function initMissioneAnimations() {
         const episodiExitEnd = 2450;
         const episodiExitDuration = episodiExitEnd - episodiDeadzoneEnd; // 1000px
 
+        // Animation timing constants
+        const elementAnimationDuration = 500; // Same as updateMissioneAnimations
+        const staggerOffset = 50; // Same as updateMissioneAnimations
+
         // Start at 75% through episodi EXIT animation (not entire episodi section)
         const entranceStart = episodiDeadzoneEnd + (episodiExitDuration * 0.75); // 1450 + 750 = 2200px
         const entranceEnd = entranceStart + 750; // 750px entrance duration (2.5x longer)
         const deadzoneEnd = entranceEnd + 250;   // 250px deadzone (same as episodi)
-        const exitEnd = deadzoneEnd + 750;       // 750px exit duration (2.5x longer)
+
+        // Calculate exitEnd based on actual number of elements to prevent premature container hiding
+        // Last element (highest reverseIndex) finishes at: deadzoneEnd + (reverseIndex * staggerOffset) + elementAnimationDuration
+        const totalElements = elementData.length;
+        const lastElementReverseIndex = totalElements - 1;
+        const lastElementExitEnd = deadzoneEnd + (lastElementReverseIndex * staggerOffset) + elementAnimationDuration;
+        const exitEnd = lastElementExitEnd + 50; // Add 50px buffer for safety
 
         console.log('Missione scroll positions (Lenis-driven):', {
             entranceStart,
             entranceEnd,
             deadzoneEnd,
             exitEnd,
+            totalElements,
+            lastElementExitEnd,
+            bufferAdded: 50,
             episodiExitStart: episodiDeadzoneEnd,
             episodiExitEnd: episodiExitEnd,
             startsAt75PercentOfEpisodiExit: true
@@ -2372,17 +2382,17 @@ function initMissioneAnimations() {
     attemptInitialization();
 }
 
-// Initialize candidati card stack system - SCROLL-DECOUPLED 3-PHASE ANIMATION
+// Initialize candidati card stack system - SCROLL-DECOUPLED 4-PHASE ANIMATION (with exit)
 function initCandidatiCardStack() {
-    console.log('🚀🚀🚀 CANDIDATI INIT START - CHECKING IF THIS RUNS 🚀🚀🚀');
+    console.log('🚀🚀🚀 CANDIDATI INIT START (4-PHASE WITH EXIT) 🚀🚀🚀');
 
     // Query DOM elements
     // NEW STRUCTURE: Select independent fixed elements (no parent container)
     const candidatiSpacer = document.querySelector('.candidati-spacer');
     const candidatiTitleWrapper = document.querySelector('.candidati-title-wrapper');
     const candidatiTitle = candidatiTitleWrapper?.querySelector('.candidati-title');
-    const cardWrappers = document.querySelectorAll('.candidati-card-wrapper');
-    const cards = document.querySelectorAll('.candidati-card-wrapper .form-card');
+    const cardWrappers = Array.from(document.querySelectorAll('.candidati-card-wrapper'));
+    const cards = Array.from(document.querySelectorAll('.candidati-card-wrapper .form-card'));
     const submitButtonContainer = document.querySelector('.submit-button-container');
 
     console.log('🔍 Element check (new structure):', {
@@ -2418,16 +2428,6 @@ function initCandidatiCardStack() {
     // Elements are already fixed via CSS - no positioning setup needed
     const topPosition = 60; // Fixed top position defined in CSS
 
-    // Set spacer height to maintain document scroll range
-    const totalScrollRange = window.innerHeight * 6; // 600vh
-    candidatiSpacer.style.height = totalScrollRange + 'px';
-
-    console.log('Candidati spacer configured:', {
-        height: totalScrollRange,
-        inVH: '600vh',
-        spacerPosition: spacerTop
-    });
-
     // Calculate scroll ranges - based on spacer position
     const titleEntranceStart = spacerTop;
 
@@ -2449,15 +2449,47 @@ function initCandidatiCardStack() {
     const cardDeadzoneDuration = window.innerHeight * 2;
     const cardDeadzoneEnd = cardEntranceEnd + cardDeadzoneDuration;
 
-    console.log('Candidati scroll ranges (decoupled):', {
+    // Phase 4: Exit animation (shorter, snappier - 100vh)
+    const exitAnimationDuration = window.innerHeight * 1; // 100vh for exit
+    const exitAnimationStart = cardDeadzoneEnd;
+    const exitAnimationEnd = exitAnimationStart + exitAnimationDuration;
+
+    // Set spacer height to cover all 4 phases
+    const totalScrollRange = exitAnimationEnd - titleEntranceStart;
+    candidatiSpacer.style.height = totalScrollRange + 'px';
+
+    console.log('Candidati scroll ranges (4-phase with exit):', {
         titleEntranceStart,
         titleEntranceEnd,
         cardEntranceStart,
         cardEntranceEnd,
         cardDeadzoneEnd,
-        totalScrollRange: cardDeadzoneEnd - titleEntranceStart,
+        exitAnimationStart,
+        exitAnimationEnd,
+        totalScrollRange,
+        totalVh: `${(totalScrollRange / window.innerHeight).toFixed(1)}vh`,
+        spacerHeight: totalScrollRange + 'px',
         missioneExitStart: missioneAnimationState?.deadzoneEnd || 'N/A'
     });
+
+    // Create background overlay for fade-to-black effect during exit
+    let backgroundOverlay = document.querySelector('.candidati-background-overlay');
+    if (!backgroundOverlay) {
+        backgroundOverlay = document.createElement('div');
+        backgroundOverlay.className = 'candidati-background-overlay';
+        backgroundOverlay.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 1);
+            opacity: 0;
+            pointer-events: none;
+            z-index: 99;
+        `;
+        document.body.appendChild(backgroundOverlay);
+    }
 
     // Function to calculate and set card heights dynamically
     // NEW: Cards are independent fixed elements, no container
@@ -2690,6 +2722,9 @@ function initCandidatiCardStack() {
 
     updateNavigationButtons();
 
+    // Get video background element for transition effects
+    const videoBg = document.getElementById('videoBg');
+
     // Store state globally
     candidatiCardState = {
         candidatiSpacer,
@@ -2698,11 +2733,15 @@ function initCandidatiCardStack() {
         submitButtonContainer,
         cardWrappers,
         cards,
+        backgroundOverlay,
+        videoBg,
         titleEntranceStart,
         titleEntranceEnd,
         cardEntranceStart,
         cardEntranceEnd,
         cardDeadzoneEnd,
+        exitAnimationStart,
+        exitAnimationEnd,
         totalCards,
         currentCardIndex,
         calculateCardOffsets,
@@ -2727,7 +2766,7 @@ function initCandidatiCardStack() {
 
     window.addEventListener('resize', handleResize);
 
-    console.log('Candidati card stack initialized successfully (scroll-decoupled, synced with missione exit, responsive height)');
+    console.log('✅ Candidati card stack initialized successfully (4-phase: entrance → deadzone → exit with fade-to-black, scroll-decoupled, responsive)');
 }
 
 // Optimized episodi parallax with batched DOM updates
@@ -2819,7 +2858,7 @@ function updateEpisodiParallax(scrollY, elements) {
     contentArea.style.transform = contentTransform;
 }
 
-// Update missione animations - LENIS-DRIVEN 3-PHASE SYSTEM
+// Update missione animations - OPTIMIZED BATCHED DOM UPDATES
 function updateMissioneAnimations(scrollY, animationState) {
     if (!animationState) return;
 
@@ -2832,98 +2871,121 @@ function updateMissioneAnimations(scrollY, animationState) {
     const staggerOffset = 50; // 50px stagger between elements
     const moveDistance = 30; // 30px movement (subtle peek-through effect like reference)
 
-    // CONTAINER VISIBILITY CONTROL - hide section before entry and after exit
-    const currentVisibility = missioneContainer.style.visibility;
-
-    if (scrollY < entranceStart) {
-        // Before animation sequence - hide entire section
-        if (currentVisibility !== 'hidden') {
-            missioneContainer.style.visibility = 'hidden';
-            missioneContainer.style.opacity = '0';
-            console.log('Missione section hidden (before entry trigger)');
-        }
-    } else if (scrollY > exitEnd) {
-        // After animation sequence - hide entire section
-        if (currentVisibility !== 'hidden') {
-            missioneContainer.style.visibility = 'hidden';
-            missioneContainer.style.opacity = '0';
-            console.log('Missione section hidden (after exit sequence)');
-        }
-    } else {
-        // During animation sequence - show section at entranceStart (elements still hidden, ready for gradual emergence)
-        if (currentVisibility !== 'visible') {
-            missioneContainer.style.visibility = 'visible';
-            missioneContainer.style.opacity = '1';
-            console.log('Missione section visible (animation sequence active)');
-        }
+    // OPTIMIZED CONTAINER VISIBILITY - track state to avoid redundant DOM reads/writes
+    if (!animationState.containerVisibilityState) {
+        animationState.containerVisibilityState = null;
     }
 
-    elements.forEach((elementData) => {
-        const { element, reverseIndex } = elementData;
+    let targetVisibility = null;
+    if (scrollY < entranceStart) {
+        targetVisibility = 'hidden';
+    } else if (scrollY > exitEnd) {
+        targetVisibility = 'hidden';
+    } else {
+        targetVisibility = 'visible';
+    }
+
+    // Only update DOM if visibility state actually changed
+    if (animationState.containerVisibilityState !== targetVisibility) {
+        animationState.containerVisibilityState = targetVisibility;
+        missioneContainer.style.visibility = targetVisibility;
+        missioneContainer.style.opacity = targetVisibility === 'visible' ? '1' : '0';
+        console.log(`Missione section ${targetVisibility} (visibility state changed)`);
+    }
+
+    // PHASE 1: Calculate all element states (NO DOM reads - pure calculations)
+    const elementUpdates = elements.map((elementData) => {
+        const { element, reverseIndex, index } = elementData;
 
         // Calculate staggered timing for this element (reverse order - button first)
         const elementEntranceStart = entranceStart + (reverseIndex * staggerOffset);
         const elementEntranceEnd = elementEntranceStart + elementAnimationDuration;
-
         const elementExitStart = deadzoneEnd + (reverseIndex * staggerOffset);
         const elementExitEnd = elementExitStart + elementAnimationDuration;
 
+        let transform, opacity, phase;
+
         if (scrollY < elementEntranceStart) {
             // Phase 1: Before entrance - hidden below its own line
-            element.style.transform = 'translateY(30px)';
-            element.style.opacity = '0';
-            element.classList.remove('animated', 'exiting');
+            phase = 'before';
+            transform = 'translateY(30px)';
+            opacity = 0;
 
         } else if (scrollY >= elementEntranceStart && scrollY <= elementEntranceEnd) {
             // Phase 2: Entrance animation - peek through its own line
+            phase = 'entrance';
             const progress = (scrollY - elementEntranceStart) / elementAnimationDuration;
             const easedProgress = 1 - Math.pow(1 - progress, 1.3); // Ease-out with exponent 1.3
-
             const translateY = moveDistance * (1 - easedProgress); // 30px → 0px
-            const opacity = easedProgress; // 0 → 1
-
-            element.style.transform = `translateY(${translateY}px)`;
-            element.style.opacity = opacity;
-
-            if (!element.classList.contains('animated')) {
-                element.classList.add('animated');
-                console.log(`Element ${elementData.index} (reverse order ${reverseIndex}) peeking through line at scroll ${scrollY}`);
-            }
+            transform = `translateY(${translateY}px)`;
+            opacity = easedProgress;
 
         } else if (scrollY > elementEntranceEnd && scrollY <= elementExitStart) {
             // Phase 3: Deadzone - fully visible at natural position
-            element.style.transform = 'translateY(0px)';
-            element.style.opacity = '1';
-            element.classList.add('animated');
-            element.classList.remove('exiting');
+            phase = 'deadzone';
+            transform = 'translateY(0px)';
+            opacity = 1;
 
         } else if (scrollY > elementExitStart && scrollY <= elementExitEnd) {
             // Phase 4: Exit animation - disappear behind its own line
+            phase = 'exit';
             const progress = (scrollY - elementExitStart) / elementAnimationDuration;
             const easedProgress = Math.pow(progress, 1.25); // Ease-in (same as hero easeInFast)
-
             const translateY = -moveDistance * easedProgress; // 0px → -30px
-            const opacity = 1 - easedProgress; // 1 → 0
+            transform = `translateY(${translateY}px)`;
+            opacity = 1 - easedProgress;
 
-            element.style.transform = `translateY(${translateY}px)`;
-            element.style.opacity = opacity;
-
-            if (!element.classList.contains('exiting')) {
-                element.classList.add('exiting');
-                console.log(`Element ${elementData.index} (reverse order ${reverseIndex}) disappearing behind line at scroll ${scrollY}`);
-            }
-
-        } else if (scrollY > elementExitEnd) {
+        } else {
             // Phase 5: After exit - hidden above its own line
-            element.style.transform = 'translateY(-30px)';
-            element.style.opacity = '0';
-            element.classList.remove('animated');
-            element.classList.add('exiting');
+            phase = 'after';
+            transform = 'translateY(-30px)';
+            opacity = 0;
+        }
+
+        return { element, transform, opacity, phase, index, reverseIndex };
+    });
+
+    // PHASE 2: Batch apply all DOM updates (styles + classList together for cache efficiency)
+    elementUpdates.forEach(({ element, transform, opacity, phase, index, reverseIndex }) => {
+        // Apply styles (ensure opacity is string for consistency)
+        element.style.transform = transform;
+        element.style.opacity = String(opacity);
+
+        // Apply classList operations based on phase
+        const classList = element.classList;
+        switch (phase) {
+            case 'before':
+                classList.remove('animated', 'exiting');
+                break;
+
+            case 'entrance':
+                if (!classList.contains('animated')) {
+                    classList.add('animated');
+                    console.log(`Element ${index} (reverse order ${reverseIndex}) peeking through line at scroll ${scrollY}`);
+                }
+                break;
+
+            case 'deadzone':
+                classList.add('animated');
+                classList.remove('exiting');
+                break;
+
+            case 'exit':
+                if (!classList.contains('exiting')) {
+                    classList.add('exiting');
+                    console.log(`Element ${index} (reverse order ${reverseIndex}) disappearing behind line at scroll ${scrollY}`);
+                }
+                break;
+
+            case 'after':
+                classList.remove('animated');
+                classList.add('exiting');
+                break;
         }
     });
 }
 
-// Update candidati card stack animations - SCROLL-DECOUPLED 3-PHASE SYSTEM
+// Update candidati card stack animations - SCROLL-DECOUPLED 4-PHASE SYSTEM (with exit)
 function updateCandidatiCardStack(scrollY, cardState) {
     if (!cardState) return;
 
@@ -2934,11 +2996,15 @@ function updateCandidatiCardStack(scrollY, cardState) {
         submitButtonContainer,
         cardWrappers,
         cards,
+        backgroundOverlay,
+        videoBg,
         titleEntranceStart,
         titleEntranceEnd,
         cardEntranceStart,
         cardEntranceEnd,
         cardDeadzoneEnd,
+        exitAnimationStart,
+        exitAnimationEnd,
         totalCards,
         calculateCardOffsets,
         sidebarEasing,
@@ -2947,10 +3013,10 @@ function updateCandidatiCardStack(scrollY, cardState) {
     } = cardState;
 
     // No visibility control needed - elements are independent and always in layout
-    // Early return if before candidati section starts
+    // Early return if before candidati section starts or after exit completes
     if (scrollY < titleEntranceStart) {
         return;
-    } else if (scrollY > cardDeadzoneEnd) {
+    } else if (scrollY > exitAnimationEnd) {
         return;
     }
 
@@ -2962,14 +3028,39 @@ function updateCandidatiCardStack(scrollY, cardState) {
         const translateY = titleHiddenY * (1 - easedProgress);
         const opacity = easedProgress;
 
+        candidatiTitleWrapper.style.visibility = 'visible';
         candidatiTitleWrapper.style.transform = `translate(-50%, ${translateY}px)`;
         candidatiTitleWrapper.style.opacity = opacity;
 
+        // Keep background overlay transparent during Phase 1
+        if (backgroundOverlay) {
+            backgroundOverlay.style.visibility = 'visible';
+            backgroundOverlay.style.opacity = '0';
+        }
+
+        // Reset video to default state during Phase 1
+        if (videoBg) {
+            videoBg.style.filter = 'grayscale(25%) brightness(0.50) contrast(1.2) blur(0px)';
+        }
+
     } else if (scrollY < titleEntranceStart) {
+        candidatiTitleWrapper.style.visibility = 'visible';
         candidatiTitleWrapper.style.transform = `translate(-50%, ${titleHiddenY}px)`;
         candidatiTitleWrapper.style.opacity = '0';
 
+        // Keep background overlay transparent before Phase 1
+        if (backgroundOverlay) {
+            backgroundOverlay.style.visibility = 'visible';
+            backgroundOverlay.style.opacity = '0';
+        }
+
+        // Reset video to default state before Phase 1
+        if (videoBg) {
+            videoBg.style.filter = 'grayscale(25%) brightness(0.50) contrast(1.2) blur(0px)';
+        }
+
     } else if (scrollY > titleEntranceEnd) {
+        candidatiTitleWrapper.style.visibility = 'visible';
         candidatiTitleWrapper.style.transform = 'translate(-50%, 0px)';
         candidatiTitleWrapper.style.opacity = '1';
     }
@@ -2979,13 +3070,13 @@ function updateCandidatiCardStack(scrollY, cardState) {
     const totalOffsetX = (totalCards - 1) * offsets.x;
     const centerOffsetX = -totalOffsetX / 2;
 
-    // PHASE 2: Card progressive reveal (150vh)
+    // PHASE 2: Card progressive reveal (150vh) - OPTIMIZED BATCHED DOM UPDATES
     // Animate cardWrappers (position: fixed)
     if (scrollY >= cardEntranceStart && scrollY <= cardEntranceEnd) {
         const totalProgress = (scrollY - cardEntranceStart) / (cardEntranceEnd - cardEntranceStart);
 
-        // Animate each card wrapper with staggered timing
-        cardWrappers.forEach((wrapper, index) => {
+        // Calculate all card states first (batched calculations)
+        const cardUpdates = cardWrappers.map((wrapper, index) => {
             const cardEntranceFraction = index / totalCards;
             const cardCompleteFraction = (index + 1) / totalCards;
 
@@ -3002,17 +3093,35 @@ function updateCandidatiCardStack(scrollY, cardState) {
             const easedCardProgress = sidebarEasing(cardProgress);
             const cardOffsetX = centerOffsetX + (index * offsets.x);
             const translateXVw = 100 * (1 - easedCardProgress);
-            const opacity = easedCardProgress;
 
-            wrapper.style.transform = `translate(calc(-50% + ${cardOffsetX}px), 0) translateX(${translateXVw}vw)`;
-            wrapper.style.opacity = opacity;
-
-            // Update current card index when card is >50% visible
-            if (cardProgress > 0.5 && index > cardState.currentCardIndex) {
-                cardState.currentCardIndex = index;
-                cardState.updateNavigationButtons();
-            }
+            return {
+                wrapper,
+                visibility: 'visible',
+                transform: `translate(calc(-50% + ${cardOffsetX}px), 0) translateX(${translateXVw}vw)`,
+                opacity: easedCardProgress,
+                cardProgress,
+                index
+            };
         });
+
+        // Batch apply all card DOM updates
+        cardUpdates.forEach(({ wrapper, visibility, transform, opacity }) => {
+            wrapper.style.visibility = visibility;
+            wrapper.style.transform = transform;
+            wrapper.style.opacity = opacity;
+        });
+
+        // Update current card index (find highest card >50% visible)
+        let newCardIndex = cardState.currentCardIndex;
+        for (const { cardProgress, index } of cardUpdates) {
+            if (cardProgress > 0.5 && index > newCardIndex) {
+                newCardIndex = index;
+            }
+        }
+        if (newCardIndex !== cardState.currentCardIndex) {
+            cardState.currentCardIndex = newCardIndex;
+            cardState.updateNavigationButtons();
+        }
 
         // Submit button animation (starts at 80% of phase)
         const submitStartFraction = Math.max(0.7, (totalCards - 1) / totalCards);
@@ -3023,59 +3132,180 @@ function updateCandidatiCardStack(scrollY, cardState) {
         }
 
         const easedSubmitProgress = contentEasing(submitProgress);
-        const submitOpacity = easedSubmitProgress;
 
         if (submitButtonContainer) {
+            submitButtonContainer.style.visibility = 'visible';
             submitButtonContainer.style.transform = 'translateX(-50%)';
-            submitButtonContainer.style.opacity = submitOpacity;
+            submitButtonContainer.style.opacity = easedSubmitProgress;
+        }
+
+        // Keep background overlay transparent during Phase 2
+        if (backgroundOverlay) {
+            backgroundOverlay.style.visibility = 'visible';
+            backgroundOverlay.style.opacity = '0';
+        }
+
+        // Keep video at default state during Phase 2
+        if (videoBg) {
+            videoBg.style.filter = 'grayscale(25%) brightness(0.50) contrast(1.2) blur(0px)';
         }
 
     } else if (scrollY < cardEntranceStart) {
-        // Before phase 2 - all card wrappers hidden
-        cardWrappers.forEach((wrapper, index) => {
-            const cardOffsetX = centerOffsetX + (index * offsets.x);
-            wrapper.style.transform = `translate(calc(-50% + ${cardOffsetX}px), 0) translateX(100vw)`;
-            wrapper.style.opacity = '0';
+        // Before phase 2 - all card wrappers hidden (OPTIMIZED BATCHED)
+        const cardUpdates = cardWrappers.map((wrapper, index) => ({
+            wrapper,
+            visibility: 'visible',
+            transform: `translate(calc(-50% + ${centerOffsetX + (index * offsets.x)}px), 0) translateX(100vw)`,
+            opacity: '0'
+        }));
+
+        cardUpdates.forEach(({ wrapper, visibility, transform, opacity }) => {
+            wrapper.style.visibility = visibility;
+            wrapper.style.transform = transform;
+            wrapper.style.opacity = opacity;
         });
 
         if (submitButtonContainer) {
+            submitButtonContainer.style.visibility = 'visible';
             submitButtonContainer.style.transform = 'translateX(-50%)';
             submitButtonContainer.style.opacity = '0';
         }
+
+        // Keep background overlay transparent before Phase 2
+        if (backgroundOverlay) {
+            backgroundOverlay.style.visibility = 'visible';
+            backgroundOverlay.style.opacity = '0';
+        }
+
+        // Keep video at default state before Phase 2
+        if (videoBg) {
+            videoBg.style.filter = 'grayscale(25%) brightness(0.50) contrast(1.2) blur(0px)';
+        }
     }
 
-    // PHASE 3: Deadzone (interaction phase, 200vh)
+    // PHASE 3: Deadzone (interaction phase, 200vh) - OPTIMIZED BATCHED DOM UPDATES
     else if (scrollY > cardEntranceEnd && scrollY <= cardDeadzoneEnd) {
-        const deadzoneProgress = (scrollY - cardEntranceEnd) / (cardDeadzoneEnd - cardEntranceEnd);
-        const targetCardIndex = Math.floor(deadzoneProgress * totalCards);
+        // All card wrappers at final position (OPTIMIZED BATCHED)
+        const cardUpdates = cardWrappers.map((wrapper, index) => ({
+            wrapper,
+            visibility: 'visible',
+            transform: `translate(calc(-50% + ${centerOffsetX + (index * offsets.x)}px), 0) translateX(0vw)`,
+            opacity: '1'
+        }));
 
-        // All card wrappers at final position
-        cardWrappers.forEach((wrapper, index) => {
-            const cardOffsetX = centerOffsetX + (index * offsets.x);
-            wrapper.style.transform = `translate(calc(-50% + ${cardOffsetX}px), 0) translateX(0vw)`;
-            wrapper.style.opacity = '1';
+        cardUpdates.forEach(({ wrapper, visibility, transform, opacity }) => {
+            wrapper.style.visibility = visibility;
+            wrapper.style.transform = transform;
+            wrapper.style.opacity = opacity;
         });
 
-        // Update current card based on deadzone scroll
-        const newCardIndex = Math.min(Math.max(0, targetCardIndex), totalCards - 1);
-        if (newCardIndex !== cardState.currentCardIndex) {
-            cardState.currentCardIndex = newCardIndex;
-            cardState.updateNavigationButtons(true); // Hide non-current cards during deadzone
+        // Maintain the last card from Phase 2 (don't reset to card 0)
+        const finalCardIndex = totalCards - 1;
+        if (cardState.currentCardIndex !== finalCardIndex) {
+            cardState.currentCardIndex = finalCardIndex;
+            cardState.updateNavigationButtons(true); // Show only the last card
         }
 
         // Submit button at final position
         if (submitButtonContainer) {
+            submitButtonContainer.style.visibility = 'visible';
             submitButtonContainer.style.transform = 'translateX(-50%)';
             submitButtonContainer.style.opacity = '1';
         }
-    }
-}
 
-// Update hero animations - RESTORED TO USE DECOUPLED SCROLL SYSTEM
-function updateHeroAnimations(scrollY) {
-    // Hero animations are now handled by the decoupled scroll system
-    // This function is kept for compatibility but functionality moved to decoupled elements
-    // updateDecoupledElements() handles hero animations automatically
+        // Background overlay stays transparent during deadzone
+        if (backgroundOverlay) {
+            backgroundOverlay.style.visibility = 'visible';
+            backgroundOverlay.style.opacity = '0';
+        }
+
+        // Keep video at default state during Phase 3
+        if (videoBg) {
+            videoBg.style.filter = 'grayscale(25%) brightness(0.50) contrast(1.2) blur(0px)';
+        }
+    }
+
+    // PHASE 4: Exit animation (scale down, fade out, video blur to black) - OPTIMIZED BATCHED DOM UPDATES
+    else if (scrollY > cardDeadzoneEnd && scrollY <= exitAnimationEnd) {
+        const exitProgress = (scrollY - cardDeadzoneEnd) / (exitAnimationEnd - cardDeadzoneEnd);
+        const easedExitProgress = contentEasing(exitProgress);
+
+        // Scale and fade out all elements simultaneously (subtle scale)
+        const scale = 1 - (easedExitProgress * 0.05); // Scale from 1.0 to 0.95 (subtle)
+        const opacity = 1 - easedExitProgress; // Fade from 1 to 0
+
+        // Reuse offsets already calculated above (no redundant calculation)
+
+        // Apply exit animation to title
+        candidatiTitleWrapper.style.visibility = 'visible';
+        candidatiTitleWrapper.style.transform = `translate(-50%, 0px) scale(${scale})`;
+        candidatiTitleWrapper.style.opacity = opacity;
+
+        // Apply exit animation to all card wrappers (OPTIMIZED BATCHED)
+        const cardUpdates = cardWrappers.map((wrapper, index) => ({
+            wrapper,
+            visibility: 'visible',
+            transform: `translate(calc(-50% + ${centerOffsetX + (index * offsets.x)}px), 0) translateX(0vw) scale(${scale})`,
+            opacity
+        }));
+
+        cardUpdates.forEach(({ wrapper, visibility, transform, opacity }) => {
+            wrapper.style.visibility = visibility;
+            wrapper.style.transform = transform;
+            wrapper.style.opacity = opacity;
+        });
+
+        // Apply exit animation to submit button
+        if (submitButtonContainer) {
+            submitButtonContainer.style.visibility = 'visible';
+            submitButtonContainer.style.transform = `translateX(-50%) scale(${scale})`;
+            submitButtonContainer.style.opacity = opacity;
+        }
+
+        // Progressively blur and darken video to black
+        if (videoBg) {
+            // Blur: from 0px to 50px
+            const blurAmount = 50 * easedExitProgress;
+            // Brightness: from 0.50 to 0.05 (near complete darkness, but not absolute zero for better visuals)
+            const brightness = 0.50 - (0.45 * easedExitProgress);
+            // Grayscale and contrast remain constant
+            videoBg.style.filter = `grayscale(25%) brightness(${brightness}) contrast(1.2) blur(${blurAmount}px)`;
+        }
+
+        // Keep background overlay transparent during exit (video darkening is sufficient)
+        if (backgroundOverlay) {
+            backgroundOverlay.style.visibility = 'visible';
+            backgroundOverlay.style.opacity = '0';
+        }
+    }
+
+    // AFTER Phase 4: Hide everything so contatti is visible
+    else if (scrollY > exitAnimationEnd) {
+        // Hide all candidati elements
+        candidatiTitleWrapper.style.opacity = '0';
+        candidatiTitleWrapper.style.visibility = 'hidden';
+
+        cardWrappers.forEach(wrapper => {
+            wrapper.style.opacity = '0';
+            wrapper.style.visibility = 'hidden';
+        });
+
+        if (submitButtonContainer) {
+            submitButtonContainer.style.opacity = '0';
+            submitButtonContainer.style.visibility = 'hidden';
+        }
+
+        // Keep video fully blurred and dark for contatti section
+        if (videoBg) {
+            videoBg.style.filter = 'grayscale(25%) brightness(0.05) contrast(1.2) blur(50px)';
+        }
+
+        // Keep background overlay transparent and hidden (video darkness is sufficient)
+        if (backgroundOverlay) {
+            backgroundOverlay.style.opacity = '0';
+            backgroundOverlay.style.visibility = 'hidden';
+        }
+    }
 }
 
 // Start
