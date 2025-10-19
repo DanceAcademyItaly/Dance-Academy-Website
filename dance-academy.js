@@ -1470,11 +1470,21 @@ function populateEpisodes() {
 function toggleSeason(seasonId) {
     const headers = document.querySelectorAll('.accordion-header');
     const lists = document.querySelectorAll('.episodi-list');
-    
+
     // Find currently expanded list
     const currentlyExpanded = document.querySelector('.episodi-list.expanded');
     const targetList = document.querySelector(`.episodi-list[data-season="${seasonId}"]`);
-    
+
+    // Helper function to select last episode in a season
+    const selectLastEpisodeInSeason = (seasonId) => {
+        // Find the season in siteContent
+        const season = siteContent.episodes.seasons.find(s => s.id == seasonId);
+        if (season && season.episodes && season.episodes.length > 0) {
+            const lastEpisode = season.episodes[season.episodes.length - 1];
+            switchEpisode(lastEpisode.id);
+        }
+    };
+
     // If clicking the same season or no season is expanded, toggle immediately
     if (!currentlyExpanded || currentlyExpanded.dataset.season == seasonId) {
         headers.forEach(header => {
@@ -1484,7 +1494,9 @@ function toggleSeason(seasonId) {
                 header.classList.remove('active');
             }
         });
-        
+
+        const isExpanding = !targetList.classList.contains('expanded');
+
         lists.forEach(list => {
             if (list.dataset.season == seasonId) {
                 list.classList.toggle('expanded');
@@ -1492,18 +1504,30 @@ function toggleSeason(seasonId) {
                 list.classList.remove('expanded');
             }
         });
+
+        // If we just expanded the season, select last episode after animation
+        if (isExpanding) {
+            setTimeout(() => {
+                selectLastEpisodeInSeason(seasonId);
+            }, 300);
+        }
         return;
     }
-    
+
     // First, close the currently expanded section
     currentlyExpanded.classList.remove('expanded');
     document.querySelector(`.accordion-header[data-season="${currentlyExpanded.dataset.season}"]`).classList.remove('active');
-    
+
     // Wait for closing animation to finish (300ms based on CSS transition)
     setTimeout(() => {
         // Then open the new section
         targetList.classList.add('expanded');
         document.querySelector(`.accordion-header[data-season="${seasonId}"]`).classList.add('active');
+
+        // Wait for opening animation to finish, then select last episode
+        setTimeout(() => {
+            selectLastEpisodeInSeason(seasonId);
+        }, 300);
     }, 300);
 }
 
@@ -1531,13 +1555,48 @@ function initEpisodiFixedSystem() {
         return;
     }
 
-    // Calculate optimal sizing
-    calculateEpisodiSizing();
+    // CRITICAL INITIALIZATION ORDER - DO NOT REORDER THESE STEPS:
+    // 1. Calculate deadzone and set container height FIRST
+    // 2. Then calculateEpisodiSizing() can measure the correct container height
+    // 3. Then updateEpisodiAnimations() applies transforms
+    //
+    // WHY: calculateEpisodiSizing() needs to measure containerWrapper.offsetHeight
+    //      to calculate video sizes correctly. If container height isn't set yet,
+    //      it will measure 'auto' height and get incorrect values.
+    //
+    // SAME SEQUENCE in handleEpisodiResizeImmediate() for consistency
 
-    // Calculate animation parameters
     const viewportHeight = window.innerHeight;
-    const headerHeight = 80;
-    const deadzoneTop = headerHeight;
+
+    // Calculate deadzone based on header text vertical center
+    // The episodi top should be positioned such that the header vertical center
+    // is equidistant from viewport top (0) and episodi top
+    const header = document.querySelector('.header-fixed');
+    const headerTop = 20; // Fixed in CSS
+
+    let headerVerticalCenter = headerTop;
+    if (header) {
+        const headerSpan = header.querySelector('span');
+        if (headerSpan) {
+            const computedStyle = window.getComputedStyle(headerSpan);
+            const fontSize = parseFloat(computedStyle.fontSize);
+            const lineHeight = parseFloat(computedStyle.lineHeight) || fontSize * 1.6;
+            headerVerticalCenter = headerTop + (lineHeight / 2);
+        }
+    }
+
+    // Episodi top = headerVerticalCenter * 2 (makes center equidistant from 0 and episodi)
+    const deadzoneTop = headerVerticalCenter * 2;
+
+    // Set container height dynamically based on available space
+    // MUST be set BEFORE calculateEpisodiSizing() so it can measure correctly
+    const bottomPadding = 80; // Bottom margin for breathing room
+    const containerHeight = viewportHeight - deadzoneTop - bottomPadding;
+    containerWrapper.style.height = containerHeight + 'px';
+
+    // Now that container has correct height, calculate sizing
+    // This will measure containerWrapper.offsetHeight and get the correct value
+    calculateEpisodiSizing();
 
     // Calculate starting position (off-screen/bottom)
     const startTop = viewportHeight;
@@ -1585,6 +1644,9 @@ function initEpisodiFixedSystem() {
     window.addEventListener('resize', handleEpisodiResize);
 
     console.log('Episodi fixed system initialized with animations:', {
+        headerVerticalCenter,
+        deadzoneTop,
+        containerHeight,
         entranceStart,
         entranceEnd,
         deadzoneEnd,
@@ -1601,6 +1663,16 @@ function calculateEpisodiSizing() {
 
     if (!containerWrapper || !sidebarWrapper || !contentWrapper) return;
 
+    // CRITICAL PROTECTION: Clear any animation transforms before measuring/manipulating DOM
+    // WHY: Active transforms (translateY/translateX) interfere with:
+    //      1. Accurate offsetWidth/offsetHeight measurements
+    //      2. Layout calculations when setting width/height inline styles
+    //      3. Browser reflow/repaint during DOM manipulation
+    // SAFETY: Transforms are immediately reapplied by updateEpisodiAnimations()
+    //         which MUST be called right after this function (see init & resize handlers)
+    sidebarWrapper.style.transform = '';
+    contentWrapper.style.transform = '';
+
     // Get actual sidebar width (from CSS clamp)
     const sidebarWidth = sidebarWrapper.offsetWidth;
     const gap = 15;
@@ -1613,10 +1685,12 @@ function calculateEpisodiSizing() {
     // Account for: sidebar width + gap + content
     const maxAvailableForContent = maxContainerWidth - sidebarWidth - gap;
 
-    // Vertical space calculations
-    const availableHeight = window.innerHeight - 160; // 80px top + 80px bottom padding
+    // Vertical space calculations - use actual container height
+    // Container height is ALWAYS set before this function is called (see init & resize handlers)
+    // Fallback should never be needed, but prevents catastrophic failure if sequence breaks
+    const actualContainerHeight = containerWrapper.offsetHeight || (window.innerHeight * 0.8);
     const verticalOverhead = 65; // Video margins, section spacing, headers
-    const effectiveHeight = availableHeight - verticalOverhead;
+    const effectiveHeight = actualContainerHeight - verticalOverhead;
 
     // Minimum coreografie video width (per video) and gaps
     const minCoreografieWidth = 180;
@@ -1651,13 +1725,21 @@ function calculateEpisodiSizing() {
     }
 
     // Calculate coreografie group width
-    const coreografieGroupWidth = (3 * coreografieVideoWidth) + coreografieGaps;
+    let coreografieGroupWidth = (3 * coreografieVideoWidth) + coreografieGaps;
 
     // Content wrapper wraps the wider of: video or coreografie group
     const contentWidth = Math.max(videoWidth, coreografieGroupWidth);
 
     // Ensure content doesn't exceed available space
     const finalContentWidth = Math.min(contentWidth, maxAvailableForContent);
+
+    // CRITICAL: If coreografie group exceeds available space, recalculate individual card width
+    if (coreografieGroupWidth > finalContentWidth) {
+        // Recalculate card width to fit within available space
+        coreografieVideoWidth = (finalContentWidth - coreografieGaps) / 3;
+        coreografieVideoHeight = coreografieVideoWidth * 0.5625;
+        coreografieGroupWidth = (3 * coreografieVideoWidth) + coreografieGaps;
+    }
 
     contentWrapper.style.width = finalContentWidth + 'px';
     contentWrapper.style.flexShrink = '0';
@@ -1682,7 +1764,7 @@ function calculateEpisodiSizing() {
         maxContainerWidth,
         sidebarWidth,
         maxAvailableForContent,
-        availableHeight,
+        actualContainerHeight,
         effectiveHeight,
         videoWidth,
         videoHeight,
@@ -1711,10 +1793,70 @@ function debounce(func, wait) {
 function handleEpisodiResizeImmediate() {
     if (!episodiAnimationState) return;
 
-    // Recalculate optimal sizing
-    calculateEpisodiSizing();
+    const { containerWrapper } = episodiAnimationState;
+    const viewportHeight = window.innerHeight;
+    const episodiSpacer = document.querySelector('.episodi-spacer');
 
-    // Update current animation frame
+    // FOLLOWS SAME SEQUENCE AS INITIALIZATION (see initEpisodiFixedSystem):
+    // 1. Calculate deadzone and set container height
+    // 2. Call calculateEpisodiSizing() to measure correct height
+    // 3. Call updateEpisodiAnimations() to apply transforms
+
+    // Recalculate deadzone based on current header dimensions
+    const header = document.querySelector('.header-fixed');
+    const headerTop = 20;
+
+    let headerVerticalCenter = headerTop;
+    if (header) {
+        const headerSpan = header.querySelector('span');
+        if (headerSpan) {
+            const computedStyle = window.getComputedStyle(headerSpan);
+            const fontSize = parseFloat(computedStyle.fontSize);
+            const lineHeight = parseFloat(computedStyle.lineHeight) || fontSize * 1.6;
+            headerVerticalCenter = headerTop + (lineHeight / 2);
+        }
+    }
+
+    const deadzoneTop = headerVerticalCenter * 2;
+
+    // Update container height
+    const bottomPadding = 80;
+    const containerHeight = viewportHeight - deadzoneTop - bottomPadding;
+    containerWrapper.style.height = containerHeight + 'px';
+
+    // Recalculate animation parameters
+    const startTop = viewportHeight;
+    const travelDistance = startTop - deadzoneTop;
+
+    const entranceDuration = 1.2 * viewportHeight;
+    const deadzoneDuration = 0.5 * viewportHeight;
+    const exitDuration = 1.0 * viewportHeight;
+
+    const totalScrollRange = entranceDuration + deadzoneDuration + exitDuration;
+    if (episodiSpacer) {
+        episodiSpacer.style.height = totalScrollRange + 'px';
+    }
+
+    const spacerTop = episodiSpacer ? episodiSpacer.offsetTop : 0;
+    const entranceStart = spacerTop;
+    const entranceEnd = entranceStart + entranceDuration;
+    const deadzoneEnd = entranceEnd + deadzoneDuration;
+    const exitEnd = deadzoneEnd + exitDuration;
+
+    // Update animation state
+    episodiAnimationState.deadzoneTop = deadzoneTop;
+    episodiAnimationState.startTop = startTop;
+    episodiAnimationState.travelDistance = travelDistance;
+    episodiAnimationState.entranceStart = entranceStart;
+    episodiAnimationState.entranceEnd = entranceEnd;
+    episodiAnimationState.deadzoneEnd = deadzoneEnd;
+    episodiAnimationState.exitEnd = exitEnd;
+
+    // CRITICAL SEQUENCE: Sizing must clear transforms, then animations reapply them
+    // 1. calculateEpisodiSizing() clears transforms for clean measurements
+    // 2. updateEpisodiAnimations() immediately reapplies correct transforms
+    // DO NOT separate these calls or add code between them
+    calculateEpisodiSizing();
     updateEpisodiAnimations(window.scrollY);
 }
 
@@ -1752,17 +1894,19 @@ function updateEpisodiAnimations(scrollY) {
     } else if (scrollY <= entranceEnd) {
         // Phase 1: Entrance - container slides up, children have parallax transforms
         const progress = (scrollY - entranceStart) / (entranceEnd - entranceStart);
-        const easing = 1 - Math.pow(1 - progress, 3); // Ease-out-cubic
+        const containerEasing = 1 - Math.pow(1 - progress, 3); // Ease-out-cubic
+        const contentEasing = 1 - Math.pow(1 - progress, 2); // Ease-out-quadratic
 
-        containerTop = startTop - (travelDistance * easing);
+        containerTop = startTop - (travelDistance * containerEasing);
 
         // Fade in during first 30% of entrance
         opacity = Math.min(1, progress / 0.3);
 
-        // Parallax effect: sidebar lags behind, content leads
-        const parallaxAmount = 50; // pixels
-        const sidebarLag = parallaxAmount * (1 - progress);
-        const contentLead = -parallaxAmount * (1 - progress);
+        // Parallax effect: sidebar lags 100px, content has ease-out-quad independent curve
+        const sidebarParallaxAmount = 100; // pixels
+        const contentParallaxAmount = 50; // pixels
+        const sidebarLag = sidebarParallaxAmount * (1 - progress);
+        const contentLead = -contentParallaxAmount * (1 - contentEasing);
 
         sidebarTransform = `translateY(${sidebarLag}px)`;
         contentTransform = `translateY(${contentLead}px)`;

@@ -316,11 +316,11 @@
         /* Episodi Container Wrapper - Parent container (centered, fixed) */
         .episodi-container-wrapper {
             position: fixed;
-            top: 80px;
+            top: 0; /* JS will set the actual top position dynamically */
             left: 50%;
             transform: translateX(-50%);
-            height: calc(100vh - 160px);
-            max-height: calc(100vh - 160px);
+            height: auto; /* JS will calculate based on viewport and deadzone */
+            max-height: 95vh;
             max-width: 95vw;
             z-index: 105;
             opacity: 0;
@@ -465,7 +465,8 @@
             display: flex;
             flex-direction: column;
             align-items: center; /* Center children horizontally */
-            width: auto; /* Size to content, not full width */
+            width: var(--video-width, 100%); /* Match video width for consistent layout */
+            max-width: 100%; /* Prevent section from exceeding parent */
             flex-shrink: 0;
         }
 
@@ -487,13 +488,16 @@
             gap: 20px;
             flex-shrink: 0;
             width: fit-content; /* Size to actual number of cards */
+            max-width: 100%; /* Prevent overflow beyond parent container */
         }
 
         .coreo-card {
             background: var(--bg-medium);
             border: 1px solid var(--border-default);
             width: var(--coreografie-width, calc(33.333% - 13.333px)); /* Individual width or fallback */
-            flex-shrink: 0;
+            max-width: 100%; /* Prevent individual cards from overflowing */
+            min-width: 0; /* Allow cards to shrink below content size if needed */
+            flex-shrink: 1; /* Allow cards to shrink on very small viewports */
             transition: all 0.3s;
         }
 
@@ -504,6 +508,8 @@
         .coreo-video {
             aspect-ratio: 16/9;
             background: var(--black);
+            width: 100%; /* Ensure video fills card width */
+            max-width: 100%; /* Prevent overflow */
         }
 
         .coreo-video iframe {
