@@ -319,13 +319,14 @@
             top: 80px;
             left: 50%;
             transform: translateX(-50%);
+            height: calc(100vh - 160px);
             max-height: calc(100vh - 160px);
-            min-width: 75vw;
             max-width: 95vw;
             z-index: 105;
             opacity: 0;
             /* No transition - JS handles animations */
             display: flex;
+            justify-content: center;
             gap: 15px;
         }
 
@@ -348,8 +349,8 @@
         .sidebar {
             display: flex;
             flex-direction: column;
-            gap: 0; /* No gap, accordions sized to fit */
-            height: 100%;
+            gap: 0;
+            /* height: auto - sizes to content (accordion headers) */
         }
 
         .stagione-accordion {
@@ -357,26 +358,21 @@
         }
 
         .accordion-header {
-            /* Height and padding set dynamically by JS */
+            /* Match episodio-item sizing exactly */
             display: flex;
             align-items: center;
-            justify-content: center;
+            justify-content: flex-start; /* Align text to left */
             text-transform: uppercase;
-            letter-spacing: var(--letter-spacing-wider);
-            font-size: clamp(0.65rem, 0.6rem + 0.8vw, 0.875rem); /* Scales with viewport for sidebar */
+            letter-spacing: var(--letter-spacing-wide); /* Match episodio-item */
+            font-size: clamp(0.6rem, 0.55rem + 0.6vw, 0.875rem); /* Match episodio-item */
             color: var(--text-secondary);
+            padding: clamp(12px, 1.2vw, 16px) clamp(14px, 1.5vw, 20px); /* Match episodio-item */
             cursor: pointer;
             background: rgba(0, 0, 0, 0.3);
             backdrop-filter: blur(20px) saturate(90%);
             -webkit-backdrop-filter: blur(20px) saturate(90%);
             border: 1px solid rgba(255, 255, 255, 0.25);
             border-radius: 2px;
-            box-shadow:
-                0 20px 60px rgba(0, 0, 0, 0.9),
-                0 12px 32px rgba(0, 0, 0, 0.7),
-                0 6px 16px rgba(0, 0, 0, 0.5),
-                0 2px 8px rgba(0, 0, 0, 0.4),
-                inset 0 -1px 0 rgba(0, 0, 0, 0.6);
             transition: all 0.3s;
         }
 
@@ -389,7 +385,7 @@
             background: rgba(0, 0, 0, 0.3);
             backdrop-filter: blur(20px) saturate(90%);
             -webkit-backdrop-filter: blur(20px) saturate(90%);
-            border: 2px solid var(--border-active);
+            border: 1px solid var(--border-active);
             color: var(--text-primary);
         }
 
