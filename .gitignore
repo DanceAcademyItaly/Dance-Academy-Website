@@ -1,4 +1,4 @@
-content-backup.json
+# Development tools
 ContentManager/
 
 # Claude Code files
@@ -13,4 +13,31 @@ specs/
 *.backup
 *-backup.json
 *.working-backup
+content-backup.json
 contentbackup.json
+
+# Documentation/Analysis files (development only)
+*_ANALYSIS.md
+*_PLAN.md
+*_REFACTORING*.md
+*_SYSTEM.md
+*_LOGIC*.md
+SCROLL_*.md
+DEAD_CODE*.md
+
+# Experimental/unused code
+missione-mathematical-animations.js
+
+# macOS system files
+.DS_Store
+**/.DS_Store
+
+# Editor files
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+
+# Node modules (if any)
+node_modules/

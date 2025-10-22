@@ -3105,8 +3105,9 @@ function updateMissioneAnimations(scrollY, animationState) {
 
     // Animation parameters
     const elementAnimationDuration = 500; // Each element animates over 500px (2.5x longer)
-    const staggerOffset = 50; // 50px stagger between elements
-    const moveDistance = 30; // 30px movement (subtle peek-through effect like reference)
+    const staggerOffsetMax = 90; // Maximum stagger offset (first element)
+    const staggerOffsetMin = 10; // Minimum stagger offset (last element)
+    const moveDistance = 8; // 8px movement (subtle peek-through effect like reference)
 
     // OPTIMIZED CONTAINER VISIBILITY - track state to avoid redundant DOM reads/writes
     if (!animationState.containerVisibilityState) {
@@ -3134,10 +3135,28 @@ function updateMissioneAnimations(scrollY, animationState) {
     const elementUpdates = elements.map((elementData) => {
         const { element, reverseIndex, index } = elementData;
 
+        // Calculate progressive stagger offset for this element (90px → 30px)
+        // reverseIndex 0 (button) gets max offset, last element gets min offset
+        const totalElements = elements.length;
+        const progressiveStagger = totalElements > 1
+            ? staggerOffsetMax - ((staggerOffsetMax - staggerOffsetMin) * (reverseIndex / (totalElements - 1)))
+            : staggerOffsetMax;
+
+        // Accumulate stagger offsets to get actual timing
+        let cumulativeEntranceOffset = 0;
+        let cumulativeExitOffset = 0;
+        for (let i = 0; i < reverseIndex; i++) {
+            const prevProgressiveStagger = totalElements > 1
+                ? staggerOffsetMax - ((staggerOffsetMax - staggerOffsetMin) * (i / (totalElements - 1)))
+                : staggerOffsetMax;
+            cumulativeEntranceOffset += prevProgressiveStagger;
+            cumulativeExitOffset += prevProgressiveStagger;
+        }
+
         // Calculate staggered timing for this element (reverse order - button first)
-        const elementEntranceStart = entranceStart + (reverseIndex * staggerOffset);
+        const elementEntranceStart = entranceStart + cumulativeEntranceOffset;
         const elementEntranceEnd = elementEntranceStart + elementAnimationDuration;
-        const elementExitStart = deadzoneEnd + (reverseIndex * staggerOffset);
+        const elementExitStart = deadzoneEnd + cumulativeExitOffset;
         const elementExitEnd = elementExitStart + elementAnimationDuration;
 
         let transform, opacity, phase;
@@ -3145,15 +3164,15 @@ function updateMissioneAnimations(scrollY, animationState) {
         if (scrollY < elementEntranceStart) {
             // Phase 1: Before entrance - hidden below its own line
             phase = 'before';
-            transform = 'translateY(30px)';
+            transform = 'translateY(8px)';
             opacity = 0;
 
         } else if (scrollY >= elementEntranceStart && scrollY <= elementEntranceEnd) {
             // Phase 2: Entrance animation - peek through its own line
             phase = 'entrance';
             const progress = (scrollY - elementEntranceStart) / elementAnimationDuration;
-            const easedProgress = 1 - Math.pow(1 - progress, 1.3); // Ease-out with exponent 1.3
-            const translateY = moveDistance * (1 - easedProgress); // 30px → 0px
+            const easedProgress = 1 - Math.pow(1 - progress, 1.15); // Ease-out with exponent 1.15
+            const translateY = moveDistance * (1 - easedProgress); // 8px → 0px
             transform = `translateY(${translateY}px)`;
             opacity = easedProgress;
 
@@ -3167,15 +3186,15 @@ function updateMissioneAnimations(scrollY, animationState) {
             // Phase 4: Exit animation - disappear behind its own line
             phase = 'exit';
             const progress = (scrollY - elementExitStart) / elementAnimationDuration;
-            const easedProgress = Math.pow(progress, 1.25); // Ease-in (same as hero easeInFast)
-            const translateY = -moveDistance * easedProgress; // 0px → -30px
+            const easedProgress = Math.pow(progress, 1.15); // Ease-in with exponent 1.15
+            const translateY = -moveDistance * easedProgress; // 0px → -8px
             transform = `translateY(${translateY}px)`;
             opacity = 1 - easedProgress;
 
         } else {
             // Phase 5: After exit - hidden above its own line
             phase = 'after';
-            transform = 'translateY(-30px)';
+            transform = 'translateY(-8px)';
             opacity = 0;
         }
 
