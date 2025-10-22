@@ -2905,6 +2905,17 @@ function initCandidatiCardStack() {
     const sidebarEasing = t => 1 - Math.pow(1 - t, 2.5);
     const contentEasing = t => 1 - Math.pow(1 - t, 1.8);
 
+    // Helper function to generate card shadow with opacity
+    function generateCardShadow(opacity) {
+        return `
+            0 8px 24px rgba(0, 0, 0, ${0.4 * opacity}),
+            0 5px 12px rgba(0, 0, 0, ${0.3 * opacity}),
+            0 3px 6px rgba(0, 0, 0, ${0.25 * opacity}),
+            0 1px 3px rgba(0, 0, 0, ${0.2 * opacity}),
+            inset 0 -1px 0 rgba(0, 0, 0, ${0.4 * opacity})
+        `;
+    }
+
     // Card fade-out configuration - tunable system for progressive card disappearance
     // HOW IT WORKS: Card N fades out while card N+fadeOffset is entering
     // EXAMPLE: With fadeOffset=2, card 0 fades while card 2 enters, card 1 fades while card 3 enters, etc.
@@ -3349,15 +3360,7 @@ function updateCandidatiCardStack(scrollY, cardState) {
 
             // Apply shadow fade if enabled
             if (cardFadeOutConfig.enabled && cardFadeOutConfig.fadeShadow) {
-                // Scale shadow opacity to match card opacity (shadow fades with card)
-                const shadowOpacity = opacity;
-                wrapper.style.boxShadow = `
-                    0 20px 60px rgba(0, 0, 0, ${0.9 * shadowOpacity}),
-                    0 12px 32px rgba(0, 0, 0, ${0.7 * shadowOpacity}),
-                    0 6px 16px rgba(0, 0, 0, ${0.5 * shadowOpacity}),
-                    0 2px 8px rgba(0, 0, 0, ${0.4 * shadowOpacity}),
-                    inset 0 -1px 0 rgba(0, 0, 0, ${0.6 * shadowOpacity})
-                `;
+                wrapper.style.boxShadow = generateCardShadow(opacity);
             }
         });
 
@@ -3462,14 +3465,7 @@ function updateCandidatiCardStack(scrollY, cardState) {
 
             // Apply shadow fade if enabled
             if (cardFadeOutConfig.enabled && cardFadeOutConfig.fadeShadow) {
-                const shadowOpacity = opacity;
-                wrapper.style.boxShadow = `
-                    0 20px 60px rgba(0, 0, 0, ${0.9 * shadowOpacity}),
-                    0 12px 32px rgba(0, 0, 0, ${0.7 * shadowOpacity}),
-                    0 6px 16px rgba(0, 0, 0, ${0.5 * shadowOpacity}),
-                    0 2px 8px rgba(0, 0, 0, ${0.4 * shadowOpacity}),
-                    inset 0 -1px 0 rgba(0, 0, 0, ${0.6 * shadowOpacity})
-                `;
+                wrapper.style.boxShadow = generateCardShadow(opacity);
             }
         });
 
@@ -3545,14 +3541,7 @@ function updateCandidatiCardStack(scrollY, cardState) {
 
             // Apply shadow fade proportional to card opacity
             if (cardFadeOutConfig.enabled && cardFadeOutConfig.fadeShadow) {
-                const shadowOpacity = opacity;
-                wrapper.style.boxShadow = `
-                    0 20px 60px rgba(0, 0, 0, ${0.9 * shadowOpacity}),
-                    0 12px 32px rgba(0, 0, 0, ${0.7 * shadowOpacity}),
-                    0 6px 16px rgba(0, 0, 0, ${0.5 * shadowOpacity}),
-                    0 2px 8px rgba(0, 0, 0, ${0.4 * shadowOpacity}),
-                    inset 0 -1px 0 rgba(0, 0, 0, ${0.6 * shadowOpacity})
-                `;
+                wrapper.style.boxShadow = generateCardShadow(opacity);
             }
         });
 

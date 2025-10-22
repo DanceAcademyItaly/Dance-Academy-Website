@@ -323,12 +323,12 @@ function updateMissioneAnimationsMathematical(scrollY, animationState) {
             const reverseIndex = totalElements - 1 - index;
 
             // Entrance stagger: reverse order (button first)
-            const elementTrigger = entranceStart + (reverseIndex * 80);
+            const elementTrigger = entranceStart + (reverseIndex * 60);
             const animationDuration = 200;
             const elementAnimationEnd = elementTrigger + animationDuration;
 
             // Exit stagger: SAME order as entrance (button first)
-            const elementExitStart = deadzoneEnd + (reverseIndex * 80);
+            const elementExitStart = deadzoneEnd + (reverseIndex * 60);
             const elementExitEnd = elementExitStart + animationDuration;
 
             // Maintain fixed viewport positioning (positions never change)
@@ -343,7 +343,7 @@ function updateMissioneAnimationsMathematical(scrollY, animationState) {
             } else if (scrollY >= elementTrigger && scrollY <= elementAnimationEnd) {
                 // Phase 2: Entrance animation - emerge from floor
                 const progress = (scrollY - elementTrigger) / animationDuration;
-                const easedProgress = 1 - Math.pow(1 - progress, 3); // Ease-out cubic
+                const easedProgress = 1 - Math.pow(1 - progress, 1.3); // Ease-out with exponent 1.3
 
                 const translateY = 30 * (1 - easedProgress); // 30px → 0px
                 const opacity = easedProgress; // 0 → 1
@@ -365,7 +365,7 @@ function updateMissioneAnimationsMathematical(scrollY, animationState) {
             } else if (scrollY > elementExitStart && scrollY <= elementExitEnd) {
                 // Phase 4: Exit animation - submerge into ceiling (REVERSE OF ENTRANCE)
                 const progress = (scrollY - elementExitStart) / animationDuration;
-                const easedProgress = 1 - Math.pow(1 - progress, 3); // Same easing as entrance
+                const easedProgress = Math.pow(progress, 1.3); // Ease-in with exponent 1.3
 
                 const translateY = -30 * easedProgress; // 0px → -30px (submerge into ceiling)
                 const opacity = 1 - easedProgress; // 1 → 0
