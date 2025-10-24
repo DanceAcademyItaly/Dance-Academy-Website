@@ -3076,7 +3076,8 @@ function initCandidatiCardStack() {
         contentEasing,
         titleHiddenY,
         cardFadeOutConfig,  // Card fade-out configuration
-        calculateCardFadeOutMultiplier  // Helper function for persistent fade-out
+        calculateCardFadeOutMultiplier,  // Helper function for persistent fade-out
+        generateCardShadow  // Helper function to generate shadow with opacity
     };
 
     // Add resize handler for responsive container and card height recalculation
@@ -3379,7 +3380,7 @@ function updateCandidatiCardStack(scrollY, cardState) {
 
             // Apply shadow fade if enabled
             if (cardFadeOutConfig.enabled && cardFadeOutConfig.fadeShadow) {
-                wrapper.style.boxShadow = generateCardShadow(opacity);
+                wrapper.style.boxShadow = cardState.generateCardShadow(opacity);
             }
         });
 
@@ -3484,7 +3485,7 @@ function updateCandidatiCardStack(scrollY, cardState) {
 
             // Apply shadow fade if enabled
             if (cardFadeOutConfig.enabled && cardFadeOutConfig.fadeShadow) {
-                wrapper.style.boxShadow = generateCardShadow(opacity);
+                wrapper.style.boxShadow = cardState.generateCardShadow(opacity);
             }
         });
 
@@ -3560,7 +3561,7 @@ function updateCandidatiCardStack(scrollY, cardState) {
 
             // Apply shadow fade proportional to card opacity
             if (cardFadeOutConfig.enabled && cardFadeOutConfig.fadeShadow) {
-                wrapper.style.boxShadow = generateCardShadow(opacity);
+                wrapper.style.boxShadow = cardState.generateCardShadow(opacity);
             }
         });
 
