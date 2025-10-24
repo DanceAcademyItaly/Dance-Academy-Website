@@ -962,6 +962,11 @@
             /* gap: 6px from base styles - minimal spacing */
         }
 
+        /* Mobile Episode Selector - Hidden on desktop */
+        .episodi-mobile-selector {
+            display: none; /* Hidden on desktop, shown on mobile */
+        }
+
         /* Contatti Block - Container System */
         .contatti-block {
             min-height: 100vh;
@@ -1027,26 +1032,195 @@
                 padding: 0 20px;
             }
 
-            /* Episodi responsive */
-            .episodi-container {
-                grid-template-columns: 1fr;
-                gap: clamp(15px, 3vh, 20px);
-                max-height: none;
+            /* ===== EPISODI MOBILE LAYOUT =====
+               Complete override of desktop fixed system for mobile devices.
+               Creates a single-viewport static layout with dropdown selector + content.
+            */
+
+            /* Episodi spacer: Becomes the visible section container on mobile */
+            .episodi-spacer {
+                display: flex !important; /* Show as flex container */
+                visibility: visible !important;
+                height: auto !important; /* Override JS-set height */
+                min-height: 100vh !important; /* Full viewport height */
+                width: 100% !important;
+                max-width: 100vw !important; /* Constrain to viewport width */
+                padding: clamp(80px, 10vh, 100px) clamp(15px, 4vw, 20px) clamp(40px, 5vh, 60px) !important;
+                align-items: stretch !important;
+                justify-content: flex-start !important;
+                flex-direction: column;
             }
 
-            .sidebar,
+            /* Container wrapper: Nested inside spacer on mobile (via JS) */
+            .episodi-container-wrapper {
+                position: relative !important; /* Override fixed positioning */
+                top: auto !important;
+                left: auto !important;
+                transform: none !important; /* No transforms on mobile */
+                height: auto !important;
+                max-height: none !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                flex-direction: column !important; /* Stack vertically */
+                gap: clamp(15px, 2vh, 20px) !important;
+                padding: 0 !important; /* Spacer provides padding */
+                opacity: 1 !important; /* Always visible */
+                z-index: auto !important;
+                display: flex !important;
+                align-items: stretch !important;
+                justify-content: flex-start !important;
+            }
+
+            /* Hide desktop sidebar accordion on mobile */
+            .episodi-sidebar-wrapper {
+                display: none !important;
+            }
+
+            /* Show mobile dropdown selector */
+            .episodi-mobile-selector {
+                display: block !important;
+                width: 100%;
+                padding: clamp(14px, 2vh, 18px) clamp(16px, 3vw, 20px);
+                background: rgba(0, 0, 0, 0.3);
+                backdrop-filter: blur(20px) saturate(90%);
+                -webkit-backdrop-filter: blur(20px) saturate(90%);
+                border: 1px solid var(--border-default);
+                border-radius: 2px;
+                color: var(--text-secondary);
+                font-family: inherit;
+                font-size: clamp(11px, 1.2vw + 0.3vh, 14px);
+                text-transform: uppercase;
+                letter-spacing: var(--letter-spacing-wide);
+                cursor: pointer;
+                transition: all 0.3s;
+                appearance: none;
+                background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='rgba(255,255,255,0.5)' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+                background-repeat: no-repeat;
+                background-position: right 15px center;
+                background-size: 20px;
+                padding-right: 45px;
+                box-shadow:
+                    0 8px 24px rgba(0, 0, 0, 0.4),
+                    0 5px 12px rgba(0, 0, 0, 0.3),
+                    0 3px 6px rgba(0, 0, 0, 0.25),
+                    0 1px 3px rgba(0, 0, 0, 0.2),
+                    inset 0 -1px 0 rgba(0, 0, 0, 0.4);
+            }
+
+            .episodi-mobile-selector:hover,
+            .episodi-mobile-selector:focus {
+                color: var(--text-primary);
+                border-color: var(--border-hover);
+                outline: none;
+            }
+
+            .episodi-mobile-selector option {
+                background: var(--black);
+                color: var(--text-primary);
+                padding: 12px;
+            }
+
+            /* Content wrapper: Full width, no transforms */
+            .episodi-content-wrapper {
+                width: 100% !important;
+                height: auto !important;
+                flex: none !important;
+                min-width: 0 !important;
+                transform: none !important; /* No parallax on mobile */
+            }
+
+            /* Content area: No scroll, auto height */
             .content-area {
-                max-height: none;
-                height: auto;
+                height: auto !important;
+                max-height: none !important;
+                overflow-y: visible !important;
+                overflow-x: visible !important; /* Allow horizontal scroll for coreografie */
             }
 
-            .sidebar {
-                max-height: 50vh;
+            /* Episode content: Ensure proper spacing */
+            .episodio-content {
+                display: none;
+            }
+
+            .episodio-content.active {
+                display: flex !important;
+                flex-direction: column;
+                gap: clamp(12px, 2vh, 18px);
+                width: 100%;
+            }
+
+            /* Main video: Full width, responsive aspect ratio */
+            .video-principale {
+                width: 100% !important;
+                max-width: 100% !important;
+                aspect-ratio: 16/9;
+                margin-bottom: 0 !important;
+            }
+
+            /* ===== CHOREOGRAPHIES HORIZONTAL CAROUSEL ===== */
+            .coreografie-section {
+                display: flex !important; /* Flex to control header and grid separately */
+                flex-direction: column !important;
+                align-items: center !important; /* Center header */
+                width: 100% !important;
+                margin-top: 0 !important;
+                padding: 0 !important;
+                overflow-x: visible !important; /* No overflow on section */
+                overflow-y: visible !important;
+            }
+
+            .coreografie-header {
+                font-size: clamp(10px, 1.1vw + 0.2vh, 12px);
+                margin-bottom: clamp(8px, 1.5vh, 12px);
+                padding-bottom: clamp(6px, 1vh, 8px);
+                width: 100% !important; /* Full width */
+                flex-shrink: 0 !important; /* Don't shrink */
             }
 
             .coreografie-grid {
-                flex-direction: column;
-                gap: 15px;
+                display: flex !important; /* Horizontal flex container */
+                flex-direction: row !important;
+                gap: 15px !important;
+                padding: 0 0 10px 0 !important;
+                overflow-x: scroll !important; /* Grid is the scrolling container */
+                overflow-y: hidden !important;
+                -webkit-overflow-scrolling: touch !important;
+                scrollbar-width: none !important;
+                -ms-overflow-style: none !important;
+                scroll-snap-type: x mandatory !important;
+                width: 100% !important; /* Full width for scroll area */
+            }
+
+            /* Hide scrollbar on grid */
+            .coreografie-grid::-webkit-scrollbar {
+                display: none;
+            }
+
+            .coreo-card {
+                width: calc(85vw - 30px) !important;
+                min-width: 250px !important;
+                max-width: 400px !important;
+                flex-shrink: 0 !important;
+                scroll-snap-align: center !important;
+                scroll-snap-stop: always !important;
+            }
+
+            /* First and last cards: Add padding for center alignment */
+            .coreo-card:first-child {
+                margin-left: calc((100vw - (85vw - 30px)) / 2) !important;
+            }
+
+            .coreo-card:last-child {
+                margin-right: calc((100vw - (85vw - 30px)) / 2) !important;
+            }
+
+            .coreo-video {
+                aspect-ratio: 16/9;
+            }
+
+            .coreo-title {
+                font-size: clamp(9px, 1vw + 0.2vh, 11px);
+                padding: clamp(8px, 1.5vh, 12px);
             }
 
             /* Missione responsive */
@@ -1319,6 +1493,10 @@
 
     <!-- Parent container (centered fixed element) -->
     <div class="episodi-container-wrapper">
+        <!-- Mobile episode selector (hidden on desktop) -->
+        <select class="episodi-mobile-selector" id="episodiMobileSelector" aria-label="Select episode">
+        </select>
+
         <!-- Sidebar wrapper -->
         <div class="episodi-sidebar-wrapper">
             <aside class="sidebar" id="sidebar"></aside>
