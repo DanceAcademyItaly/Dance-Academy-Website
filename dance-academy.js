@@ -1419,7 +1419,32 @@ function populateEpisodes() {
         seasonDiv.appendChild(list);
         sidebar.appendChild(seasonDiv);
     });
-    
+
+    // Build mobile selector (hidden on desktop, shown on mobile)
+    const mobileSelector = document.getElementById('episodiMobileSelector');
+    if (mobileSelector) {
+        mobileSelector.innerHTML = '';
+        siteContent.episodes.seasons.forEach(season => {
+            if (!season?.episodes?.length) return;
+
+            season.episodes.forEach(episode => {
+                const option = document.createElement('option');
+                option.value = episode.id;
+                option.textContent = `${season.name} - ${episode.title}`;
+                if (episode.id === defaultEpisodeId) {
+                    option.selected = true;
+                }
+                mobileSelector.appendChild(option);
+            });
+        });
+
+        // Add change event listener for mobile selector
+        mobileSelector.onchange = (e) => {
+            const episodeId = parseInt(e.target.value);
+            switchEpisode(episodeId);
+        };
+    }
+
     // Build content
     contentArea.innerHTML = '';
     siteContent.episodes.seasons.forEach(season => {
@@ -1540,6 +1565,12 @@ function switchEpisode(episodeId) {
     document.querySelectorAll('.episodio-content').forEach(content => {
         content.classList.toggle('active', content.dataset.content == episodeId);
     });
+
+    // Update mobile selector to match current episode
+    const mobileSelector = document.getElementById('episodiMobileSelector');
+    if (mobileSelector && mobileSelector.value != episodeId) {
+        mobileSelector.value = episodeId;
+    }
 }
 
 // Episodi animation state
@@ -1882,74 +1913,112 @@ function updateEpisodiAnimations(scrollY) {
     const sidebarWrapper = containerWrapper.querySelector('.episodi-sidebar-wrapper');
     const contentWrapper = containerWrapper.querySelector('.episodi-content-wrapper');
 
+    // Detect mobile (same breakpoint as CSS: 768px)
+    const isMobile = window.innerWidth <= 768;
+
     let containerTop, opacity, sidebarTransform, contentTransform;
 
-    if (scrollY < entranceStart) {
-        // Before entrance - container off-screen
-        containerTop = startTop;
-        opacity = 0;
-        sidebarTransform = 'translateY(0)';
-        contentTransform = 'translateY(0)';
-
-    } else if (scrollY <= entranceEnd) {
-        // Phase 1: Entrance - container slides up, children have parallax transforms
-        const progress = (scrollY - entranceStart) / (entranceEnd - entranceStart);
-        const containerEasing = 1 - Math.pow(1 - progress, 3); // Ease-out-cubic
-        const contentEasing = 1 - Math.pow(1 - progress, 2); // Ease-out-quadratic
-
-        containerTop = startTop - (travelDistance * containerEasing);
-
-        // Fade in during first 30% of entrance
-        opacity = Math.min(1, progress / 0.3);
-
-        // Parallax effect: sidebar lags 100px, content has ease-out-quad independent curve
-        const sidebarParallaxAmount = 100; // pixels
-        const contentParallaxAmount = 50; // pixels
-        const sidebarLag = sidebarParallaxAmount * (1 - progress);
-        const contentLead = -contentParallaxAmount * (1 - contentEasing);
-
-        sidebarTransform = `translateY(${sidebarLag}px)`;
-        contentTransform = `translateY(${contentLead}px)`;
-
-    } else if (scrollY <= deadzoneEnd) {
-        // Phase 2: Deadzone - container fixed at deadzone position
+    if (isMobile) {
+        // ===== MOBILE: Simple fade in/deadzone/fade out (like missione) =====
+        // Container stays at fixed position, only opacity changes
         containerTop = deadzoneTop;
-        opacity = 1;
         sidebarTransform = 'translateY(0)';
         contentTransform = 'translateY(0)';
 
-    } else if (scrollY <= exitEnd) {
-        // Phase 3: Exit - horizontal slide out with fade
-        const exitProgress = (scrollY - deadzoneEnd) / (exitEnd - deadzoneEnd);
-        const exitEasing = Math.pow(exitProgress, 1.25); // Ease-in for exit
+        if (scrollY < entranceStart) {
+            // Before entrance - hidden
+            opacity = 0;
 
-        // Fade out (starts at 20%, fully faded at 70%)
-        if (exitProgress >= 0.2) {
-            if (exitProgress >= 0.7) {
-                opacity = 0;
-            } else {
-                const fadeProgress = (exitProgress - 0.2) / 0.5;
-                opacity = 1 - Math.pow(fadeProgress, 0.5);
-            }
-        } else {
+        } else if (scrollY <= entranceEnd) {
+            // Phase 1: Entrance - fade in with missione curve
+            const progress = (scrollY - entranceStart) / (entranceEnd - entranceStart);
+            const easedProgress = 1 - Math.pow(1 - progress, 1.15); // Missione ease-out curve
+            opacity = easedProgress;
+
+        } else if (scrollY <= deadzoneEnd) {
+            // Phase 2: Deadzone - fully visible
             opacity = 1;
+
+        } else if (scrollY <= exitEnd) {
+            // Phase 3: Exit - fade out with missione curve
+            const exitProgress = (scrollY - deadzoneEnd) / (exitEnd - deadzoneEnd);
+            const easedProgress = Math.pow(exitProgress, 1.15); // Missione ease-in curve
+            opacity = 1 - easedProgress;
+
+        } else {
+            // After exit - hidden
+            opacity = 0;
         }
 
-        // Horizontal slide (sidebar left, content right)
-        const moveDistance = 60; // vw
-        const sidebarMoveX = -moveDistance * exitEasing;
-        const contentMoveX = moveDistance * exitEasing;
-
-        containerTop = deadzoneTop;
-        sidebarTransform = `translateX(${sidebarMoveX}vw)`;
-        contentTransform = `translateX(${contentMoveX}vw)`;
-
     } else {
-        // After exit - fully hidden
-        containerTop = deadzoneTop;
-        opacity = 0;
-        sidebarTransform = 'translateX(-60vw)';
-        contentTransform = 'translateX(60vw)';
+        // ===== DESKTOP: Complex entrance/exit with parallax =====
+        if (scrollY < entranceStart) {
+            // Before entrance - container off-screen
+            containerTop = startTop;
+            opacity = 0;
+            sidebarTransform = 'translateY(0)';
+            contentTransform = 'translateY(0)';
+
+        } else if (scrollY <= entranceEnd) {
+            // Phase 1: Entrance - container slides up, children have parallax transforms
+            const progress = (scrollY - entranceStart) / (entranceEnd - entranceStart);
+            const containerEasing = 1 - Math.pow(1 - progress, 3); // Ease-out-cubic
+            const contentEasing = 1 - Math.pow(1 - progress, 2); // Ease-out-quadratic
+
+            containerTop = startTop - (travelDistance * containerEasing);
+
+            // Fade in during first 30% of entrance
+            opacity = Math.min(1, progress / 0.3);
+
+            // Parallax effect: sidebar lags 100px, content has ease-out-quad independent curve
+            const sidebarParallaxAmount = 100; // pixels
+            const contentParallaxAmount = 50; // pixels
+            const sidebarLag = sidebarParallaxAmount * (1 - progress);
+            const contentLead = -contentParallaxAmount * (1 - contentEasing);
+
+            sidebarTransform = `translateY(${sidebarLag}px)`;
+            contentTransform = `translateY(${contentLead}px)`;
+
+        } else if (scrollY <= deadzoneEnd) {
+            // Phase 2: Deadzone - container fixed at deadzone position
+            containerTop = deadzoneTop;
+            opacity = 1;
+            sidebarTransform = 'translateY(0)';
+            contentTransform = 'translateY(0)';
+
+        } else if (scrollY <= exitEnd) {
+            // Phase 3: Exit - horizontal slide out with fade
+            const exitProgress = (scrollY - deadzoneEnd) / (exitEnd - deadzoneEnd);
+            const exitEasing = Math.pow(exitProgress, 1.25); // Ease-in for exit
+
+            // Fade out (starts at 20%, fully faded at 70%)
+            if (exitProgress >= 0.2) {
+                if (exitProgress >= 0.7) {
+                    opacity = 0;
+                } else {
+                    const fadeProgress = (exitProgress - 0.2) / 0.5;
+                    opacity = 1 - Math.pow(fadeProgress, 0.5);
+                }
+            } else {
+                opacity = 1;
+            }
+
+            // Horizontal slide (sidebar left, content right)
+            const moveDistance = 60; // vw
+            const sidebarMoveX = -moveDistance * exitEasing;
+            const contentMoveX = moveDistance * exitEasing;
+
+            containerTop = deadzoneTop;
+            sidebarTransform = `translateX(${sidebarMoveX}vw)`;
+            contentTransform = `translateX(${contentMoveX}vw)`;
+
+        } else {
+            // After exit - fully hidden
+            containerTop = deadzoneTop;
+            opacity = 0;
+            sidebarTransform = 'translateX(-60vw)';
+            contentTransform = 'translateX(60vw)';
+        }
     }
 
     // Apply animations to parent container
@@ -1959,6 +2028,20 @@ function updateEpisodiAnimations(scrollY) {
     // Apply child transforms for parallax/exit effects
     if (sidebarWrapper) sidebarWrapper.style.transform = sidebarTransform;
     if (contentWrapper) contentWrapper.style.transform = contentTransform;
+
+    // Update mobile selector position and opacity (sibling at body level)
+    const mobileSelector = document.getElementById('episodiMobileSelector');
+    if (mobileSelector) {
+        if (isMobile) {
+            // Position mobile selector at same position as container top
+            // (matches desktop sidebar/content positioning - they start at container top)
+            mobileSelector.style.top = containerTop + 'px';
+            mobileSelector.style.opacity = opacity;
+        } else {
+            // Hide on desktop (CSS handles display, but ensure opacity is 0)
+            mobileSelector.style.opacity = 0;
+        }
+    }
 }
 
 // Initialize scroll system
@@ -2698,11 +2781,15 @@ function initCandidatiCardStack() {
     const exitAnimationStart = cardDeadzoneEnd;
     const exitAnimationEnd = exitAnimationStart + exitAnimationDuration;
 
-    // Set spacer height to cover all 4 phases
-    const totalScrollRange = exitAnimationEnd - titleEntranceStart;
+    // Phase 5: Contatti fade-in (50vh)
+    const contattiFadeDuration = window.innerHeight * 0.5; // 50vh for contatti fade-in
+    const contattiFadeEnd = exitAnimationEnd + contattiFadeDuration;
+
+    // Set spacer height to cover all 5 phases (candidati + contatti fade-in)
+    const totalScrollRange = contattiFadeEnd - titleEntranceStart;
     candidatiSpacer.style.height = totalScrollRange + 'px';
 
-    console.log('Candidati scroll ranges (4-phase with exit):', {
+    console.log('Candidati scroll ranges (4-phase with exit + contatti fade-in):', {
         titleEntranceStart,
         titleEntranceEnd,
         cardEntranceStart,
@@ -2710,6 +2797,7 @@ function initCandidatiCardStack() {
         cardDeadzoneEnd,
         exitAnimationStart,
         exitAnimationEnd,
+        contattiFadeEnd,
         totalScrollRange,
         totalVh: `${(totalScrollRange / window.innerHeight).toFixed(1)}vh`,
         spacerHeight: totalScrollRange + 'px',
@@ -3272,12 +3360,11 @@ function updateCandidatiCardStack(scrollY, cardState) {
     } = cardState;
 
     // No visibility control needed - elements are independent and always in layout
-    // Early return if before candidati section starts or after exit completes
+    // Early return if before candidati section starts
     if (scrollY < titleEntranceStart) {
         return;
-    } else if (scrollY > exitAnimationEnd) {
-        return;
     }
+    // REMOVED: early return after exitAnimationEnd - need to continue for contatti fade-in
 
     // PHASE 1: Title entrance animation (50vh)
     // Animate candidatiTitleWrapper (position: fixed)
@@ -3589,7 +3676,7 @@ function updateCandidatiCardStack(scrollY, cardState) {
         }
     }
 
-    // AFTER Phase 4: Hide everything so contatti is visible
+    // AFTER Phase 4: Hide candidati elements and fade in contatti
     else if (scrollY > exitAnimationEnd) {
         // Hide all candidati elements
         candidatiTitleWrapper.style.opacity = '0';
@@ -3614,6 +3701,29 @@ function updateCandidatiCardStack(scrollY, cardState) {
         if (backgroundOverlay) {
             backgroundOverlay.style.opacity = '0';
             backgroundOverlay.style.visibility = 'hidden';
+        }
+
+        // CONTATTI FADE-IN ANIMATION
+        // Fade in contatti using candidati title curve (ease-out with exponent 2.5)
+        const contattiContainer = document.getElementById('contattiContainer');
+        if (contattiContainer) {
+            // Animation starts right after candidati exit ends
+            const contattiFadeStart = exitAnimationEnd;
+            const contattiFadeDuration = window.innerHeight * 0.5; // 50vh fade-in duration
+            const contattiFadeEnd = contattiFadeStart + contattiFadeDuration;
+
+            if (scrollY >= contattiFadeStart && scrollY <= contattiFadeEnd) {
+                // Fade in with candidati title curve
+                const progress = (scrollY - contattiFadeStart) / contattiFadeDuration;
+                const easedProgress = sidebarEasing(progress); // Same curve as candidati title
+
+                contattiContainer.style.visibility = 'visible';
+                contattiContainer.style.opacity = easedProgress;
+            } else if (scrollY > contattiFadeEnd) {
+                // Fully visible
+                contattiContainer.style.visibility = 'visible';
+                contattiContainer.style.opacity = '1';
+            }
         }
     }
 }

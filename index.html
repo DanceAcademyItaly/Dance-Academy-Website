@@ -596,6 +596,7 @@
             backdrop-filter: blur(20px) saturate(90%);
             -webkit-backdrop-filter: blur(20px) saturate(90%);
             border: 1px solid rgba(255, 255, 255, 0.25);
+            border-radius: 2px;
             color: var(--text-secondary);
             /* Responsive padding that scales with viewport */
             padding: clamp(12px, 2vh, 20px) clamp(25px, 4vw, 50px);
@@ -608,6 +609,13 @@
             /* Ensure button doesn't get too wide on large screens */
             max-width: 300px;
             text-align: center;
+            /* 5-layer shadow system matching candidati cards */
+            box-shadow:
+                0 8px 24px rgba(0, 0, 0, 0.4),
+                0 5px 12px rgba(0, 0, 0, 0.3),
+                0 3px 6px rgba(0, 0, 0, 0.25),
+                0 1px 3px rgba(0, 0, 0, 0.2),
+                inset 0 -1px 0 rgba(0, 0, 0, 0.4);
         }
 
         .missione-button:hover {
@@ -907,6 +915,7 @@
             backdrop-filter: blur(20px) saturate(90%);
             -webkit-backdrop-filter: blur(20px) saturate(90%);
             border: 1px solid rgba(255, 255, 255, 0.25);
+            border-radius: 2px;
             color: var(--text-secondary);
             /* Match missione-button padding */
             padding: clamp(12px, 2vh, 20px) clamp(25px, 4vw, 50px);
@@ -923,6 +932,13 @@
             /* Match missione-button max-width */
             max-width: 300px;
             text-align: center;
+            /* 5-layer shadow system matching candidati cards */
+            box-shadow:
+                0 8px 24px rgba(0, 0, 0, 0.4),
+                0 5px 12px rgba(0, 0, 0, 0.3),
+                0 3px 6px rgba(0, 0, 0, 0.25),
+                0 1px 3px rgba(0, 0, 0, 0.2),
+                inset 0 -1px 0 rgba(0, 0, 0, 0.4);
         }
 
         .submit-button:hover {
@@ -962,9 +978,18 @@
             /* gap: 6px from base styles - minimal spacing */
         }
 
-        /* Mobile Episode Selector - Hidden on desktop */
+        /* Mobile Episode Selector - Fixed at body level for backdrop-filter */
         .episodi-mobile-selector {
-            display: none; /* Hidden on desktop, shown on mobile */
+            /* Fixed positioning at body level as sibling to video-bg */
+            position: fixed;
+            /* Hidden on desktop, shown and positioned on mobile */
+            display: none;
+            /* Will be positioned by JS to match container top + vertical offset */
+            top: 0; /* JS will update this */
+            left: 0;
+            /* Base styling */
+            z-index: 106; /* Above container (105) to blur video-bg (-1) */
+            opacity: 0; /* Controlled by JS animations (same as container) */
         }
 
         /* Contatti Block - Container System */
@@ -987,6 +1012,9 @@
             width: 100%;
             text-align: center;
             overflow: auto;
+            /* Initial state: hidden for fade-in animation */
+            opacity: 0;
+            visibility: hidden;
         }
 
         .contatti-container h2 {
@@ -1033,42 +1061,27 @@
             }
 
             /* ===== EPISODI MOBILE LAYOUT =====
-               Complete override of desktop fixed system for mobile devices.
-               Creates a single-viewport static layout with dropdown selector + content.
+               Maintains fixed positioning but with simpler layout.
+               Uses fade in/deadzone/fade out animations (like missione section).
             */
 
-            /* Episodi spacer: Becomes the visible section container on mobile */
+            /* Episodi spacer: Hidden scroll range creator (same as desktop) */
             .episodi-spacer {
-                display: flex !important; /* Show as flex container */
-                visibility: visible !important;
-                height: auto !important; /* Override JS-set height */
-                min-height: 100vh !important; /* Full viewport height */
-                width: 100% !important;
-                max-width: 100vw !important; /* Constrain to viewport width */
-                padding: clamp(80px, 10vh, 100px) clamp(15px, 4vw, 20px) clamp(40px, 5vh, 60px) !important;
-                align-items: stretch !important;
-                justify-content: flex-start !important;
-                flex-direction: column;
+                /* Spacer remains hidden - JS sets height for scroll range */
             }
 
-            /* Container wrapper: Nested inside spacer on mobile (via JS) */
+            /* Container wrapper: Stays fixed, but simplified for mobile */
             .episodi-container-wrapper {
-                position: relative !important; /* Override fixed positioning */
-                top: auto !important;
-                left: auto !important;
-                transform: none !important; /* No transforms on mobile */
-                height: auto !important;
-                max-height: none !important;
-                width: 100% !important;
-                max-width: 100% !important;
+                /* Keep position: fixed - animations controlled by JS */
                 flex-direction: column !important; /* Stack vertically */
                 gap: clamp(15px, 2vh, 20px) !important;
-                padding: 0 !important; /* Spacer provides padding */
-                opacity: 1 !important; /* Always visible */
-                z-index: auto !important;
-                display: flex !important;
-                align-items: stretch !important;
-                justify-content: flex-start !important;
+                /* Top padding accounts for mobile selector height + gap (relative values) */
+                /* Selector: clamp(46px, 5vh, 58px) + Gap: clamp(15px, 2vh, 20px) = clamp(61px, 7vh, 78px) */
+                padding: clamp(60px, 7vh, 80px) 0 clamp(15px, 2vh, 20px) 0 !important; /* top right bottom left */
+                max-width: 100vw !important; /* Full viewport width */
+                width: 100vw !important;
+                left: 0 !important;
+                transform: none !important; /* No centering transform needed */
             }
 
             /* Hide desktop sidebar accordion on mobile */
@@ -1076,14 +1089,18 @@
                 display: none !important;
             }
 
-            /* Show mobile dropdown selector */
+            /* Show mobile dropdown selector - now at body level as sibling */
             .episodi-mobile-selector {
                 display: block !important;
-                width: 100%;
+                /* Already fixed at body level - no position override needed */
+                /* Horizontal positioning with margins from viewport edges */
+                left: clamp(15px, 4vw, 20px) !important;
+                width: calc(100vw - 2 * clamp(15px, 4vw, 20px)) !important;
                 padding: clamp(14px, 2vh, 18px) clamp(16px, 3vw, 20px);
-                background: rgba(0, 0, 0, 0.3);
-                backdrop-filter: blur(20px) saturate(90%);
-                -webkit-backdrop-filter: blur(20px) saturate(90%);
+                /* Glassmorphism background - NOW WORKS because it's at body level! */
+                background-color: rgba(0, 0, 0, 0.3) !important;
+                backdrop-filter: blur(20px) saturate(90%) !important;
+                -webkit-backdrop-filter: blur(20px) saturate(90%) !important;
                 border: 1px solid var(--border-default);
                 border-radius: 2px;
                 color: var(--text-secondary);
@@ -1093,18 +1110,25 @@
                 letter-spacing: var(--letter-spacing-wide);
                 cursor: pointer;
                 transition: all 0.3s;
+                /* Remove default select appearance to allow custom styling */
                 appearance: none;
-                background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='rgba(255,255,255,0.5)' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
-                background-repeat: no-repeat;
-                background-position: right 15px center;
-                background-size: 20px;
+                -webkit-appearance: none;
+                -moz-appearance: none;
+                /* Custom dropdown arrow - uses background-image to overlay on background-color */
+                background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='rgba(255,255,255,0.5)' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e") !important;
+                background-repeat: no-repeat !important;
+                background-position: right 15px center !important;
+                background-size: 20px !important;
                 padding-right: 45px;
+                /* Enhanced shadow system matching other glassmorphism elements */
                 box-shadow:
                     0 8px 24px rgba(0, 0, 0, 0.4),
                     0 5px 12px rgba(0, 0, 0, 0.3),
                     0 3px 6px rgba(0, 0, 0, 0.25),
                     0 1px 3px rgba(0, 0, 0, 0.2),
                     inset 0 -1px 0 rgba(0, 0, 0, 0.4);
+                /* z-index inherited from base (106 - above container) */
+                /* opacity inherited from base (0 - controlled by JS) */
             }
 
             .episodi-mobile-selector:hover,
@@ -1120,21 +1144,23 @@
                 padding: 12px;
             }
 
-            /* Content wrapper: Full width, no transforms */
+            /* Content wrapper: Full width on mobile */
             .episodi-content-wrapper {
                 width: 100% !important;
-                height: auto !important;
-                flex: none !important;
+                height: 100% !important;
+                flex: 1 !important;
                 min-width: 0 !important;
-                transform: none !important; /* No parallax on mobile */
+                /* No padding - let children control their own spacing */
+                padding: 0 !important;
             }
 
-            /* Content area: No scroll, auto height */
+            /* Content area: Vertical scroll for episode content */
             .content-area {
-                height: auto !important;
-                max-height: none !important;
-                overflow-y: visible !important;
+                height: 100% !important;
+                overflow-y: auto !important;
                 overflow-x: visible !important; /* Allow horizontal scroll for coreografie */
+                /* Remove padding - handled by wrapper and individual elements */
+                padding: 0 !important;
             }
 
             /* Episode content: Ensure proper spacing */
@@ -1151,10 +1177,13 @@
 
             /* Main video: Full width, responsive aspect ratio */
             .video-principale {
-                width: 100% !important;
-                max-width: 100% !important;
+                width: calc(100% - 2 * clamp(15px, 4vw, 20px)) !important;
+                max-width: calc(100% - 2 * clamp(15px, 4vw, 20px)) !important;
                 aspect-ratio: 16/9;
                 margin-bottom: 0 !important;
+                /* Add horizontal margin for spacing from viewport edges */
+                margin-left: clamp(15px, 4vw, 20px) !important;
+                margin-right: clamp(15px, 4vw, 20px) !important;
             }
 
             /* ===== CHOREOGRAPHIES HORIZONTAL CAROUSEL ===== */
@@ -1162,7 +1191,8 @@
                 display: flex !important; /* Flex to control header and grid separately */
                 flex-direction: column !important;
                 align-items: center !important; /* Center header */
-                width: 100% !important;
+                /* Full viewport width - no padding to break out of */
+                width: 100vw !important;
                 margin-top: 0 !important;
                 padding: 0 !important;
                 overflow-x: visible !important; /* No overflow on section */
@@ -1173,7 +1203,11 @@
                 font-size: clamp(10px, 1.1vw + 0.2vh, 12px);
                 margin-bottom: clamp(8px, 1.5vh, 12px);
                 padding-bottom: clamp(6px, 1vh, 8px);
-                width: 100% !important; /* Full width */
+                /* Header has padding for spacing from edges */
+                padding-left: clamp(15px, 4vw, 20px) !important;
+                padding-right: clamp(15px, 4vw, 20px) !important;
+                width: 100% !important;
+                box-sizing: border-box !important;
                 flex-shrink: 0 !important; /* Don't shrink */
             }
 
@@ -1188,7 +1222,7 @@
                 scrollbar-width: none !important;
                 -ms-overflow-style: none !important;
                 scroll-snap-type: x mandatory !important;
-                width: 100% !important; /* Full width for scroll area */
+                width: 100vw !important; /* Full viewport width for scroll area */
             }
 
             /* Hide scrollbar on grid */
@@ -1491,12 +1525,12 @@
     <!-- Episodi - Restructured for direct backdrop-filter support -->
     <!-- Fixed container at body level as sibling to video -->
 
+    <!-- Mobile episode selector (fixed at body level as sibling, hidden on desktop) -->
+    <select class="episodi-mobile-selector" id="episodiMobileSelector" aria-label="Select episode">
+    </select>
+
     <!-- Parent container (centered fixed element) -->
     <div class="episodi-container-wrapper">
-        <!-- Mobile episode selector (hidden on desktop) -->
-        <select class="episodi-mobile-selector" id="episodiMobileSelector" aria-label="Select episode">
-        </select>
-
         <!-- Sidebar wrapper -->
         <div class="episodi-sidebar-wrapper">
             <aside class="sidebar" id="sidebar"></aside>
@@ -1673,7 +1707,7 @@
                     <div class="form-group full-width">
                         <textarea name="perche" placeholder="Perché volete partecipare a Dance Academy?" class="tall required" form="candidatiForm" required></textarea>
                     </div>
-                    <div class="form-group">
+                    <div class="form-group full-width">
                         <select name="disponibilita" class="required" form="candidatiForm" required>
                             <option value="">Disponibilità per le riprese</option>
                             <option value="subito">Da subito</option>
