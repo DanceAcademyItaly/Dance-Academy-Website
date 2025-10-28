@@ -70,6 +70,33 @@
             pointer-events: none;
         }
 
+        /* CRITICAL: Lenis data-lenis-prevent support */
+        /* Prevents scroll propagation on elements excluded from Lenis control */
+        .lenis.lenis-smooth [data-lenis-prevent],
+        .lenis.lenis-smooth [data-lenis-prevent-touch],
+        .lenis.lenis-smooth [data-lenis-prevent-wheel] {
+            overscroll-behavior: contain;
+        }
+
+        /* Also apply without lenis-smooth class for broader compatibility */
+        .lenis [data-lenis-prevent],
+        .lenis [data-lenis-prevent-touch],
+        .lenis [data-lenis-prevent-wheel] {
+            overscroll-behavior: contain;
+        }
+
+        /* Ensure horizontal scroll containers are excluded from Lenis */
+        .lenis .coreografie-grid,
+        .coreografie-grid {
+            overscroll-behavior: contain;
+        }
+
+        /* Ensure episodi containers can handle their own scroll */
+        .lenis .episodi-container-wrapper,
+        .episodi-container-wrapper {
+            overscroll-behavior: contain;
+        }
+
         /* Enhanced progressive enhancement for reduced motion */
         @media (prefers-reduced-motion: reduce) {
             html {
@@ -495,6 +522,11 @@
             flex-shrink: 0;
             width: fit-content; /* Size to actual number of cards */
             max-width: 100%; /* Prevent overflow beyond parent container */
+            /* Base configuration for scroll handling */
+            touch-action: auto;
+            pointer-events: auto;
+            /* Enable hardware acceleration for smooth scrolling */
+            will-change: scroll-position;
         }
 
         .coreo-card {
@@ -511,6 +543,8 @@
                 0 3px 6px rgba(0, 0, 0, 0.25),
                 0 1px 3px rgba(0, 0, 0, 0.2),
                 inset 0 -1px 0 rgba(0, 0, 0, 0.4);
+            user-select: none;
+            -webkit-user-select: none;
         }
 
         .coreo-card:hover {
@@ -522,12 +556,23 @@
             background: var(--black);
             width: 100%; /* Ensure video fills card width */
             max-width: 100%; /* Prevent overflow */
+            /* CRITICAL: Pass through ALL events - don't capture anything */
+            pointer-events: none !important;
+            position: relative;
         }
 
         .coreo-video iframe {
             width: 100%;
             height: 100%;
             border: none;
+            /* NUCLEAR OPTION: Maximum specificity pointer-events none */
+            /* Ensures iframes NEVER capture events under any circumstances */
+            pointer-events: none !important;
+            /* Explicitly disable all touch gestures on iframe itself */
+            touch-action: none !important;
+            /* Prevent any possibility of interaction */
+            user-select: none !important;
+            -webkit-user-select: none !important;
         }
 
         .coreo-title {
@@ -1157,10 +1202,13 @@
             /* Content area: Vertical scroll for episode content */
             .content-area {
                 height: 100% !important;
-                overflow-y: auto !important;
-                overflow-x: visible !important; /* Allow horizontal scroll for coreografie */
-                /* Remove padding - handled by wrapper and individual elements */
+                /* CRITICAL FIX: Disable vertical scrolling on mobile to prevent scroll conflicts */
+                /* The episodi container is fixed and sized to fit viewport, so no vertical scroll needed */
+                overflow-y: visible !important;
+                overflow-x: visible !important;
                 padding: 0 !important;
+                /* No touch-action restrictions - let children control completely */
+                touch-action: manipulation !important;
             }
 
             /* Episode content: Ensure proper spacing */
@@ -1173,6 +1221,8 @@
                 flex-direction: column;
                 gap: clamp(12px, 2vh, 18px);
                 width: 100%;
+                /* CRITICAL: Allow child horizontal scroll containers to function */
+                touch-action: auto !important;
             }
 
             /* Main video: Full width, responsive aspect ratio */
@@ -1197,6 +1247,8 @@
                 padding: 0 !important;
                 overflow-x: visible !important; /* No overflow on section */
                 overflow-y: visible !important;
+                /* CRITICAL: Allow child horizontal scroll container (grid) to function */
+                touch-action: auto !important;
             }
 
             .coreografie-header {
@@ -1223,6 +1275,16 @@
                 -ms-overflow-style: none !important;
                 scroll-snap-type: x mandatory !important;
                 width: 100vw !important; /* Full viewport width for scroll area */
+                /* NUCLEAR: Maximum horizontal scroll configuration */
+                touch-action: pan-x !important;
+                overscroll-behavior-x: contain !important;
+                overscroll-behavior-y: none !important;
+                pointer-events: auto !important;
+                /* Hardware acceleration */
+                will-change: scroll-position !important;
+                transform: translateZ(0) !important;
+                /* Ensure it's a stacking context */
+                isolation: isolate !important;
             }
 
             /* Hide scrollbar on grid */
@@ -1237,6 +1299,11 @@
                 flex-shrink: 0 !important;
                 scroll-snap-align: center !important;
                 scroll-snap-stop: always !important;
+                /* Cards CAN receive pointer events - they don't block scroll */
+                pointer-events: auto !important;
+                user-select: none !important;
+                -webkit-user-select: none !important;
+                overflow: visible !important;
             }
 
             /* First and last cards: Add padding for center alignment */
@@ -1250,6 +1317,16 @@
 
             .coreo-video {
                 aspect-ratio: 16/9;
+                /* CRITICAL: Pass through ALL events - this element is transparent */
+                pointer-events: none !important;
+            }
+
+            .coreo-video iframe {
+                /* NUCLEAR: Maximum specificity on mobile for iframes */
+                pointer-events: none !important;
+                touch-action: none !important;
+                user-select: none !important;
+                -webkit-user-select: none !important;
             }
 
             .coreo-title {
@@ -1530,7 +1607,9 @@
     </select>
 
     <!-- Parent container (centered fixed element) -->
-    <div class="episodi-container-wrapper">
+    <!-- data-lenis-prevent: Excludes entire episodi section from Lenis smooth scroll control -->
+    <!-- data-lenis-prevent-touch: Specifically prevents touch event capture for horizontal scrolling -->
+    <div class="episodi-container-wrapper" data-lenis-prevent data-lenis-prevent-touch>
         <!-- Sidebar wrapper -->
         <div class="episodi-sidebar-wrapper">
             <aside class="sidebar" id="sidebar"></aside>

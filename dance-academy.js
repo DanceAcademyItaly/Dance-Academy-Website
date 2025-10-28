@@ -286,12 +286,41 @@ function initEnhancedScrollSystem() {
             wheelMultiplier: 1,     // Standard wheel sensitivity
             infinite: false,
             orientation: 'vertical',
-            normalizeWheel: true
+            normalizeWheel: true,
+            // CRITICAL: Programmatically prevent Lenis from capturing events on horizontal scroll containers
+            // This allows native horizontal scrolling to work on mobile devices
+            prevent: (node) => {
+                // Prevent Lenis on elements with data-lenis-prevent attribute
+                if (node.hasAttribute && node.hasAttribute('data-lenis-prevent')) {
+                    return true;
+                }
+                // Prevent Lenis on elements with data-lenis-prevent-touch attribute
+                if (node.hasAttribute && node.hasAttribute('data-lenis-prevent-touch')) {
+                    return true;
+                }
+                // Prevent Lenis on coreografie grids (horizontal scroll containers)
+                if (node.classList && node.classList.contains('coreografie-grid')) {
+                    return true;
+                }
+                // Prevent Lenis on any child of coreografie grid
+                if (node.closest && node.closest('.coreografie-grid')) {
+                    return true;
+                }
+                // Prevent Lenis on episodi container wrapper
+                if (node.classList && node.classList.contains('episodi-container-wrapper')) {
+                    return true;
+                }
+                // Prevent Lenis on any child of episodi container
+                if (node.closest && node.closest('.episodi-container-wrapper')) {
+                    return true;
+                }
+                return false;
+            }
         });
 
         // Mark as initialized
         isScrollSystemInitialized = true;
-        document.documentElement.classList.add('js-loaded', 'lenis-enabled');
+        document.documentElement.classList.add('js-loaded', 'lenis-enabled', 'lenis', 'lenis-smooth');
 
         console.log('Lenis smooth scroll initialized successfully');
 
@@ -1469,7 +1498,12 @@ function populateEpisodes() {
                 
                 const grid = document.createElement('div');
                 grid.className = 'coreografie-grid';
-                
+                // CRITICAL: Prevent Lenis from capturing events on horizontal scroll container
+                // data-lenis-prevent: Blocks both wheel and touch events
+                // data-lenis-prevent-touch: Specifically blocks touch/gesture events for mobile scrolling
+                grid.setAttribute('data-lenis-prevent', '');
+                grid.setAttribute('data-lenis-prevent-touch', '');
+
                 episode.choreographies.forEach(choreo => {
                     const card = document.createElement('div');
                     card.className = 'coreo-card';
