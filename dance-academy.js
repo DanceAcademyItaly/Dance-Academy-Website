@@ -287,8 +287,7 @@ function initEnhancedScrollSystem() {
             infinite: false,
             orientation: 'vertical',
             normalizeWheel: true,
-            // CRITICAL: Programmatically prevent Lenis from capturing events on horizontal scroll containers
-            // This allows native horizontal scrolling to work on mobile devices
+            // Prevent Lenis from capturing events on specific elements
             prevent: (node) => {
                 // Prevent Lenis on elements with data-lenis-prevent attribute
                 if (node.hasAttribute && node.hasAttribute('data-lenis-prevent')) {
@@ -296,14 +295,6 @@ function initEnhancedScrollSystem() {
                 }
                 // Prevent Lenis on elements with data-lenis-prevent-touch attribute
                 if (node.hasAttribute && node.hasAttribute('data-lenis-prevent-touch')) {
-                    return true;
-                }
-                // Prevent Lenis on coreografie grids (horizontal scroll containers)
-                if (node.classList && node.classList.contains('coreografie-grid')) {
-                    return true;
-                }
-                // Prevent Lenis on any child of coreografie grid
-                if (node.closest && node.closest('.coreografie-grid')) {
                     return true;
                 }
                 // Prevent Lenis on episodi container wrapper
@@ -1490,37 +1481,274 @@ function populateEpisodes() {
             if (episode.choreographies?.length) {
                 const choreoSection = document.createElement('div');
                 choreoSection.className = 'coreografie-section';
-                
+
                 const header = document.createElement('h3');
                 header.className = 'coreografie-header';
                 header.textContent = 'Coreografie';
                 choreoSection.appendChild(header);
-                
-                const grid = document.createElement('div');
-                grid.className = 'coreografie-grid';
-                // CRITICAL: Prevent Lenis from capturing events on horizontal scroll container
-                // data-lenis-prevent: Blocks both wheel and touch events
-                // data-lenis-prevent-touch: Specifically blocks touch/gesture events for mobile scrolling
-                grid.setAttribute('data-lenis-prevent', '');
-                grid.setAttribute('data-lenis-prevent-touch', '');
 
-                episode.choreographies.forEach(choreo => {
+                // Create carousel container
+                const carouselContainer = document.createElement('div');
+                carouselContainer.className = 'carousel-container';
+                carouselContainer.dataset.episodeId = episode.id; // For tracking carousel state per episode
+
+                // Create carousel track (holds all cards)
+                const carouselTrack = document.createElement('div');
+                carouselTrack.className = 'carousel-track';
+
+                // Create choreography cards
+                episode.choreographies.forEach((choreo, index) => {
                     const card = document.createElement('div');
                     card.className = 'coreo-card';
+                    card.dataset.index = index;
                     card.innerHTML = `
                         <div class="coreo-video">
                             <iframe src="${choreo.video}" allowfullscreen></iframe>
                         </div>
                         <div class="coreo-title">${choreo.title}</div>
                     `;
-                    grid.appendChild(card);
+                    carouselTrack.appendChild(card);
                 });
-                
-                choreoSection.appendChild(grid);
+
+                carouselContainer.appendChild(carouselTrack);
+
+                // Only add navigation if there are multiple choreographies
+                if (episode.choreographies.length > 1) {
+                    // Create left arrow
+                    const leftArrow = document.createElement('button');
+                    leftArrow.className = 'carousel-arrow left';
+                    leftArrow.setAttribute('aria-label', 'Previous choreography');
+                    leftArrow.innerHTML = `
+                        <svg viewBox="0 0 24 24">
+                            <polyline points="15 18 9 12 15 6"></polyline>
+                        </svg>
+                    `;
+                    carouselContainer.appendChild(leftArrow);
+
+                    // Create right arrow
+                    const rightArrow = document.createElement('button');
+                    rightArrow.className = 'carousel-arrow right';
+                    rightArrow.setAttribute('aria-label', 'Next choreography');
+                    rightArrow.innerHTML = `
+                        <svg viewBox="0 0 24 24">
+                            <polyline points="9 18 15 12 9 6"></polyline>
+                        </svg>
+                    `;
+                    carouselContainer.appendChild(rightArrow);
+
+                    // Create dot indicators
+                    const dotsContainer = document.createElement('div');
+                    dotsContainer.className = 'carousel-dots';
+
+                    episode.choreographies.forEach((_, index) => {
+                        const dot = document.createElement('button');
+                        dot.className = `carousel-dot${index === 0 ? ' active' : ''}`;
+                        dot.dataset.index = index;
+                        dot.setAttribute('aria-label', `Go to choreography ${index + 1}`);
+                        dotsContainer.appendChild(dot);
+                    });
+
+                    choreoSection.appendChild(carouselContainer);
+                    choreoSection.appendChild(dotsContainer);
+                } else {
+                    // Only one choreography, no navigation needed
+                    choreoSection.appendChild(carouselContainer);
+                }
+
                 div.appendChild(choreoSection);
             }
             
             contentArea.appendChild(div);
+        });
+    });
+
+    // Initialize carousel navigation after content is rendered
+    initializeCarousels();
+}
+
+// Initialize all carousel navigation (swipe, arrows, dots)
+function initializeCarousels() {
+    const carousels = document.querySelectorAll('.carousel-container');
+
+    carousels.forEach(carousel => {
+        const track = carousel.querySelector('.carousel-track');
+        const cards = carousel.querySelectorAll('.coreo-card');
+        const leftArrow = carousel.querySelector('.carousel-arrow.left');
+        const rightArrow = carousel.querySelector('.carousel-arrow.right');
+        const section = carousel.closest('.coreografie-section');
+        const dots = section ? section.querySelectorAll('.carousel-dot') : [];
+
+        // Skip if only one card (no navigation needed)
+        if (cards.length <= 1) return;
+
+        let currentIndex = 0;
+        let startX = 0;
+        let currentX = 0;
+        let isDragging = false;
+        let startTime = 0;
+        let autoPlayInterval = null;
+        let autoPlayPauseTimeout = null;
+
+        // Update carousel position
+        function updateCarousel(animated = true) {
+            const cardWidth = cards[0].offsetWidth;
+            const cardMargin = parseInt(getComputedStyle(cards[0]).marginLeft) || 0;
+            const offset = -currentIndex * (cardWidth + 2 * cardMargin);
+
+            if (animated) {
+                track.style.transition = 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
+            } else {
+                track.style.transition = 'none';
+            }
+
+            track.style.transform = `translateX(${offset}px)`;
+
+            // Arrows are always enabled since we loop infinitely
+            // (No disabled state needed)
+
+            // Update dot states
+            dots.forEach((dot, index) => {
+                dot.classList.toggle('active', index === currentIndex);
+            });
+        }
+
+        // Navigate to specific index
+        function goToIndex(index) {
+            currentIndex = Math.max(0, Math.min(index, cards.length - 1));
+            updateCarousel(true);
+            resetAutoPlay();
+        }
+
+        // Advance to next slide with looping
+        function advanceSlide() {
+            currentIndex = (currentIndex + 1) % cards.length;
+            updateCarousel(true);
+        }
+
+        // Start auto-play
+        function startAutoPlay() {
+            stopAutoPlay(); // Clear any existing interval
+            autoPlayInterval = setInterval(advanceSlide, 4000);
+        }
+
+        // Stop auto-play
+        function stopAutoPlay() {
+            if (autoPlayInterval) {
+                clearInterval(autoPlayInterval);
+                autoPlayInterval = null;
+            }
+        }
+
+        // Reset auto-play (pause and restart after delay)
+        function resetAutoPlay() {
+            stopAutoPlay();
+            clearTimeout(autoPlayPauseTimeout);
+            // Resume auto-play after 6 seconds of no interaction
+            autoPlayPauseTimeout = setTimeout(startAutoPlay, 6000);
+        }
+
+        // Touch/swipe handlers
+        function handleTouchStart(e) {
+            isDragging = true;
+            startX = e.type.includes('mouse') ? e.pageX : e.touches[0].pageX;
+            currentX = startX;
+            startTime = Date.now();
+            track.style.transition = 'none';
+            stopAutoPlay(); // Pause auto-play during interaction
+        }
+
+        function handleTouchMove(e) {
+            if (!isDragging) return;
+
+            currentX = e.type.includes('mouse') ? e.pageX : e.touches[0].pageX;
+            const diff = currentX - startX;
+
+            // Apply drag (no edge resistance since we loop infinitely)
+            const cardWidth = cards[0].offsetWidth;
+            const cardMargin = parseInt(getComputedStyle(cards[0]).marginLeft) || 0;
+            const baseOffset = -currentIndex * (cardWidth + 2 * cardMargin);
+
+            track.style.transform = `translateX(${baseOffset + diff}px)`;
+        }
+
+        function handleTouchEnd(e) {
+            if (!isDragging) return;
+            isDragging = false;
+
+            const diff = currentX - startX;
+            const duration = Date.now() - startTime;
+            const velocity = Math.abs(diff) / duration;
+
+            // Determine if swipe was significant enough
+            const threshold = 50; // pixels
+            const velocityThreshold = 0.3; // pixels/ms
+
+            if (Math.abs(diff) > threshold || velocity > velocityThreshold) {
+                if (diff < 0) {
+                    // Swipe left - next (with looping)
+                    currentIndex = (currentIndex + 1) % cards.length;
+                } else if (diff > 0) {
+                    // Swipe right - previous (with looping)
+                    currentIndex = (currentIndex - 1 + cards.length) % cards.length;
+                }
+            }
+
+            updateCarousel(true);
+            resetAutoPlay(); // Resume auto-play after delay
+        }
+
+        // Arrow click handlers with looping
+        if (leftArrow) {
+            leftArrow.addEventListener('click', () => {
+                currentIndex = (currentIndex - 1 + cards.length) % cards.length;
+                updateCarousel(true);
+                resetAutoPlay();
+            });
+        }
+
+        if (rightArrow) {
+            rightArrow.addEventListener('click', () => {
+                currentIndex = (currentIndex + 1) % cards.length;
+                updateCarousel(true);
+                resetAutoPlay();
+            });
+        }
+
+        // Dot click handlers
+        dots.forEach((dot, index) => {
+            dot.addEventListener('click', () => {
+                goToIndex(index);
+            });
+        });
+
+        // Add touch event listeners
+        track.addEventListener('touchstart', handleTouchStart, { passive: true });
+        track.addEventListener('touchmove', handleTouchMove, { passive: true });
+        track.addEventListener('touchend', handleTouchEnd, { passive: true });
+
+        // Add mouse event listeners for desktop testing
+        track.addEventListener('mousedown', handleTouchStart);
+        track.addEventListener('mousemove', handleTouchMove);
+        track.addEventListener('mouseup', handleTouchEnd);
+        track.addEventListener('mouseleave', () => {
+            if (isDragging) {
+                handleTouchEnd();
+            }
+        });
+
+        // Initialize position
+        updateCarousel(false);
+
+        // Start auto-play
+        startAutoPlay();
+
+        // Update on window resize
+        let resizeTimeout;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(() => {
+                updateCarousel(false);
+            }, 100);
         });
     });
 }
