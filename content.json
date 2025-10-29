@@ -26,30 +26,30 @@
           {
             "id": 1,
             "title": "EP. 1: Accademia di Milano",
-            "mainVideo": "https://www.youtube.com/embed/dQw4w9WgXcQ",
+            "mainVideo": "https://www.youtube.com/embed/M1F0lBnsnkE",
             "choreographies": [
               {
                 "title": "Balletto Classico",
-                "video": "https://www.youtube.com/embed/dQw4w9WgXcQ"
+                "video": "https://www.youtube.com/embed/VBZ4Wnm-tuI"
+              },
+              {
+                "title": "Danza Contemporanea",
+                "video": "https://www.youtube.com/embed/QcIy9NiNbmo"
               },
               {
                 "title": "Danza Moderna",
-                "video": "https://www.youtube.com/embed/dQw4w9WgXcQ"
+                "video": "https://www.youtube.com/embed/kTJczUoc26U"
               }
             ]
           },
           {
             "id": 2,
             "title": "EP. 2: Studio di Roma",
-            "mainVideo": "https://www.youtube.com/embed/dQw4w9WgXcQ",
+            "mainVideo": "https://www.youtube.com/embed/2vjPBrBU-TM",
             "choreographies": [
               {
                 "title": "Jazz Dance",
-                "video": "https://www.youtube.com/embed/dQw4w9WgXcQ"
-              },
-              {
-                "title": "Hip Hop",
-                "video": "https://www.youtube.com/embed/dQw4w9WgXcQ"
+                "video": "https://www.youtube.com/embed/gOsM-DYAEhY"
               }
             ]
           }
@@ -62,30 +62,34 @@
           {
             "id": 3,
             "title": "EP. 1: Venezia Street Dance",
-            "mainVideo": "https://www.youtube.com/embed/dQw4w9WgXcQ",
+            "mainVideo": "https://www.youtube.com/embed/BvSRwAEw1Rk",
             "choreographies": [
               {
                 "title": "Street Style",
-                "video": "https://www.youtube.com/embed/dQw4w9WgXcQ"
+                "video": "https://www.youtube.com/embed/1Y5Kdd46aXo"
               },
               {
-                "title": "Urban Moves",
-                "video": "https://www.youtube.com/embed/dQw4w9WgXcQ"
+                "title": "Urban Choreography",
+                "video": "https://www.youtube.com/embed/TKYbv8vlLnM"
               }
             ]
           },
           {
             "id": 4,
             "title": "EP. 2: Palermo Jazz Studio",
-            "mainVideo": "https://www.youtube.com/embed/dQw4w9WgXcQ",
+            "mainVideo": "https://www.youtube.com/embed/4rZZgzQBt1E",
             "choreographies": [
               {
                 "title": "Jazz Fusion",
-                "video": "https://www.youtube.com/embed/dQw4w9WgXcQ"
+                "video": "https://www.youtube.com/embed/7RO35wcVMIE"
+              },
+              {
+                "title": "Contemporary Jazz",
+                "video": "https://www.youtube.com/embed/vt2i0ts-uck"
               },
               {
                 "title": "Latin Jazz",
-                "video": "https://www.youtube.com/embed/dQw4w9WgXcQ"
+                "video": "https://www.youtube.com/embed/6HCnQ6J-fks"
               }
             ]
           }

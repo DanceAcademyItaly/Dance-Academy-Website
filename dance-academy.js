@@ -1501,9 +1501,18 @@ function populateEpisodes() {
                     const card = document.createElement('div');
                     card.className = 'coreo-card';
                     card.dataset.index = index;
+
+                    // Generate unique ID for this iframe
+                    const iframeId = `coreo-player-${episode.id}-${index}`;
+
+                    // Add enablejsapi=1 to enable YouTube API
+                    const videoUrl = choreo.video.includes('?')
+                        ? `${choreo.video}&enablejsapi=1`
+                        : `${choreo.video}?enablejsapi=1`;
+
                     card.innerHTML = `
                         <div class="coreo-video">
-                            <iframe src="${choreo.video}" allowfullscreen></iframe>
+                            <iframe id="${iframeId}" src="${videoUrl}" allowfullscreen></iframe>
                         </div>
                         <div class="coreo-title">${choreo.title}</div>
                     `;
@@ -1566,72 +1575,162 @@ function populateEpisodes() {
     initializeCarousels();
 }
 
-// Initialize all carousel navigation (swipe, arrows, dots)
+// Initialize coreografie carousels (MOBILE ONLY - desktop shows all videos)
 function initializeCarousels() {
+    // Only run on mobile
+    if (window.innerWidth > 768) return;
+
     const carousels = document.querySelectorAll('.carousel-container');
 
     carousels.forEach(carousel => {
-        const track = carousel.querySelector('.carousel-track');
-        const cards = carousel.querySelectorAll('.coreo-card');
+        const cards = Array.from(carousel.querySelectorAll('.coreo-card'));
         const leftArrow = carousel.querySelector('.carousel-arrow.left');
         const rightArrow = carousel.querySelector('.carousel-arrow.right');
         const section = carousel.closest('.coreografie-section');
-        const dots = section ? section.querySelectorAll('.carousel-dot') : [];
+        const dots = section ? Array.from(section.querySelectorAll('.carousel-dot')) : [];
 
-        // Skip if only one card (no navigation needed)
+        // Skip if only one card
         if (cards.length <= 1) return;
 
         let currentIndex = 0;
-        let startX = 0;
-        let currentX = 0;
-        let isDragging = false;
-        let startTime = 0;
         let autoPlayInterval = null;
         let autoPlayPauseTimeout = null;
+        let players = [];
+        let isAnyVideoPlaying = false;
 
-        // Update carousel position
-        function updateCarousel(animated = true) {
-            const cardWidth = cards[0].offsetWidth;
-            const cardMargin = parseInt(getComputedStyle(cards[0]).marginLeft) || 0;
-            const offset = -currentIndex * (cardWidth + 2 * cardMargin);
-
-            if (animated) {
-                track.style.transition = 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
+        // Initialize - start at index 0, set first card as active
+        cards.forEach((card, index) => {
+            if (index === 0) {
+                card.classList.add('active');
+                card.style.opacity = '1';
+                card.style.transform = 'translateX(0)';
+                card.style.pointerEvents = 'auto';  // Active card captures clicks
             } else {
-                track.style.transition = 'none';
+                card.classList.remove('active');
+                card.style.opacity = '0';
+                card.style.transform = 'translateX(100%)';
+                card.style.pointerEvents = 'none';  // Inactive cards don't block clicks
             }
+        });
 
-            track.style.transform = `translateX(${offset}px)`;
-
-            // Arrows are always enabled since we loop infinitely
-            // (No disabled state needed)
-
-            // Update dot states
+        // Update dots
+        function updateDots() {
             dots.forEach((dot, index) => {
                 dot.classList.toggle('active', index === currentIndex);
             });
         }
 
-        // Navigate to specific index
+        // Navigate with directional slide+fade animation
+        function navigateTo(newIndex, direction) {
+            if (newIndex === currentIndex) return;
+
+            const currentCard = cards[currentIndex];
+            const newCard = cards[newIndex];
+
+            // Determine animation direction
+            const exitDirection = direction === 'next' ? '-100%' : '100%';
+            const enterFrom = direction === 'next' ? '100%' : '-100%';
+
+            // Pause current video
+            pauseCurrentVideo();
+
+            // Exit animation for current card
+            currentCard.style.transition = 'opacity 1s ease, transform 1s ease';
+            currentCard.style.opacity = '0';
+            currentCard.style.transform = `translateX(${exitDirection})`;
+            currentCard.style.pointerEvents = 'none';  // Disable clicks on exiting card
+
+            // Prepare new card (positioned off-screen)
+            newCard.style.transition = 'none';
+            newCard.style.opacity = '0';
+            newCard.style.transform = `translateX(${enterFrom})`;
+            newCard.classList.add('active');
+            newCard.style.pointerEvents = 'auto';  // Enable clicks on new card immediately
+
+            // Enter animation for new card (small delay for visual clarity)
+            setTimeout(() => {
+                newCard.style.transition = 'opacity 1s ease, transform 1s ease';
+                newCard.style.opacity = '1';
+                newCard.style.transform = 'translateX(0)';
+            }, 50);
+
+            // Cleanup after animation
+            setTimeout(() => {
+                currentCard.classList.remove('active');
+                currentIndex = newIndex;
+                updateDots();
+                checkVideoPlayback();
+            }, 1050);
+        }
+
+        // Navigate to next
+        function goNext() {
+            const newIndex = (currentIndex + 1) % cards.length;
+            navigateTo(newIndex, 'next');
+        }
+
+        // Navigate to previous
+        function goPrev() {
+            const newIndex = (currentIndex - 1 + cards.length) % cards.length;
+            navigateTo(newIndex, 'prev');
+        }
+
+        // Navigate to specific index (from dot click)
         function goToIndex(index) {
-            currentIndex = Math.max(0, Math.min(index, cards.length - 1));
-            updateCarousel(true);
-            resetAutoPlay();
+            if (index === currentIndex) return;
+            const direction = index > currentIndex ? 'next' : 'prev';
+            navigateTo(index, direction);
         }
 
-        // Advance to next slide with looping
+        // YouTube API integration
+        function getCurrentPlayer() {
+            return players[currentIndex];
+        }
+
+        function pauseCurrentVideo() {
+            const player = getCurrentPlayer();
+            if (player && player.pauseVideo) {
+                try {
+                    player.pauseVideo();
+                } catch (e) {
+                    console.warn('Could not pause video:', e);
+                }
+            }
+        }
+
+        function checkVideoPlayback() {
+            const player = getCurrentPlayer();
+            if (player && player.getPlayerState) {
+                try {
+                    const state = player.getPlayerState();
+                    const nowPlaying = (state === 1); // YT.PlayerState.PLAYING === 1
+
+                    if (nowPlaying !== isAnyVideoPlaying) {
+                        isAnyVideoPlaying = nowPlaying;
+                        if (isAnyVideoPlaying) {
+                            stopAutoPlay();
+                        } else {
+                            resetAutoPlay();
+                        }
+                    }
+                } catch (e) {
+                    // Ignore if player not ready
+                }
+            }
+        }
+
+        // Auto-play logic
         function advanceSlide() {
-            currentIndex = (currentIndex + 1) % cards.length;
-            updateCarousel(true);
+            if (!isAnyVideoPlaying) {
+                goNext();
+            }
         }
 
-        // Start auto-play
         function startAutoPlay() {
-            stopAutoPlay(); // Clear any existing interval
+            stopAutoPlay();
             autoPlayInterval = setInterval(advanceSlide, 4000);
         }
 
-        // Stop auto-play
         function stopAutoPlay() {
             if (autoPlayInterval) {
                 clearInterval(autoPlayInterval);
@@ -1639,77 +1738,23 @@ function initializeCarousels() {
             }
         }
 
-        // Reset auto-play (pause and restart after delay)
         function resetAutoPlay() {
             stopAutoPlay();
             clearTimeout(autoPlayPauseTimeout);
-            // Resume auto-play after 6 seconds of no interaction
             autoPlayPauseTimeout = setTimeout(startAutoPlay, 6000);
         }
 
-        // Touch/swipe handlers
-        function handleTouchStart(e) {
-            isDragging = true;
-            startX = e.type.includes('mouse') ? e.pageX : e.touches[0].pageX;
-            currentX = startX;
-            startTime = Date.now();
-            track.style.transition = 'none';
-            stopAutoPlay(); // Pause auto-play during interaction
-        }
-
-        function handleTouchMove(e) {
-            if (!isDragging) return;
-
-            currentX = e.type.includes('mouse') ? e.pageX : e.touches[0].pageX;
-            const diff = currentX - startX;
-
-            // Apply drag (no edge resistance since we loop infinitely)
-            const cardWidth = cards[0].offsetWidth;
-            const cardMargin = parseInt(getComputedStyle(cards[0]).marginLeft) || 0;
-            const baseOffset = -currentIndex * (cardWidth + 2 * cardMargin);
-
-            track.style.transform = `translateX(${baseOffset + diff}px)`;
-        }
-
-        function handleTouchEnd(e) {
-            if (!isDragging) return;
-            isDragging = false;
-
-            const diff = currentX - startX;
-            const duration = Date.now() - startTime;
-            const velocity = Math.abs(diff) / duration;
-
-            // Determine if swipe was significant enough
-            const threshold = 50; // pixels
-            const velocityThreshold = 0.3; // pixels/ms
-
-            if (Math.abs(diff) > threshold || velocity > velocityThreshold) {
-                if (diff < 0) {
-                    // Swipe left - next (with looping)
-                    currentIndex = (currentIndex + 1) % cards.length;
-                } else if (diff > 0) {
-                    // Swipe right - previous (with looping)
-                    currentIndex = (currentIndex - 1 + cards.length) % cards.length;
-                }
-            }
-
-            updateCarousel(true);
-            resetAutoPlay(); // Resume auto-play after delay
-        }
-
-        // Arrow click handlers with looping
+        // Arrow click handlers
         if (leftArrow) {
             leftArrow.addEventListener('click', () => {
-                currentIndex = (currentIndex - 1 + cards.length) % cards.length;
-                updateCarousel(true);
+                goPrev();
                 resetAutoPlay();
             });
         }
 
         if (rightArrow) {
             rightArrow.addEventListener('click', () => {
-                currentIndex = (currentIndex + 1) % cards.length;
-                updateCarousel(true);
+                goNext();
                 resetAutoPlay();
             });
         }
@@ -1718,40 +1763,67 @@ function initializeCarousels() {
         dots.forEach((dot, index) => {
             dot.addEventListener('click', () => {
                 goToIndex(index);
+                resetAutoPlay();
             });
         });
 
-        // Add touch event listeners
-        track.addEventListener('touchstart', handleTouchStart, { passive: true });
-        track.addEventListener('touchmove', handleTouchMove, { passive: true });
-        track.addEventListener('touchend', handleTouchEnd, { passive: true });
+        // Initialize YouTube players
+        function initYouTubePlayers() {
+            cards.forEach((card, index) => {
+                const iframe = card.querySelector('iframe');
+                if (iframe && iframe.id) {
+                    try {
+                        const player = new YT.Player(iframe.id, {
+                            events: {
+                                'onStateChange': (event) => {
+                                    if (index === currentIndex) {
+                                        checkVideoPlayback();
+                                    }
+                                }
+                            }
+                        });
+                        players[index] = player;
+                    } catch (e) {
+                        console.warn('Could not initialize YouTube player:', e);
+                        players[index] = null;
+                    }
+                }
+            });
+        }
 
-        // Add mouse event listeners for desktop testing
-        track.addEventListener('mousedown', handleTouchStart);
-        track.addEventListener('mousemove', handleTouchMove);
-        track.addEventListener('mouseup', handleTouchEnd);
-        track.addEventListener('mouseleave', () => {
-            if (isDragging) {
-                handleTouchEnd();
-            }
-        });
+        // Wait for YouTube API
+        if (window.YT && window.YT.Player) {
+            initYouTubePlayers();
+        } else {
+            window.onYouTubeIframeAPIReady = window.onYouTubeIframeAPIReady || (() => {});
+            const oldCallback = window.onYouTubeIframeAPIReady;
+            window.onYouTubeIframeAPIReady = function() {
+                oldCallback();
+                initYouTubePlayers();
+            };
+        }
 
-        // Initialize position
-        updateCarousel(false);
+        // Initialize dots
+        updateDots();
 
         // Start auto-play
         startAutoPlay();
-
-        // Update on window resize
-        let resizeTimeout;
-        window.addEventListener('resize', () => {
-            clearTimeout(resizeTimeout);
-            resizeTimeout = setTimeout(() => {
-                updateCarousel(false);
-            }, 100);
-        });
     });
 }
+
+// Re-initialize carousel on viewport resize (mobile/desktop switch)
+let lastViewportWidth = window.innerWidth;
+window.addEventListener('resize', () => {
+    const currentWidth = window.innerWidth;
+    const wasMobile = lastViewportWidth <= 768;
+    const isMobile = currentWidth <= 768;
+
+    // Only reinitialize if we crossed the mobile/desktop threshold
+    if (wasMobile !== isMobile) {
+        lastViewportWidth = currentWidth;
+        initializeCarousels();
+    }
+});
 
 // Toggle season
 function toggleSeason(seasonId) {
@@ -2299,9 +2371,12 @@ function updateEpisodiAnimations(scrollY) {
             // (matches desktop sidebar/content positioning - they start at container top)
             mobileSelector.style.top = containerTop + 'px';
             mobileSelector.style.opacity = opacity;
+            // CRITICAL: Enable pointer-events when visible, disable when hidden
+            mobileSelector.style.pointerEvents = opacity > 0 ? 'auto' : 'none';
         } else {
             // Hide on desktop (CSS handles display, but ensure opacity is 0)
             mobileSelector.style.opacity = 0;
+            mobileSelector.style.pointerEvents = 'none';
         }
     }
 }
