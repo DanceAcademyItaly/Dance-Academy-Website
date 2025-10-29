@@ -47,6 +47,86 @@ let typographyState = {
     resizeTimeout: null
 };
 
+// ============================================================================
+// SECTION ISOLATION SYSTEM
+// ============================================================================
+// Centralized section visibility management to prevent cross-section interference
+// Each section is either fully active (visible, interactive) or fully inactive (hidden, non-interactive)
+
+// Buffer zone between sections (% of viewport height)
+// Previous section remains active during buffer, then handoff to next section
+const SECTION_BUFFER_VH = 0.05; // 5% of viewport height
+
+const SECTIONS = {
+    hero: ['.hero-block'],
+    episodi: ['.episodi-container-wrapper', '.episodi-mobile-selector'],
+    missione: ['.missione-container'],
+    candidati: [
+        '.candidati-title-wrapper',
+        '.candidati-card-wrapper',
+        '.submit-button-container'
+    ],
+    contatti: ['.contatti-container']
+};
+
+let currentActiveSection = 'hero';
+
+/**
+ * Set the active section - all others become inactive
+ * @param {string} sectionName - Section key from SECTIONS object
+ */
+function setActiveSection(sectionName) {
+    // Skip if already active (performance optimization)
+    if (currentActiveSection === sectionName) return;
+
+    // Deactivate all sections
+    Object.keys(SECTIONS).forEach(section => {
+        SECTIONS[section].forEach(selector => {
+            const elements = document.querySelectorAll(selector);
+            elements.forEach(el => {
+                el.classList.add('section-inactive');
+            });
+        });
+    });
+
+    // Activate target section
+    if (SECTIONS[sectionName]) {
+        SECTIONS[sectionName].forEach(selector => {
+            const elements = document.querySelectorAll(selector);
+            elements.forEach(el => {
+                el.classList.remove('section-inactive');
+            });
+        });
+        currentActiveSection = sectionName;
+    }
+}
+
+// ============================================================================
+// VIDEO BACKGROUND STATE SYSTEM
+// ============================================================================
+// Centralized video background filter management per section
+// Prevents filter state leaking between sections during rapid navigation
+
+const VIDEO_STATES = {
+    hero: 'grayscale(25%) brightness(0.50) contrast(1.2) blur(0px)',
+    episodi: 'grayscale(25%) brightness(0.50) contrast(1.2) blur(0px)',
+    missione: 'grayscale(25%) brightness(0.50) contrast(1.2) blur(0px)',
+    candidati: 'grayscale(25%) brightness(0.50) contrast(1.2) blur(0px)',
+    candidatiExit: 'grayscale(25%) brightness(0.05) contrast(1.2) blur(50px)',
+    contatti: 'grayscale(25%) brightness(0.05) contrast(1.2) blur(50px)'
+};
+
+/**
+ * Apply a video state from VIDEO_STATES
+ * @param {string} state - State key from VIDEO_STATES object
+ */
+function applyVideoState(state) {
+    const videoBg = document.querySelector('.video-bg');
+    if (videoBg && VIDEO_STATES[state]) {
+        videoBg.style.filter = VIDEO_STATES[state];
+    }
+}
+
 // Check CSS clamp() support
 function supportsClamp() {
     if (typographyState.isSupported !== undefined) {
@@ -312,6 +392,10 @@ function initEnhancedScrollSystem() {
         // Mark as initialized
         isScrollSystemInitialized = true;
         document.documentElement.classList.add('js-loaded', 'lenis-enabled', 'lenis', 'lenis-smooth');
+
+        // Initialize section isolation system - hero active by default
+        setActiveSection('hero');
+        applyVideoState('hero');
 
         console.log('Lenis smooth scroll initialized successfully');
 
@@ -1973,9 +2057,10 @@ function initEpisodiFixedSystem() {
     const entranceDuration = 1.2 * viewportHeight; // 1.2vh for entrance
     const deadzoneDuration = 0.5 * viewportHeight; // 0.5vh deadzone
     const exitDuration = 1.0 * viewportHeight; // 1vh for exit
+    const bufferDuration = SECTION_BUFFER_VH * viewportHeight; // Buffer before next section
 
-    // Set spacer height to cover all phases
-    const totalScrollRange = entranceDuration + deadzoneDuration + exitDuration;
+    // Set spacer height to cover all phases INCLUDING buffer
+    const totalScrollRange = entranceDuration + deadzoneDuration + exitDuration + bufferDuration;
     episodiSpacer.style.height = totalScrollRange + 'px';
 
     // Calculate scroll positions for each phase
@@ -1984,6 +2069,7 @@ function initEpisodiFixedSystem() {
     const entranceEnd = entranceStart + entranceDuration;
     const deadzoneEnd = entranceEnd + deadzoneDuration;
     const exitEnd = deadzoneEnd + exitDuration;
+    const bufferEnd = exitEnd + bufferDuration; // Next section starts here
 
     // Store animation state
     episodiAnimationState = {
@@ -1994,7 +2080,8 @@ function initEpisodiFixedSystem() {
         entranceStart,
         entranceEnd,
         deadzoneEnd,
-        exitEnd
+        exitEnd,
+        bufferEnd // For next section to reference
     };
 
     // Update on scroll (through Lenis)
@@ -2240,8 +2327,18 @@ function updateEpisodiAnimations(scrollY) {
         entranceStart,
         entranceEnd,
         deadzoneEnd,
-        exitEnd
+        exitEnd,
+        bufferEnd
     } = episodiAnimationState;
+
+    // Section isolation: Activate episodi during entrance, missione at buffer end
+    if (scrollY >= entranceStart && scrollY < bufferEnd) {
+        setActiveSection('episodi');
+        applyVideoState('episodi');
+    } else if (scrollY >= bufferEnd && missioneAnimationState) {
+        setActiveSection('missione');
+        applyVideoState('missione');
+    }
 
     // Get child wrappers for parallax transforms
     const sidebarWrapper = containerWrapper.querySelector('.episodi-sidebar-wrapper');
@@ -2776,19 +2873,27 @@ function initMissioneAnimations() {
             };
         });
 
-        // Calculate scroll trigger positions - 75% through episodi EXIT animation
-        const episodiDeadzoneEnd = 1450; // From episodi configuration
-        const episodiExitEnd = 2450;
-        const episodiExitDuration = episodiExitEnd - episodiDeadzoneEnd; // 1000px
+        // Calculate scroll trigger positions - Start after episodi buffer zone ends
+        // Use dynamic values from episodiAnimationState (no more hardcoded pixels!)
+        const episodiBufferEnd = episodiAnimationState ? episodiAnimationState.bufferEnd : 0;
+
+        if (!episodiBufferEnd) {
+            console.error('Episodi animation state not available - missione cannot initialize');
+            return;
+        }
+
+        const viewportHeight = window.innerHeight;
 
         // Animation timing constants
         const elementAnimationDuration = 500; // Same as updateMissioneAnimations
         const staggerOffset = 50; // Same as updateMissioneAnimations
 
-        // Start at 75% through episodi EXIT animation (not entire episodi section)
-        const entranceStart = episodiDeadzoneEnd + (episodiExitDuration * 0.75); // 1450 + 750 = 2200px
-        const entranceEnd = entranceStart + 750; // 750px entrance duration (2.5x longer)
-        const deadzoneEnd = entranceEnd + 250;   // 250px deadzone (same as episodi)
+        // Start after episodi buffer zone (strict separation, no overlap)
+        const entranceStart = episodiBufferEnd;
+        const entranceDuration = 0.75 * viewportHeight; // 0.75vh entrance duration
+        const entranceEnd = entranceStart + entranceDuration;
+        const deadzoneDuration = 0.25 * viewportHeight; // 0.25vh deadzone
+        const deadzoneEnd = entranceEnd + deadzoneDuration;
 
         // Calculate exitEnd based on actual number of elements to prevent premature container hiding
         // Last element (highest reverseIndex) finishes at: deadzoneEnd + (reverseIndex * staggerOffset) + elementAnimationDuration
@@ -2797,17 +2902,21 @@ function initMissioneAnimations() {
         const lastElementExitEnd = deadzoneEnd + (lastElementReverseIndex * staggerOffset) + elementAnimationDuration;
         const exitEnd = lastElementExitEnd + 50; // Add 50px buffer for safety
 
-        console.log('Missione scroll positions (Lenis-driven):', {
+        // Add buffer zone before next section
+        const bufferDuration = SECTION_BUFFER_VH * viewportHeight;
+        const bufferEnd = exitEnd + bufferDuration;
+
+        console.log('Missione scroll positions (dynamic, no hardcoded pixels):', {
+            episodiBufferEnd,
             entranceStart,
             entranceEnd,
             deadzoneEnd,
             exitEnd,
+            bufferEnd,
             totalElements,
             lastElementExitEnd,
             bufferAdded: 50,
-            episodiExitStart: episodiDeadzoneEnd,
-            episodiExitEnd: episodiExitEnd,
-            startsAt75PercentOfEpisodiExit: true
+            startsAfterEpisodiBuffer: true
         });
 
         // Font size auto-adjustment system - calculates based on longest text of each type
@@ -3026,6 +3135,7 @@ function initMissioneAnimations() {
             entranceEnd,
             deadzoneEnd,
             exitEnd,
+            bufferEnd, // For next section to reference
             originalContainerTop
         };
 
@@ -3092,41 +3202,51 @@ function initCandidatiCardStack() {
     // Elements are already fixed via CSS - no positioning setup needed
     const topPosition = 60; // Fixed top position defined in CSS
 
-    // Calculate scroll ranges - based on spacer position
-    const titleEntranceStart = spacerTop;
+    // Calculate scroll ranges - Start after missione buffer zone
+    const missioneBufferEnd = missioneAnimationState ? missioneAnimationState.bufferEnd : 0;
 
-    console.log('Candidati timing:', {
-        missioneExitEnd: missioneAnimationState?.exitEnd || 'N/A',
+    if (!missioneBufferEnd) {
+        console.error('Missione animation state not available - candidati cannot initialize');
+        return;
+    }
+
+    const titleEntranceStart = missioneBufferEnd;
+    const viewportHeight = window.innerHeight;
+
+    console.log('Candidati timing (dynamic):', {
+        missioneBufferEnd,
         candidatiStart: titleEntranceStart,
-        spacerTop: spacerTop
+        spacerTop: spacerTop,
+        startsAfterMissioneBuffer: true
     });
 
-    // Phase 1: Title entrance (50vh)
-    const titleEntranceEnd = titleEntranceStart + window.innerHeight * 0.5;
+    // Phase 1: Title entrance (0.5vh)
+    const titleEntranceDuration = 0.5 * viewportHeight;
+    const titleEntranceEnd = titleEntranceStart + titleEntranceDuration;
 
-    // Phase 2: Card entrance (150vh)
+    // Phase 2: Card entrance (1vh)
     const cardEntranceStart = titleEntranceEnd;
-    const cardEntranceDuration = window.innerHeight * 1.5;
+    const cardEntranceDuration = 1.0 * viewportHeight;
     const cardEntranceEnd = cardEntranceStart + cardEntranceDuration;
 
-    // Phase 3: Deadzone (200vh)
-    const cardDeadzoneDuration = window.innerHeight * 2;
+    // Phase 3: Deadzone (2vh)
+    const cardDeadzoneDuration = 2.0 * viewportHeight;
     const cardDeadzoneEnd = cardEntranceEnd + cardDeadzoneDuration;
 
-    // Phase 4: Exit animation (shorter, snappier - 100vh)
-    const exitAnimationDuration = window.innerHeight * 1; // 100vh for exit
+    // Phase 4: Exit animation (1vh)
+    const exitAnimationDuration = 1.0 * viewportHeight;
     const exitAnimationStart = cardDeadzoneEnd;
     const exitAnimationEnd = exitAnimationStart + exitAnimationDuration;
 
-    // Phase 5: Contatti fade-in (50vh)
-    const contattiFadeDuration = window.innerHeight * 0.5; // 50vh for contatti fade-in
-    const contattiFadeEnd = exitAnimationEnd + contattiFadeDuration;
+    // Add buffer zone before contatti section
+    const bufferDuration = SECTION_BUFFER_VH * viewportHeight;
+    const bufferEnd = exitAnimationEnd + bufferDuration;
 
-    // Set spacer height to cover all 5 phases (candidati + contatti fade-in)
-    const totalScrollRange = contattiFadeEnd - titleEntranceStart;
+    // Set spacer height to cover all 4 phases + buffer (contatti has its own section now)
+    const totalScrollRange = bufferEnd - titleEntranceStart;
     candidatiSpacer.style.height = totalScrollRange + 'px';
 
-    console.log('Candidati scroll ranges (4-phase with exit + contatti fade-in):', {
+    console.log('Candidati scroll ranges (4-phase with exit + buffer):', {
         titleEntranceStart,
         titleEntranceEnd,
         cardEntranceStart,
@@ -3134,11 +3254,11 @@ function initCandidatiCardStack() {
         cardDeadzoneEnd,
         exitAnimationStart,
         exitAnimationEnd,
-        contattiFadeEnd,
+        bufferEnd,
         totalScrollRange,
-        totalVh: `${(totalScrollRange / window.innerHeight).toFixed(1)}vh`,
+        totalVh: `${(totalScrollRange / viewportHeight).toFixed(1)}vh`,
         spacerHeight: totalScrollRange + 'px',
-        missioneExitStart: missioneAnimationState?.deadzoneEnd || 'N/A'
+        missioneBufferEnd
     });
 
     // Create background overlay for fade-to-black effect during exit
@@ -3491,6 +3611,7 @@ function initCandidatiCardStack() {
         cardDeadzoneEnd,
         exitAnimationStart,
         exitAnimationEnd,
+        bufferEnd, // For contatti section to reference
         totalCards,
         currentCardIndex,
         calculateCardOffsets,
@@ -3525,9 +3646,18 @@ function initCandidatiCardStack() {
 function updateMissioneAnimations(scrollY, animationState) {
     if (!animationState) return;
 
-    const { elements, entranceStart, entranceEnd, deadzoneEnd, exitEnd, missioneContainer } = animationState;
+    const { elements, entranceStart, entranceEnd, deadzoneEnd, exitEnd, bufferEnd, missioneContainer } = animationState;
 
     if (!elements || elements.length === 0) return;
+
+    // Section isolation: Activate missione during entrance, candidati at buffer end
+    if (scrollY >= entranceStart && scrollY < bufferEnd) {
+        setActiveSection('missione');
+        applyVideoState('missione');
+    } else if (scrollY >= bufferEnd && candidatiCardState) {
+        setActiveSection('candidati');
+        applyVideoState('candidati');
+    }
 
     // Animation parameters
     const elementAnimationDuration = 500; // Each element animates over 500px (2.5x longer)
@@ -3687,6 +3817,7 @@ function updateCandidatiCardStack(scrollY, cardState) {
         cardDeadzoneEnd,
         exitAnimationStart,
         exitAnimationEnd,
+        bufferEnd,
         totalCards,
         calculateCardOffsets,
         sidebarEasing,
@@ -3696,12 +3827,23 @@ function updateCandidatiCardStack(scrollY, cardState) {
         calculateCardFadeOutMultiplier
     } = cardState;
 
+    // Section isolation: Activate candidati during card entrance, contatti at buffer end
+    if (scrollY >= cardEntranceStart && scrollY < bufferEnd) {
+        setActiveSection('candidati');
+        // Video state handled progressively during exit (see Phase 4 below)
+        if (scrollY < exitAnimationStart) {
+            applyVideoState('candidati');
+        }
+    } else if (scrollY >= bufferEnd) {
+        setActiveSection('contatti');
+        applyVideoState('contatti');
+    }
+
     // No visibility control needed - elements are independent and always in layout
     // Early return if before candidati section starts
     if (scrollY < titleEntranceStart) {
         return;
     }
-    // REMOVED: early return after exitAnimationEnd - need to continue for contatti fade-in
 
     // PHASE 1: Title entrance animation (50vh)
     // Animate candidatiTitleWrapper (position: fixed)

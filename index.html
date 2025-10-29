@@ -47,6 +47,21 @@
             --letter-spacing-wide: clamp(0.025em, 0.02em + 0.01vw, 0.1em);
             --letter-spacing-wider: clamp(0.05em, 0.04em + 0.05vw, 0.2em);
             --letter-spacing-widest: clamp(0.1em, 0.08em + 0.1vw, 0.3em);
+
+            /* Z-Index Layer System - Section Isolation */
+            /* System UI - always on top */
+            --z-system-ui: 10000;
+            --z-popups: 9000;
+
+            /* Sections - strict hierarchy (no overlaps) */
+            --z-contatti: 500;
+            --z-candidati: 400;
+            --z-missione: 300;
+            --z-episodi: 200;
+            --z-hero: 100;
+
+            /* Background */
+            --z-video-bg: -1;
         }
 
         html {
@@ -166,6 +181,13 @@
         }
         */
 
+        /* Section Isolation - Unified Visibility Management */
+        .section-inactive {
+            opacity: 0 !important;
+            pointer-events: none !important;
+            visibility: hidden !important;
+        }
+
         /* Progress Bar */
         .progress-bar {
             position: fixed;
@@ -174,7 +196,7 @@
             width: 0%;
             height: 2px;
             background: var(--accent);
-            z-index: 10001;
+            z-index: calc(var(--z-system-ui) + 1);
             transition: width 0.1s linear;
         }
 
@@ -184,7 +206,7 @@
             top: 20px;
             left: 0;
             right: 0;
-            z-index: 10000;
+            z-index: var(--z-system-ui);
             display: flex;
             justify-content: space-between;
             padding: 0 40px;
@@ -285,7 +307,7 @@
             width: 100%;
             height: 100%;
             object-fit: cover;
-            z-index: -1;
+            z-index: var(--z-video-bg);
             opacity: 0;
             filter: grayscale(25%) brightness(0.50) contrast(1.2);
         }
@@ -356,7 +378,7 @@
             height: auto; /* JS will calculate based on viewport and deadzone */
             max-height: 95vh;
             max-width: 95vw;
-            z-index: 105;
+            z-index: var(--z-episodi);
             opacity: 0;
             /* No transition - JS handles animations */
             display: flex;
@@ -633,6 +655,7 @@
             overflow-y: auto;
             /* Dynamic padding that scales with viewport */
             padding: clamp(10px, 2vh, 20px) clamp(15px, 3vw, 30px);
+            z-index: var(--z-missione);
         }
 
         /* Missione Responsive Scaling System */
@@ -723,7 +746,7 @@
             top: 60px;
             left: 50%;
             transform: translateX(-50%);
-            z-index: 110; /* Above all cards */
+            z-index: calc(var(--z-candidati) + 10); /* Above all cards */
             opacity: 0; /* Controlled by JS */
         }
 
@@ -759,12 +782,12 @@
                 inset 0 -1px 0 rgba(0, 0, 0, 0.4);
         }
 
-        /* Individual cards get incrementing z-indexes via JS */
-        .candidati-card-wrapper[data-card="0"] { z-index: 100; }
-        .candidati-card-wrapper[data-card="1"] { z-index: 101; }
-        .candidati-card-wrapper[data-card="2"] { z-index: 102; }
-        .candidati-card-wrapper[data-card="3"] { z-index: 103; }
-        .candidati-card-wrapper[data-card="4"] { z-index: 104; }
+        /* Individual cards get incrementing z-indexes */
+        .candidati-card-wrapper[data-card="0"] { z-index: calc(var(--z-candidati) + 0); }
+        .candidati-card-wrapper[data-card="1"] { z-index: calc(var(--z-candidati) + 1); }
+        .candidati-card-wrapper[data-card="2"] { z-index: calc(var(--z-candidati) + 2); }
+        .candidati-card-wrapper[data-card="3"] { z-index: calc(var(--z-candidati) + 3); }
+        .candidati-card-wrapper[data-card="4"] { z-index: calc(var(--z-candidati) + 4); }
 
         /* Individual form cards - layout and styling */
         .form-card {
@@ -983,7 +1006,7 @@
             left: 50%;
             transform: translateX(-50%);
             opacity: 0;
-            z-index: 111; /* Above all cards (100-104) and title (110) */
+            z-index: calc(var(--z-candidati) + 11); /* Above all cards and title */
         }
 
         .submit-button {
@@ -1065,7 +1088,7 @@
             top: 0; /* JS will update this */
             left: 0;
             /* Base styling */
-            z-index: 106; /* Above container (105) to blur video-bg (-1) */
+            z-index: calc(var(--z-episodi) + 6); /* Above container to blur video-bg */
             opacity: 0; /* Controlled by JS animations (same as container) */
             pointer-events: none; /* Don't block clicks when hidden - JS will enable when shown */
         }
@@ -1090,6 +1113,7 @@
             width: 100%;
             text-align: center;
             overflow: auto;
+            z-index: var(--z-contatti);
             /* Initial state: hidden for fade-in animation */
             opacity: 0;
             visibility: hidden;
@@ -1445,7 +1469,7 @@
             width: 100%;
             height: 100%;
             background: rgba(0, 0, 0, 0.8);
-            z-index: 9999;
+            z-index: var(--z-popups);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -1458,7 +1482,7 @@
             color: var(--text-primary);
             padding: 40px 50px;
             text-align: center;
-            z-index: 10000;
+            z-index: calc(var(--z-popups) + 1);
             max-width: 500px;
             width: 90%;
             max-height: 80vh;
