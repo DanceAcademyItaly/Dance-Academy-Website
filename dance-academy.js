@@ -2331,11 +2331,17 @@ function updateEpisodiAnimations(scrollY) {
         bufferEnd
     } = episodiAnimationState;
 
-    // Section isolation: Activate episodi during entrance, missione at buffer end
-    if (scrollY >= entranceStart && scrollY < bufferEnd) {
+    // Section isolation: hero → episodi → missione transitions
+    if (scrollY < entranceStart) {
+        // Scrolled back up to hero section
+        setActiveSection('hero');
+        applyVideoState('hero');
+    } else if (scrollY >= entranceStart && scrollY < bufferEnd) {
+        // In episodi section
         setActiveSection('episodi');
         applyVideoState('episodi');
     } else if (scrollY >= bufferEnd && missioneAnimationState) {
+        // Transitioned to missione section
         setActiveSection('missione');
         applyVideoState('missione');
     }
@@ -2878,7 +2884,10 @@ function initMissioneAnimations() {
         const episodiBufferEnd = episodiAnimationState ? episodiAnimationState.bufferEnd : 0;
 
         if (!episodiBufferEnd) {
-            console.error('Episodi animation state not available - missione cannot initialize');
+            // Episodi might not have initialized yet (e.g., no episodes in content)
+            // Retry missione initialization after content is populated
+            console.warn('Episodi animation state not available - retrying missione init in 300ms');
+            setTimeout(() => attemptInitialization(attempts), 300);
             return;
         }
 
@@ -3206,7 +3215,10 @@ function initCandidatiCardStack() {
     const missioneBufferEnd = missioneAnimationState ? missioneAnimationState.bufferEnd : 0;
 
     if (!missioneBufferEnd) {
-        console.error('Missione animation state not available - candidati cannot initialize');
+        // Missione might still be initializing (async retry mechanism)
+        // Retry candidati initialization after a delay
+        console.warn('Missione animation state not ready yet - retrying candidati init in 300ms');
+        setTimeout(initCandidatiCardStack, 300);
         return;
     }
 
@@ -3827,8 +3839,9 @@ function updateCandidatiCardStack(scrollY, cardState) {
         calculateCardFadeOutMultiplier
     } = cardState;
 
-    // Section isolation: Activate candidati during card entrance, contatti at buffer end
-    if (scrollY >= cardEntranceStart && scrollY < bufferEnd) {
+    // Section isolation: Activate candidati during TITLE entrance (not card entrance!)
+    // CRITICAL: Must activate at titleEntranceStart to prevent .section-inactive CSS override
+    if (scrollY >= titleEntranceStart && scrollY < bufferEnd) {
         setActiveSection('candidati');
         // Video state handled progressively during exit (see Phase 4 below)
         if (scrollY < exitAnimationStart) {
@@ -3864,22 +3877,6 @@ function updateCandidatiCardStack(scrollY, cardState) {
         }
 
         // Reset video to default state during Phase 1
-        if (videoBg) {
-            videoBg.style.filter = 'grayscale(25%) brightness(0.50) contrast(1.2) blur(0px)';
-        }
-
-    } else if (scrollY < titleEntranceStart) {
-        candidatiTitleWrapper.style.visibility = 'visible';
-        candidatiTitleWrapper.style.transform = `translate(-50%, ${titleHiddenY}px)`;
-        candidatiTitleWrapper.style.opacity = '0';
-
-        // Keep background overlay transparent before Phase 1
-        if (backgroundOverlay) {
-            backgroundOverlay.style.visibility = 'visible';
-            backgroundOverlay.style.opacity = '0';
-        }
-
-        // Reset video to default state before Phase 1
         if (videoBg) {
             videoBg.style.filter = 'grayscale(25%) brightness(0.50) contrast(1.2) blur(0px)';
         }
@@ -4182,28 +4179,8 @@ function updateCandidatiCardStack(scrollY, cardState) {
             backgroundOverlay.style.visibility = 'hidden';
         }
 
-        // CONTATTI FADE-IN ANIMATION
-        // Fade in contatti using candidati title curve (ease-out with exponent 2.5)
-        const contattiContainer = document.getElementById('contattiContainer');
-        if (contattiContainer) {
-            // Animation starts right after candidati exit ends
-            const contattiFadeStart = exitAnimationEnd;
-            const contattiFadeDuration = window.innerHeight * 0.5; // 50vh fade-in duration
-            const contattiFadeEnd = contattiFadeStart + contattiFadeDuration;
-
-            if (scrollY >= contattiFadeStart && scrollY <= contattiFadeEnd) {
-                // Fade in with candidati title curve
-                const progress = (scrollY - contattiFadeStart) / contattiFadeDuration;
-                const easedProgress = sidebarEasing(progress); // Same curve as candidati title
-
-                contattiContainer.style.visibility = 'visible';
-                contattiContainer.style.opacity = easedProgress;
-            } else if (scrollY > contattiFadeEnd) {
-                // Fully visible
-                contattiContainer.style.visibility = 'visible';
-                contattiContainer.style.opacity = '1';
-            }
-        }
+        // Contatti fade-in removed - now handled by section isolation system
+        // Section activates at bufferEnd with CSS transition for smooth appearance
     }
 }
 

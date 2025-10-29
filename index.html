@@ -1114,9 +1114,10 @@
             text-align: center;
             overflow: auto;
             z-index: var(--z-contatti);
-            /* Initial state: hidden for fade-in animation */
+            /* Initial state: hidden, with transition for smooth appearance */
             opacity: 0;
             visibility: hidden;
+            transition: opacity 0.8s ease-out, visibility 0.8s;
         }
 
         .contatti-container h2 {
