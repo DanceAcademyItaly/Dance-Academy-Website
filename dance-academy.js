@@ -854,20 +854,6 @@ function setupHeroElementPositioning(element, originalPosition = null) {
 
 // Optimized scroll updates with decoupling
 function updateScrollElements(scrollY) {
-    // DEBUG: Update scroll position indicator - force immediate update
-    const scrollDebugEl = document.getElementById('scrollPos');
-    if (scrollDebugEl) {
-        const currentScroll = Math.round(scrollY || 0);
-        scrollDebugEl.textContent = currentScroll;
-        // Also update parent to show max scrollable
-        const debugParent = scrollDebugEl.parentElement;
-        if (debugParent && !debugParent.dataset.initialized) {
-            const bufferEndVal = window.candidatiCardState ? Math.floor(window.candidatiCardState.bufferEnd) : '?';
-            debugParent.innerHTML = 'Scroll: <span id="scrollPos">' + currentScroll + '</span>px<br>Need: ' + bufferEndVal + 'px (contatti)<br>DocH: ' + Math.round(document.documentElement.scrollHeight) + 'px';
-            debugParent.dataset.initialized = 'true';
-        }
-    }
-
     // Process raw scroll into custom scroll values
     const processedScroll = processScrollInput(scrollY);
 
@@ -3945,25 +3931,6 @@ function updateCandidatiCardStack(scrollY, cardState) {
     } else if (scrollY >= bufferEnd) {
         setActiveSection('contatti');
         applyVideoState('contatti');
-
-        // DEBUG: Log contatti activation
-        const contattiContainer = document.getElementById('contattiContainer');
-        const contattiBlock = document.querySelector('[data-block="contatti"]');
-        if (contattiContainer && contattiBlock) {
-            const containerStyle = window.getComputedStyle(contattiContainer);
-            const blockRect = contattiBlock.getBoundingClientRect();
-            console.log('🎯 CONTATTI ACTIVATED:', {
-                scrollY: Math.round(scrollY),
-                bufferEnd: Math.round(bufferEnd),
-                hasInactiveClass: contattiContainer.classList.contains('section-inactive'),
-                opacity: containerStyle.opacity,
-                visibility: containerStyle.visibility,
-                display: containerStyle.display,
-                blockTop: Math.round(blockRect.top),
-                blockHeight: Math.round(blockRect.height),
-                innerHTML: contattiContainer.innerHTML.length + ' chars'
-            });
-        }
 
         // CRITICAL FIX: Explicitly hide ALL candidati elements when contatti activates
         // This ensures no candidati elements (overlay, title, cards, button) cover contatti
