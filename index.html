@@ -107,15 +107,12 @@
             overscroll-behavior: contain;
         }
 
-        /* Ensure horizontal scroll containers are excluded from Lenis */
-        .lenis .coreografie-grid,
-        .coreografie-grid {
-            overscroll-behavior: contain;
-        }
-
-        /* Ensure episodi containers can handle their own scroll */
-        .lenis .episodi-container-wrapper,
-        .episodi-container-wrapper {
+        /* Ensure horizontal scroll containers (carousel) are excluded from Lenis */
+        /* Note: .carousel-container has data-lenis-prevent applied in JS */
+        .lenis .carousel-container,
+        .carousel-container,
+        .lenis .carousel-track,
+        .carousel-track {
             overscroll-behavior: contain;
         }
 
@@ -480,12 +477,18 @@
             transform: translateX(5px);
         }
 
-        /* Content Area - Fixed wrapper handles overflow */
+        /* Content Area - Fixed wrapper, content sized to fit */
         .content-area {
             display: flex;
             flex-direction: column;
             height: 100%;
-            overflow-y: auto; /* Allow scrolling for episode content */
+            /* CRITICAL FIX: Remove internal vertical scroll to prevent stuttering
+             * - Content is sized by calculateEpisodiSizing() to fit within container height
+             * - Internal scroll bypasses Lenis, causing rough scrolling when mouse over episodi
+             * - Page scroll (Lenis) should handle all vertical scrolling for smooth experience
+             * - Horizontal scroll preserved in .coreografie-grid for choreography carousel */
+            overflow-y: visible;
+            overflow-x: visible;
         }
 
         .episodio-content {
@@ -1093,15 +1096,14 @@
             pointer-events: none; /* Don't block clicks when hidden - JS will enable when shown */
         }
 
-        /* Contatti Block - Container System */
+        /* Contatti Block - Simple full-viewport section */
         .contatti-block {
             min-height: 100vh;
-            max-height: 100vh;
-            padding: clamp(40px, 8vh, 80px) clamp(20px, 5vw, 40px);
-            display: grid;
-            place-items: center;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             background: transparent;
-            overflow: hidden;
         }
 
         .contatti-container {
@@ -1109,15 +1111,12 @@
             gap: clamp(20px, 4vh, 40px);
             justify-items: center;
             max-width: min(600px, 90vw);
-            max-height: 85vh;
             width: 100%;
             text-align: center;
-            overflow: auto;
             z-index: var(--z-contatti);
-            /* Initial state: hidden, with transition for smooth appearance */
-            opacity: 0;
-            visibility: hidden;
+            /* Visibility controlled by .section-inactive class */
             transition: opacity 0.8s ease-out, visibility 0.8s;
+            padding: clamp(20px, 5vw, 40px);
         }
 
         .contatti-container h2 {
@@ -1126,6 +1125,7 @@
             letter-spacing: var(--letter-spacing-widest);
             text-transform: uppercase;
             margin-bottom: 50px;
+            color: var(--text-primary);
         }
 
         .contatti-info {
@@ -1650,6 +1650,11 @@
     <!-- Progress Bar -->
     <div class="progress-bar" id="progressBar"></div>
 
+    <!-- DEBUG: Scroll Position Indicator -->
+    <div id="scrollDebug" style="position: fixed; top: 50%; left: 10px; background: rgba(0,255,0,0.9); color: black; padding: 10px; font-family: monospace; font-size: 14px; z-index: 99999; border: 2px solid lime; border-radius: 4px;">
+        Scroll: <span id="scrollPos">0</span>px
+    </div>
+
     <!-- Header -->
     <header class="header-fixed" id="header">
         <span data-section="hero">HOME</span>
@@ -1705,9 +1710,9 @@
     </select>
 
     <!-- Parent container (centered fixed element) -->
-    <!-- data-lenis-prevent: Excludes entire episodi section from Lenis smooth scroll control -->
-    <!-- data-lenis-prevent-touch: Specifically prevents touch event capture for horizontal scrolling -->
-    <div class="episodi-container-wrapper" data-lenis-prevent data-lenis-prevent-touch>
+    <!-- REMOVED data-lenis-prevent: Now allows Lenis to handle PAGE scroll for momentum/smoothness -->
+    <!-- Horizontal carousel has its own data-lenis-prevent (applied in JS to .carousel-container) -->
+    <div class="episodi-container-wrapper">
         <!-- Sidebar wrapper -->
         <div class="episodi-sidebar-wrapper">
             <aside class="sidebar" id="sidebar"></aside>

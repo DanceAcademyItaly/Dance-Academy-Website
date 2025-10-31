@@ -6,6 +6,14 @@ let hasEpisodes = false;
 let lenis = null;
 let isScrollSystemInitialized = false;
 
+/**
+ * Get current scroll position - uses Lenis smooth value if available
+ * CRITICAL: Always use this instead of window.scrollY for consistency
+ */
+function getCurrentScroll() {
+    return (lenis && lenis.scroll !== undefined) ? lenis.scroll : window.scrollY;
+}
+
 // Reusable scroll configuration
 const SCROLL_CONFIG = {
     duration: 0.8,
@@ -116,14 +124,24 @@ const VIDEO_STATES = {
     contatti: 'grayscale(25%) brightness(0.05) contrast(1.2) blur(50px)'
 };
 
+// Track current video state to avoid redundant DOM manipulation
+let currentVideoState = null;
+
 /**
  * Apply a video state from VIDEO_STATES
+ * PERFORMANCE: Caches current state to prevent redundant filter updates
  * @param {string} state - State key from VIDEO_STATES object
  */
 function applyVideoState(state) {
+    // Early return if already in this state (critical performance optimization)
+    if (currentVideoState === state) {
+        return;
+    }
+
     const videoBg = document.querySelector('.video-bg');
     if (videoBg && VIDEO_STATES[state]) {
         videoBg.style.filter = VIDEO_STATES[state];
+        currentVideoState = state;
     }
 }
 
@@ -369,6 +387,10 @@ function initEnhancedScrollSystem() {
             normalizeWheel: true,
             // Prevent Lenis from capturing events on specific elements
             prevent: (node) => {
+                // CRITICAL FIX: Only prevent on explicitly marked elements
+                // Removed episodi-container-wrapper class/children checks to allow PAGE scroll momentum
+                // This enables Lenis smooth scroll physics on episodi section
+
                 // Prevent Lenis on elements with data-lenis-prevent attribute
                 if (node.hasAttribute && node.hasAttribute('data-lenis-prevent')) {
                     return true;
@@ -377,14 +399,11 @@ function initEnhancedScrollSystem() {
                 if (node.hasAttribute && node.hasAttribute('data-lenis-prevent-touch')) {
                     return true;
                 }
-                // Prevent Lenis on episodi container wrapper
-                if (node.classList && node.classList.contains('episodi-container-wrapper')) {
+                // Prevent Lenis on elements with data-lenis-prevent-wheel attribute
+                if (node.hasAttribute && node.hasAttribute('data-lenis-prevent-wheel')) {
                     return true;
                 }
-                // Prevent Lenis on any child of episodi container
-                if (node.closest && node.closest('.episodi-container-wrapper')) {
-                    return true;
-                }
+
                 return false;
             }
         });
@@ -444,6 +463,8 @@ function initScrollRAF() {
         lenis.raf(time);
 
         // Update viewport-dependent animations efficiently
+        // CRITICAL: Pass lenis.scroll (smooth interpolated value) NOT window.scrollY (raw jumpy value)
+        // This ensures all section animations use Lenis's smooth scroll for consistent feel
         updateScrollElements(lenis.scroll);
 
         rafId = requestAnimationFrame(raf);
@@ -833,6 +854,20 @@ function setupHeroElementPositioning(element, originalPosition = null) {
 
 // Optimized scroll updates with decoupling
 function updateScrollElements(scrollY) {
+    // DEBUG: Update scroll position indicator - force immediate update
+    const scrollDebugEl = document.getElementById('scrollPos');
+    if (scrollDebugEl) {
+        const currentScroll = Math.round(scrollY || 0);
+        scrollDebugEl.textContent = currentScroll;
+        // Also update parent to show max scrollable
+        const debugParent = scrollDebugEl.parentElement;
+        if (debugParent && !debugParent.dataset.initialized) {
+            const bufferEndVal = window.candidatiCardState ? Math.floor(window.candidatiCardState.bufferEnd) : '?';
+            debugParent.innerHTML = 'Scroll: <span id="scrollPos">' + currentScroll + '</span>px<br>Need: ' + bufferEndVal + 'px (contatti)<br>DocH: ' + Math.round(document.documentElement.scrollHeight) + 'px';
+            debugParent.dataset.initialized = 'true';
+        }
+    }
+
     // Process raw scroll into custom scroll values
     const processedScroll = processScrollInput(scrollY);
 
@@ -842,7 +877,10 @@ function updateScrollElements(scrollY) {
     // Update progress bar with raw scroll (keep original behavior)
     updateProgressBar(scrollY);
 
-    // Episodi animations handled by updateEpisodiAnimations (called separately)
+    // Update episodi animations if initialized (now in RAF loop for smooth Lenis integration)
+    if (episodiAnimationState) {
+        updateEpisodiAnimations(scrollY);
+    }
 
     // Update missione animations if initialized
     if (missioneAnimationState) {
@@ -1575,6 +1613,8 @@ function populateEpisodes() {
                 const carouselContainer = document.createElement('div');
                 carouselContainer.className = 'carousel-container';
                 carouselContainer.dataset.episodeId = episode.id; // For tracking carousel state per episode
+                // CRITICAL: Prevent Lenis on carousel to preserve horizontal scroll
+                carouselContainer.setAttribute('data-lenis-prevent', '');
 
                 // Create carousel track (holds all cards)
                 const carouselTrack = document.createElement('div');
@@ -2081,16 +2121,19 @@ function initEpisodiFixedSystem() {
         entranceEnd,
         deadzoneEnd,
         exitEnd,
-        bufferEnd // For next section to reference
+        bufferEnd, // For next section to reference
+        // Cache child wrappers to avoid repeated DOM queries (performance optimization)
+        sidebarWrapper: containerWrapper.querySelector('.episodi-sidebar-wrapper'),
+        contentWrapper: containerWrapper.querySelector('.episodi-content-wrapper'),
+        // Cache mobile breakpoint to avoid repeated window.innerWidth checks every frame
+        isMobile: window.innerWidth <= 768
     };
 
-    // Update on scroll (through Lenis)
-    if (lenis) {
-        lenis.on('scroll', () => updateEpisodiAnimations(window.scrollY));
-    }
+    // REMOVED: lenis.on('scroll') listener - now handled by RAF loop in updateScrollElements()
+    // This fixes stuttering caused by using window.scrollY instead of Lenis's smooth scroll value
 
-    // Initial animation update
-    updateEpisodiAnimations(window.scrollY);
+    // Initial animation update (use getCurrentScroll for consistency with RAF loop)
+    updateEpisodiAnimations(getCurrentScroll());
 
     // Add resize handler
     window.addEventListener('resize', handleEpisodiResize);
@@ -2303,13 +2346,17 @@ function handleEpisodiResizeImmediate() {
     episodiAnimationState.entranceEnd = entranceEnd;
     episodiAnimationState.deadzoneEnd = deadzoneEnd;
     episodiAnimationState.exitEnd = exitEnd;
+    // Refresh cached values (DOM references and mobile breakpoint)
+    episodiAnimationState.sidebarWrapper = containerWrapper.querySelector('.episodi-sidebar-wrapper');
+    episodiAnimationState.contentWrapper = containerWrapper.querySelector('.episodi-content-wrapper');
+    episodiAnimationState.isMobile = window.innerWidth <= 768;
 
     // CRITICAL SEQUENCE: Sizing must clear transforms, then animations reapply them
     // 1. calculateEpisodiSizing() clears transforms for clean measurements
     // 2. updateEpisodiAnimations() immediately reapplies correct transforms
     // DO NOT separate these calls or add code between them
     calculateEpisodiSizing();
-    updateEpisodiAnimations(window.scrollY);
+    updateEpisodiAnimations(getCurrentScroll());
 }
 
 // Debounced resize handler (150ms delay)
@@ -2328,7 +2375,10 @@ function updateEpisodiAnimations(scrollY) {
         entranceEnd,
         deadzoneEnd,
         exitEnd,
-        bufferEnd
+        bufferEnd,
+        sidebarWrapper,
+        contentWrapper,
+        isMobile
     } = episodiAnimationState;
 
     // Section isolation: hero → episodi → missione transitions
@@ -2346,12 +2396,9 @@ function updateEpisodiAnimations(scrollY) {
         applyVideoState('missione');
     }
 
-    // Get child wrappers for parallax transforms
-    const sidebarWrapper = containerWrapper.querySelector('.episodi-sidebar-wrapper');
-    const contentWrapper = containerWrapper.querySelector('.episodi-content-wrapper');
-
-    // Detect mobile (same breakpoint as CSS: 768px)
-    const isMobile = window.innerWidth <= 768;
+    // PERFORMANCE: Use cached values instead of querying DOM every frame:
+    // - sidebarWrapper, contentWrapper: Cached during initialization
+    // - isMobile: Cached and updated on resize (same breakpoint as CSS: 768px)
 
     let containerTop, opacity, sidebarTransform, contentTransform;
 
@@ -3252,11 +3299,43 @@ function initCandidatiCardStack() {
 
     // Add buffer zone before contatti section
     const bufferDuration = SECTION_BUFFER_VH * viewportHeight;
-    const bufferEnd = exitAnimationEnd + bufferDuration;
+    // CRITICAL: Round DOWN to ensure browser can actually scroll to this position
+    const bufferEnd = Math.floor(exitAnimationEnd + bufferDuration);
 
     // Set spacer height to cover all 4 phases + buffer (contatti has its own section now)
-    const totalScrollRange = bufferEnd - titleEntranceStart;
-    candidatiSpacer.style.height = totalScrollRange + 'px';
+    // CRITICAL: Use spacer's actual document position (offsetTop), not titleEntranceStart (scroll position)
+    // to ensure contatti-block aligns with bufferEnd scroll position
+    // TIMING FIX: Delay reading offsetTop to ensure previous sections have fully laid out
+    let spacerDocumentTop = candidatiSpacer.offsetTop;
+    let totalScrollRange = bufferEnd - spacerDocumentTop;
+
+    function setSpacerHeight() {
+        spacerDocumentTop = candidatiSpacer.offsetTop;
+        // CRITICAL: Round DOWN to ensure clean pixel boundaries
+        totalScrollRange = Math.floor(bufferEnd - spacerDocumentTop);
+        candidatiSpacer.style.height = totalScrollRange + 'px';
+
+        console.log('📏 Candidati spacer height set:', {
+            spacerDocumentTop,
+            bufferEnd,
+            totalScrollRange
+        });
+    }
+
+    // Call immediately for initial setup
+    setSpacerHeight();
+
+    // Also call after layout settles to fix any timing issues
+    // Use setTimeout as backup for mobile browsers that might handle RAF differently
+    requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+            setSpacerHeight();
+        });
+    });
+
+    setTimeout(() => {
+        setSpacerHeight();
+    }, 100);
 
     console.log('Candidati scroll ranges (4-phase with exit + buffer):', {
         titleEntranceStart,
@@ -3644,8 +3723,24 @@ function initCandidatiCardStack() {
         clearTimeout(resizeTimeout);
         resizeTimeout = setTimeout(() => {
             console.log('🔄 Viewport resized - recalculating everything');
+
+            // Recalculate card heights
             const { cardHeight: newCardHeight } = calculateAndSetCardHeight();
             optimizeCardInternalSizing(newCardHeight);
+
+            // CRITICAL: Recalculate spacer height based on new layout
+            // offsetTop changes when previous sections resize, must update spacer height
+            const newViewportHeight = window.innerHeight;
+            const newBufferEnd = exitAnimationEnd + (SECTION_BUFFER_VH * newViewportHeight);
+            const newSpacerDocumentTop = candidatiSpacer.offsetTop;
+            const newTotalScrollRange = newBufferEnd - newSpacerDocumentTop;
+            candidatiSpacer.style.height = newTotalScrollRange + 'px';
+
+            console.log('📏 Spacer height recalculated:', {
+                spacerTop: newSpacerDocumentTop,
+                bufferEnd: newBufferEnd,
+                newHeight: newTotalScrollRange
+            });
         }, 150); // Debounce 150ms
     };
 
@@ -3850,6 +3945,53 @@ function updateCandidatiCardStack(scrollY, cardState) {
     } else if (scrollY >= bufferEnd) {
         setActiveSection('contatti');
         applyVideoState('contatti');
+
+        // DEBUG: Log contatti activation
+        const contattiContainer = document.getElementById('contattiContainer');
+        const contattiBlock = document.querySelector('[data-block="contatti"]');
+        if (contattiContainer && contattiBlock) {
+            const containerStyle = window.getComputedStyle(contattiContainer);
+            const blockRect = contattiBlock.getBoundingClientRect();
+            console.log('🎯 CONTATTI ACTIVATED:', {
+                scrollY: Math.round(scrollY),
+                bufferEnd: Math.round(bufferEnd),
+                hasInactiveClass: contattiContainer.classList.contains('section-inactive'),
+                opacity: containerStyle.opacity,
+                visibility: containerStyle.visibility,
+                display: containerStyle.display,
+                blockTop: Math.round(blockRect.top),
+                blockHeight: Math.round(blockRect.height),
+                innerHTML: contattiContainer.innerHTML.length + ' chars'
+            });
+        }
+
+        // CRITICAL FIX: Explicitly hide ALL candidati elements when contatti activates
+        // This ensures no candidati elements (overlay, title, cards, button) cover contatti
+        if (backgroundOverlay) {
+            backgroundOverlay.style.opacity = '0';
+            backgroundOverlay.style.visibility = 'hidden';
+        }
+
+        // Hide candidati title
+        candidatiTitleWrapper.style.opacity = '0';
+        candidatiTitleWrapper.style.visibility = 'hidden';
+
+        // Hide all candidati cards
+        cardWrappers.forEach(wrapper => {
+            wrapper.style.opacity = '0';
+            wrapper.style.visibility = 'hidden';
+        });
+
+        // Hide submit button
+        if (submitButtonContainer) {
+            submitButtonContainer.style.opacity = '0';
+            submitButtonContainer.style.visibility = 'hidden';
+        }
+
+        // Keep video fully blurred and dark for contatti section
+        if (videoBg) {
+            videoBg.style.filter = 'grayscale(25%) brightness(0.05) contrast(1.2) blur(50px)';
+        }
     }
 
     // No visibility control needed - elements are independent and always in layout
