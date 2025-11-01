@@ -539,6 +539,7 @@
             text-transform: uppercase;
             letter-spacing: var(--letter-spacing-wider);
             font-size: var(--text-sm);
+            font-weight: 300;
             color: var(--text-secondary);
             margin-bottom: 7px; /* Reduced by ~50% */
             padding-bottom: 4px; /* Reduced by 50% */
@@ -1107,10 +1108,14 @@
         }
 
         .contatti-container {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
             display: grid;
             gap: clamp(20px, 4vh, 40px);
             justify-items: center;
-            max-width: min(600px, 90vw);
+            max-width: min(800px, 85vw);
             width: 100%;
             text-align: center;
             z-index: var(--z-contatti);
@@ -1124,28 +1129,29 @@
             font-weight: 300;
             letter-spacing: var(--letter-spacing-widest);
             text-transform: uppercase;
-            margin-bottom: 50px;
+            margin-bottom: clamp(30px, 5vh, 60px);
             color: var(--text-primary);
         }
 
         .contatti-info {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 40px;
+            gap: clamp(40px, 5vw, 80px);
             margin-top: 50px;
         }
 
         .contatto-item h3 {
-            font-size: var(--text-base);
+            font-size: clamp(1.1rem, 2vw + 0.5vh, 1.75rem);
+            font-weight: 300;
             text-transform: uppercase;
             letter-spacing: var(--letter-spacing-wider);
             color: var(--text-secondary);
-            margin-bottom: 15px;
+            margin-bottom: clamp(10px, 1.5vh, 20px);
         }
 
         .contatto-item p {
-            color: var(--text-primary);
-            font-size: var(--text-lg);
+            color: var(--text-secondary);
+            font-size: clamp(0.95rem, 1.5vw + 0.3vh, 1.35rem);
         }
 
         /* Mobile Responsive */
