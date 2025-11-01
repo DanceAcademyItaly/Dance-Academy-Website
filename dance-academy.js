@@ -87,6 +87,8 @@ function setActiveSection(sectionName) {
     // Skip if already active (performance optimization)
     if (currentActiveSection === sectionName) return;
 
+    console.log(`🎯 setActiveSection: ${currentActiveSection} → ${sectionName}`);
+
     // Deactivate all sections
     Object.keys(SECTIONS).forEach(section => {
         SECTIONS[section].forEach(selector => {
@@ -101,11 +103,14 @@ function setActiveSection(sectionName) {
     if (SECTIONS[sectionName]) {
         SECTIONS[sectionName].forEach(selector => {
             const elements = document.querySelectorAll(selector);
+            console.log(`  ✓ Activating ${elements.length} elements matching "${selector}"`);
             elements.forEach(el => {
                 el.classList.remove('section-inactive');
             });
         });
         currentActiveSection = sectionName;
+    } else {
+        console.warn(`⚠️ Section "${sectionName}" not found in SECTIONS registry!`);
     }
 }
 
@@ -143,6 +148,219 @@ function applyVideoState(state) {
         videoBg.style.filter = VIDEO_STATES[state];
         currentVideoState = state;
     }
+}
+
+// ============================================================================
+// HEADER REGISTRY SYSTEM
+// ============================================================================
+// Centralized header navigation and progress bar management
+// Animation-state-driven: scroll targets come from animation system calculations
+// Section-agnostic: works with any number of enabled sections
+
+const HEADER_REGISTRY = {
+    sections: [
+        { name: 'hero', order: 0, enabled: true, targetScroll: 0, registered: false },
+        { name: 'episodi', order: 1, enabled: false, targetScroll: null, registered: false },
+        { name: 'missione', order: 2, enabled: true, targetScroll: null, registered: false },
+        { name: 'candidati', order: 3, enabled: true, targetScroll: null, registered: false },
+        { name: 'contatti', order: 4, enabled: true, targetScroll: null, registered: false }
+    ],
+    maxScroll: null,
+    initialized: false,
+    _enabledSectionsCache: null,
+    _progressDivisionsCache: null
+};
+
+/**
+ * Register a section's scroll target position
+ * Called by animation systems after calculating their ranges
+ * @param {string} name - Section name
+ * @param {number} targetScroll - Scroll Y position to navigate to
+ */
+function registerSection(name, targetScroll) {
+    const section = HEADER_REGISTRY.sections.find(s => s.name === name);
+
+    if (!section) {
+        console.warn(`Cannot register unknown section: ${name}`);
+        return;
+    }
+
+    section.targetScroll = targetScroll;
+    section.registered = true;
+
+    // Invalidate caches
+    HEADER_REGISTRY._enabledSectionsCache = null;
+    HEADER_REGISTRY._progressDivisionsCache = null;
+
+    // Recalculate progress divisions
+    recalculateProgressDivisions();
+
+    console.log(`Registered ${name} section at scroll ${targetScroll}`);
+
+    // Check if all enabled sections are now registered
+    // If yes, automatically enable header navigation
+    checkAndEnableHeader();
+}
+
+/**
+ * Check if all enabled sections are registered, and enable header if ready
+ */
+function checkAndEnableHeader() {
+    // Only enable once
+    if (HEADER_REGISTRY.initialized) {
+        return;
+    }
+
+    const enabledSections = HEADER_REGISTRY.sections.filter(s => s.enabled);
+    const allRegistered = enabledSections.every(s => s.registered);
+
+    console.log('🔍 Header Registration Check:', {
+        enabledSections: enabledSections.map(s => ({name: s.name, enabled: s.enabled, registered: s.registered})),
+        allRegistered: allRegistered
+    });
+
+    if (allRegistered) {
+        console.log('✅ All enabled sections registered, activating header...');
+        HEADER_REGISTRY.initialized = true;
+        setupHeaderNavigation();
+    } else {
+        const pending = enabledSections.filter(s => !s.registered).map(s => s.name);
+        console.log(`⏳ Waiting for sections to register: ${pending.join(', ')}`);
+    }
+}
+
+/**
+ * Get sorted array of enabled and registered sections
+ * Cached for performance
+ * @returns {Array} Sorted enabled sections
+ */
+function getSortedEnabledSections() {
+    if (HEADER_REGISTRY._enabledSectionsCache) {
+        return HEADER_REGISTRY._enabledSectionsCache;
+    }
+
+    const enabled = HEADER_REGISTRY.sections
+        .filter(s => s.enabled && s.registered)
+        .sort((a, b) => a.order - b.order);
+
+    HEADER_REGISTRY._enabledSectionsCache = enabled;
+    return enabled;
+}
+
+/**
+ * Calculate equal progress divisions for enabled sections
+ * Each section gets equal percentage of progress bar
+ */
+function recalculateProgressDivisions() {
+    const sections = getSortedEnabledSections();
+
+    if (sections.length === 0) {
+        HEADER_REGISTRY._progressDivisionsCache = null;
+        return;
+    }
+
+    const divisionSize = 100 / sections.length;
+
+    const divisions = sections.map((section, index) => ({
+        name: section.name,
+        targetScroll: section.targetScroll,
+        progressStart: index * divisionSize,
+        progressEnd: (index + 1) * divisionSize,
+        divisionSize: divisionSize
+    }));
+
+    HEADER_REGISTRY._progressDivisionsCache = divisions;
+
+    console.log(`Progress divisions calculated: ${sections.length} sections at ${divisionSize.toFixed(2)}% each`);
+}
+
+/**
+ * Find which section is active at given scroll position
+ * Uses binary search for O(log n) performance
+ * @param {number} scrollY - Current scroll position
+ * @returns {Object|null} Active section object or null
+ */
+function getSectionAtScroll(scrollY) {
+    const sections = getSortedEnabledSections();
+
+    if (sections.length === 0) return null;
+
+    // Edge case: before first section
+    if (scrollY < sections[0].targetScroll) {
+        return null;
+    }
+
+    // Edge case: at or past last section
+    if (scrollY >= sections[sections.length - 1].targetScroll) {
+        return sections[sections.length - 1];
+    }
+
+    // Binary search for active section
+    let left = 0;
+    let right = sections.length - 1;
+
+    while (left <= right) {
+        const mid = Math.floor((left + right) / 2);
+        const currentSection = sections[mid];
+        const nextSection = sections[mid + 1];
+
+        if (scrollY >= currentSection.targetScroll && (!nextSection || scrollY < nextSection.targetScroll)) {
+            return currentSection;
+        } else if (scrollY < currentSection.targetScroll) {
+            right = mid - 1;
+        } else {
+            left = mid + 1;
+        }
+    }
+
+    return sections[0]; // Fallback
+}
+
+/**
+ * Calculate progress bar percentage (0-100%) based on scroll position
+ * Provides smooth progression with equal divisions per section
+ * @param {number} scrollY - Current scroll position
+ * @returns {number} Progress percentage (0-100)
+ */
+function getProgressPercentage(scrollY) {
+    const divisions = HEADER_REGISTRY._progressDivisionsCache;
+
+    if (!divisions || divisions.length === 0) return 0;
+
+    // Edge case: at top
+    if (scrollY <= 0) return 0;
+
+    // Edge case: at or past bottom
+    const maxScroll = HEADER_REGISTRY.maxScroll || document.documentElement.scrollHeight - window.innerHeight;
+    if (scrollY >= maxScroll) return 100;
+
+    // Find current division
+    for (let i = 0; i < divisions.length; i++) {
+        const division = divisions[i];
+        const nextDivision = divisions[i + 1];
+
+        // Last division
+        if (!nextDivision) {
+            if (scrollY >= division.targetScroll) {
+                // Calculate progress from this section to maxScroll
+                const range = maxScroll - division.targetScroll;
+                const progress = range > 0 ? (scrollY - division.targetScroll) / range : 1;
+                const clampedProgress = Math.min(1, Math.max(0, progress));
+                return division.progressStart + (clampedProgress * division.divisionSize);
+            }
+        } else {
+            // Middle divisions
+            if (scrollY >= division.targetScroll && scrollY < nextDivision.targetScroll) {
+                const range = nextDivision.targetScroll - division.targetScroll;
+                const progress = range > 0 ? (scrollY - division.targetScroll) / range : 0;
+                const clampedProgress = Math.min(1, Math.max(0, progress));
+                return division.progressStart + (clampedProgress * division.divisionSize);
+            }
+        }
+    }
+
+    // Fallback
+    return 0;
 }
 
 // Check CSS clamp() support
@@ -361,6 +579,101 @@ function shouldOverrideReducedMotion() {
     return prefersReducedMotion && hasOverride;
 }
 
+// Initialize all animation systems and register their scroll targets
+function initializeAllAnimationSystems() {
+    console.log('🎬 Initializing all animation systems...');
+    console.log('📋 Initial Registry State:', HEADER_REGISTRY.sections.map(s => ({
+        name: s.name,
+        enabled: s.enabled,
+        registered: s.registered,
+        targetScroll: s.targetScroll
+    })));
+
+    // 1. Hero (instant registration)
+    registerSection('hero', 0);
+
+    // 2. Episodi (if content exists)
+    if (hasEpisodes) {
+        // Enable episodi in registry
+        const episodiSection = HEADER_REGISTRY.sections.find(s => s.name === 'episodi');
+        if (episodiSection) {
+            episodiSection.enabled = true;
+            console.log('Episodi section enabled in registry');
+        }
+        initEpisodiFixedSystem();
+    }
+
+    // 3. Missione
+    initMissioneAnimations();
+
+    // 4. Candidati
+    initCandidatiCardStack();
+
+    // 5. Contatti (register with max scroll)
+    const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+    registerSection('contatti', maxScroll);
+    HEADER_REGISTRY.maxScroll = maxScroll;
+
+    console.log('✅ All animation system initialization calls completed (async sections may still be registering)');
+}
+
+// Setup header navigation (enable interaction and click handlers)
+function setupHeaderNavigation() {
+    const headerSpans = document.querySelectorAll('.header-fixed span[data-section]');
+
+    headerSpans.forEach(span => {
+        const sectionName = span.dataset.section;
+        const section = HEADER_REGISTRY.sections.find(s => s.name === sectionName);
+
+        // Hide if section disabled or not registered
+        if (!section || !section.enabled || !section.registered) {
+            span.style.display = 'none';
+            return;
+        }
+
+        // Enable and make interactive
+        span.style.pointerEvents = 'all';
+        span.style.opacity = ''; // Remove disabled opacity
+
+        // Add click handler
+        span.addEventListener('click', () => scrollToSection(sectionName));
+    });
+
+    console.log('✅ Header navigation activated');
+}
+
+// Scroll to a registered section
+function scrollToSection(sectionName) {
+    const section = HEADER_REGISTRY.sections.find(s => s.name === sectionName);
+
+    if (!section || !section.registered) {
+        console.warn(`Cannot navigate to unregistered section: ${sectionName}`);
+        return;
+    }
+
+    const targetScroll = section.targetScroll;
+
+    // Use Lenis if available, otherwise fallback to native smooth scroll
+    if (lenis && isScrollSystemInitialized) {
+        lenis.scrollTo(targetScroll, {
+            duration: 2.5, // Slow, guided animation (was 1.2)
+            easing: (t) => {
+                // Smooth ease-in-out for natural, guided feel
+                return t < 0.5
+                    ? 4 * t * t * t
+                    : 1 - Math.pow(-2 * t + 2, 3) / 2;
+            }
+        });
+    } else {
+        window.scrollTo({
+            top: targetScroll,
+            behavior: 'smooth'
+        });
+    }
+
+    console.log(`Navigating to ${sectionName} at scroll position ${targetScroll}`);
+}
+
 // Enhanced scroll system initialization
 function initEnhancedScrollSystem() {
     if (!supportsLenisFeatures()) {
@@ -432,16 +745,9 @@ function initEnhancedScrollSystem() {
         // Preserve episode navigation
         preserveEpisodeNavigation();
 
-        // Initialize episodi fixed system now that Lenis is ready
-        if (hasEpisodes) {
-            initEpisodiFixedSystem();
-        }
-
-        // Initialize missione animations now that Lenis is ready
-        initMissioneAnimations();
-
-        // Initialize candidati card stack now that Lenis is ready
-        initCandidatiCardStack();
+        // Initialize all animation systems and register scroll targets
+        // Note: Header will be automatically enabled when all sections register
+        initializeAllAnimationSystems();
 
     } catch (error) {
         console.error('Error initializing Lenis:', error);
@@ -889,9 +1195,6 @@ let cachedDocumentHeight = 0;
 let lastHeaderUpdate = 0;
 const HEADER_UPDATE_THROTTLE = 100; // Update header every 100ms max
 
-// Section-based progress bar data
-let sectionProgressData = null;
-
 // Initialize DOM cache after page load
 function initDOMCache() {
     cachedHeaderSpans = document.querySelectorAll('.header-fixed span[data-section]');
@@ -907,8 +1210,6 @@ function updateVisibleBlocks() {
     cachedVisibleBlocks = Array.from(cachedBlocks).filter(block =>
         getComputedStyle(block).display !== 'none'
     );
-    // Recalculate section progress data when visible blocks change
-    calculateSectionProgressData();
 }
 
 // Update cached document height
@@ -916,50 +1217,10 @@ function updateCachedDocumentHeight() {
     cachedDocumentHeight = document.documentElement.scrollHeight - window.innerHeight;
 }
 
-// Calculate section-based progress data for equal progress bar divisions
-function calculateSectionProgressData() {
-    if (!cachedVisibleBlocks || cachedVisibleBlocks.length === 0) {
-        sectionProgressData = null;
-        return;
-    }
-
-    const sections = [];
-    const totalSections = cachedVisibleBlocks.length;
-    const progressPerSection = 100 / totalSections; // Equal divisions
-
-    cachedVisibleBlocks.forEach((block, index) => {
-        const sectionId = block.dataset.block;
-        const sectionTop = block.offsetTop;
-        const sectionHeight = block.offsetHeight;
-        const sectionBottom = sectionTop + sectionHeight;
-
-        sections.push({
-            id: sectionId,
-            element: block,
-            top: sectionTop,
-            bottom: sectionBottom,
-            height: sectionHeight,
-            progressStart: index * progressPerSection,
-            progressEnd: (index + 1) * progressPerSection,
-            progressRange: progressPerSection
-        });
-    });
-
-    sectionProgressData = {
-        sections: sections,
-        totalSections: totalSections,
-        progressPerSection: progressPerSection
-    };
-
-    console.log(`Section progress data calculated: ${totalSections} sections`);
-}
-
 // Update cached viewport on resize
 window.addEventListener('resize', () => {
     cachedViewportHeight = window.innerHeight;
     updateCachedDocumentHeight();
-    // Recalculate section progress data on resize
-    calculateSectionProgressData();
 });
 
 // Enhanced anchor navigation with smooth scroll
@@ -1049,114 +1310,14 @@ function initializeEnhancedScrollAfterIntro() {
     }
 }
 
-// Update progress bar (smooth normalized 0-100% progression)
+// Update progress bar (uses Header Registry system)
 function updateProgressBar(scrollY) {
-    if (!cachedProgressBar || !sectionProgressData) return;
+    if (!cachedProgressBar) return;
 
-    let progressPercentage = 0;
+    const percentage = getProgressPercentage(scrollY);
+    cachedProgressBar.style.width = percentage + '%';
 
-    // Find contatti section for special handling
-    const contattiSection = sectionProgressData.sections.find(section => section.id === 'contatti');
-
-    if (contattiSection) {
-        // Calculate when contatti section starts appearing (top reaches bottom of viewport)
-        const contattiStartsAppearing = contattiSection.top - window.innerHeight;
-        // Calculate when contatti section is fully visible (bottom reaches bottom of viewport)
-        const contattiFullyVisible = contattiSection.bottom - window.innerHeight;
-
-        if (scrollY >= contattiFullyVisible) {
-            // Contatti is fully visible - progress bar at 100%
-            progressPercentage = 100;
-        } else if (scrollY >= contattiStartsAppearing) {
-            // Contatti is appearing - interpolate from previous progress to 100%
-            const previousSectionIndex = sectionProgressData.sections.findIndex(s => s.id === 'contatti') - 1;
-            const startProgress = previousSectionIndex >= 0 ? sectionProgressData.sections[previousSectionIndex].progressEnd : 80;
-
-            const progressInContattiTransition = (scrollY - contattiStartsAppearing) / (contattiFullyVisible - contattiStartsAppearing);
-            const clampedProgress = Math.min(1, Math.max(0, progressInContattiTransition));
-
-            progressPercentage = startProgress + (clampedProgress * (100 - startProgress));
-        } else {
-            // Use normal section-based calculation for sections before contatti
-            for (let i = 0; i < sectionProgressData.sections.length; i++) {
-                const section = sectionProgressData.sections[i];
-
-                // Skip contatti section in normal calculation
-                if (section.id === 'contatti') continue;
-
-                if (scrollY >= section.top && scrollY <= section.bottom) {
-                    // We're in this section - calculate progress within it
-                    const progressInSection = (scrollY - section.top) / section.height;
-                    const clampedProgressInSection = Math.min(1, Math.max(0, progressInSection));
-
-                    // Special handling for candidati section to ensure linear progression
-                    if (section.id === 'candidati') {
-                        // For candidati, use linear progression from its start to the point where contatti transition begins
-                        const contattiSection = sectionProgressData.sections.find(s => s.id === 'contatti');
-                        if (contattiSection) {
-                            // Calculate the exact progress value where contatti transition would start
-                            const contattiTransitionStart = contattiSection.top - window.innerHeight;
-                            const candidatiEffectiveEnd = Math.min(section.bottom, contattiTransitionStart);
-                            const candidatiEffectiveHeight = candidatiEffectiveEnd - section.top;
-
-                            if (candidatiEffectiveHeight > 0 && scrollY <= candidatiEffectiveEnd) {
-                                const effectiveProgressInSection = (scrollY - section.top) / candidatiEffectiveHeight;
-                                const clampedEffectiveProgress = Math.min(1, Math.max(0, effectiveProgressInSection));
-                                progressPercentage = section.progressStart + (clampedEffectiveProgress * section.progressRange);
-                            } else {
-                                // Fallback to normal calculation
-                                progressPercentage = section.progressStart + (clampedProgressInSection * section.progressRange);
-                            }
-                        } else {
-                            // No contatti section found, use normal calculation
-                            progressPercentage = section.progressStart + (clampedProgressInSection * section.progressRange);
-                        }
-                    } else {
-                        // Normal calculation for all other sections
-                        progressPercentage = section.progressStart + (clampedProgressInSection * section.progressRange);
-                    }
-                    break;
-                } else if (scrollY < section.top) {
-                    // We're before this section - use previous section's end progress
-                    progressPercentage = i > 0 ? sectionProgressData.sections[i - 1].progressEnd : 0;
-                    break;
-                } else if (i === sectionProgressData.sections.length - 2) {
-                    // We're past the second-to-last section (before contatti)
-                    progressPercentage = section.progressEnd;
-                }
-            }
-        }
-    } else {
-        // Fallback to original section-based calculation if contatti not found
-        for (let i = 0; i < sectionProgressData.sections.length; i++) {
-            const section = sectionProgressData.sections[i];
-
-            if (scrollY >= section.top && scrollY <= section.bottom) {
-                // We're in this section - calculate progress within it
-                const progressInSection = (scrollY - section.top) / section.height;
-                const clampedProgressInSection = Math.min(1, Math.max(0, progressInSection));
-
-                // Calculate total progress: completed sections + progress in current section
-                progressPercentage = section.progressStart + (clampedProgressInSection * section.progressRange);
-                break;
-            } else if (scrollY < section.top) {
-                // We're before this section - use previous section's end progress
-                progressPercentage = i > 0 ? sectionProgressData.sections[i - 1].progressEnd : 0;
-                break;
-            } else if (i === sectionProgressData.sections.length - 1) {
-                // We're past the last section
-                progressPercentage = 100;
-            }
-        }
-    }
-
-    // Clamp to 0-100 range
-    progressPercentage = Math.min(100, Math.max(0, progressPercentage));
-
-    // Smooth progress bar update
-    cachedProgressBar.style.width = progressPercentage + '%';
-
-    // Throttle header updates for performance
+    // Throttled header active state update
     const now = performance.now();
     if (now - lastHeaderUpdate > HEADER_UPDATE_THROTTLE) {
         updateActiveHeaderSection(scrollY);
@@ -1164,48 +1325,19 @@ function updateProgressBar(scrollY) {
     }
 }
 
-// Enhanced header section update for smooth scroll integration
+// Update active header section (uses Header Registry system)
 function updateActiveHeaderSection(scrollY) {
-    if (!cachedHeaderSpans || !cachedVisibleBlocks) return;
+    if (!cachedHeaderSpans) return;
 
-    let activeSection = null;
+    const activeSection = getSectionAtScroll(scrollY);
 
-    // Find section with early switching (when current section is 3/4 through)
-    for (let i = 0; i < cachedVisibleBlocks.length; i++) {
-        const block = cachedVisibleBlocks[i];
-        const blockTop = block.offsetTop;
-        const blockHeight = block.offsetHeight;
-        const blockBottom = blockTop + blockHeight;
-
-        // Calculate 75% point through current section
-        const switchPoint = blockTop + (blockHeight * 0.75);
-
-        if (scrollY >= blockTop && scrollY < switchPoint) {
-            // We're in the first 75% of this section
-            activeSection = block.dataset.block || block.id;
-            break;
-        } else if (scrollY >= switchPoint && scrollY <= blockBottom) {
-            // We're in the last 25% of this section - highlight next section
-            if (i + 1 < cachedVisibleBlocks.length) {
-                activeSection = cachedVisibleBlocks[i + 1].dataset.block || cachedVisibleBlocks[i + 1].id;
-            } else {
-                // Last section, keep current section highlighted
-                activeSection = block.dataset.block || block.id;
-            }
-            break;
+    cachedHeaderSpans.forEach(span => {
+        if (span.dataset.section === activeSection?.name) {
+            span.classList.add('active');
+        } else {
+            span.classList.remove('active');
         }
-    }
-
-    // Update header active states
-    if (activeSection) {
-        cachedHeaderSpans.forEach(span => {
-            if (span.getAttribute('data-section') === activeSection) {
-                span.classList.add('active');
-            } else {
-                span.classList.remove('active');
-            }
-        });
-    }
+    });
 }
 
 // Header navigation preservation
@@ -1342,6 +1474,14 @@ async function loadContent() {
     // Initialize DOM cache early
     initDOMCache();
 
+    // Disable header interaction during initialization
+    // Header will be enabled after all animation systems register
+    const headerSpans = document.querySelectorAll('.header-fixed span[data-section]');
+    headerSpans.forEach(span => {
+        span.style.pointerEvents = 'none';
+        span.style.opacity = '0.3'; // Visual feedback that it's disabled
+    });
+
     populateContent();
 
     // Initialize typography system before scroll system
@@ -1352,9 +1492,19 @@ async function loadContent() {
 
 // Check if episodes exist
 function checkEpisodesExist(content) {
-    return content?.episodes?.seasons?.some(season => 
+    const exists = content?.episodes?.seasons?.some(season =>
         season?.episodes?.length > 0
     ) || false;
+
+    console.log('🔍 Checking episodes:', {
+        hasEpisodesProperty: !!content?.episodes,
+        hasSeasonsArray: !!content?.episodes?.seasons,
+        seasonsCount: content?.episodes?.seasons?.length,
+        seasonsData: content?.episodes?.seasons,
+        exists: exists
+    });
+
+    return exists;
 }
 
 // Fallback content
@@ -2121,6 +2271,12 @@ function initEpisodiFixedSystem() {
     // Initial animation update (use getCurrentScroll for consistency with RAF loop)
     updateEpisodiAnimations(getCurrentScroll());
 
+    // Register section with Header Registry
+    // Desktop: navigate to start of deadzone (top of page)
+    // Mobile: navigate to end of entrance (fully visible)
+    const targetScroll = episodiAnimationState.isMobile ? entranceEnd : entranceEnd; // Both use entranceEnd (deadzone start)
+    registerSection('episodi', targetScroll);
+
     // Add resize handler
     window.addEventListener('resize', handleEpisodiResize);
 
@@ -2343,6 +2499,10 @@ function handleEpisodiResizeImmediate() {
     // DO NOT separate these calls or add code between them
     calculateEpisodiSizing();
     updateEpisodiAnimations(getCurrentScroll());
+
+    // Re-register section with updated scroll target
+    const targetScroll = episodiAnimationState.isMobile ? entranceEnd : entranceEnd;
+    registerSection('episodi', targetScroll);
 }
 
 // Debounced resize handler (150ms delay)
@@ -2638,88 +2798,7 @@ function initializeScrollSystem() {
             initializeEnhancedScrollAfterIntro();
         }, 1000);
     }
-    
-    // Simple Progress Bar System
-    const progressBar = document.getElementById('progressBar');
-    const headerSpans = document.querySelectorAll('.header-fixed span');
-    const blocks = document.querySelectorAll('.block');
-    
-    // Get current section based on viewport
-    function getCurrentSection() {
-        const viewportCenter = window.innerHeight / 2;
-        
-        for (let block of blocks) {
-            if (getComputedStyle(block).display === 'none') continue;
-            
-            const rect = block.getBoundingClientRect();
-            const blockTop = rect.top;
-            const blockBottom = rect.bottom;
-            
-            // Se il centro del viewport è dentro questa sezione
-            if (blockTop <= viewportCenter && blockBottom >= viewportCenter) {
-                return block.dataset.block;
-            }
-        }
-        
-        // Se nessuna sezione è al centro, trova la più vicina
-        let closestSection = null;
-        let closestDistance = Infinity;
-        
-        for (let block of blocks) {
-            if (getComputedStyle(block).display === 'none') continue;
-            
-            const rect = block.getBoundingClientRect();
-            const blockCenter = rect.top + (rect.height / 2);
-            const distance = Math.abs(blockCenter - viewportCenter);
-            
-            if (distance < closestDistance) {
-                closestDistance = distance;
-                closestSection = block.dataset.block;
-            }
-        }
-        
-        return closestSection;
-    }
-    
-    // Update active header
-    function updateActiveHeader(currentSection) {
-        headerSpans.forEach(span => {
-            if (span.dataset.section === currentSection) {
-                span.classList.add('active');
-            } else {
-                span.classList.remove('active');
-            }
-        });
-    }
-    
-    // Main scroll handler - let Lenis handle this through updateProgressBar
-    if (!lenis || !isScrollSystemInitialized) {
-        window.addEventListener('scroll', () => {
-            const scrollTop = window.scrollY;
-            updateProgressBar(scrollTop);
-        });
-    }
-    
-    // Initial update
-    const currentSection = getCurrentSection();
-    if (currentSection) {
-        updateActiveHeader(currentSection);
-    }
-    
-    // Add click handlers for header navigation
-    headerSpans.forEach(span => {
-        span.style.cursor = 'pointer';
-        span.style.pointerEvents = 'all';
-        span.addEventListener('click', () => {
-            const targetSection = span.dataset.section;
-            const targetBlock = document.querySelector(`[data-block="${targetSection}"]`);
-            
-            if (targetBlock && getComputedStyle(targetBlock).display !== 'none') {
-                targetBlock.scrollIntoView({ behavior: 'smooth' });
-            }
-        });
-    });
-    
+
     // Style required field asterisks
     const requiredFields = document.querySelectorAll('.required');
     requiredFields.forEach(field => {
@@ -2913,15 +2992,27 @@ function initMissioneAnimations() {
         });
 
         // Calculate scroll trigger positions - Start after episodi buffer zone ends
-        // Use dynamic values from episodiAnimationState (no more hardcoded pixels!)
-        const episodiBufferEnd = episodiAnimationState ? episodiAnimationState.bufferEnd : 0;
+        // If episodi doesn't exist (no episodes in content), start after hero block
+        let entranceStartBase;
 
-        if (!episodiBufferEnd) {
-            // Episodi might not have initialized yet (e.g., no episodes in content)
-            // Retry missione initialization after content is populated
-            console.warn('Episodi animation state not available - retrying missione init in 300ms');
-            setTimeout(() => attemptInitialization(attempts), 300);
-            return;
+        if (episodiAnimationState && episodiAnimationState.bufferEnd) {
+            // Episodi exists - start after its buffer zone
+            entranceStartBase = episodiAnimationState.bufferEnd;
+            console.log('Missione starting after episodi buffer:', entranceStartBase);
+        } else {
+            // No episodi - calculate fallback position after hero
+            const heroBlock = document.querySelector('.hero-block');
+            if (heroBlock) {
+                // Start after hero block + a buffer
+                const heroBottom = heroBlock.offsetTop + heroBlock.offsetHeight;
+                const bufferAfterHero = SECTION_BUFFER_VH * window.innerHeight;
+                entranceStartBase = heroBottom + bufferAfterHero;
+                console.log('Missione starting after hero (no episodi):', entranceStartBase);
+            } else {
+                // Fallback to missione block's own position
+                entranceStartBase = missioneBlock.offsetTop;
+                console.log('Missione starting at own position (fallback):', entranceStartBase);
+            }
         }
 
         const viewportHeight = window.innerHeight;
@@ -2930,8 +3021,8 @@ function initMissioneAnimations() {
         const elementAnimationDuration = 500; // Same as updateMissioneAnimations
         const staggerOffset = 50; // Same as updateMissioneAnimations
 
-        // Start after episodi buffer zone (strict separation, no overlap)
-        const entranceStart = episodiBufferEnd;
+        // Start after previous section (episodi or hero)
+        const entranceStart = entranceStartBase;
         const entranceDuration = 0.75 * viewportHeight; // 0.75vh entrance duration
         const entranceEnd = entranceStart + entranceDuration;
         const deadzoneDuration = 0.25 * viewportHeight; // 0.25vh deadzone
@@ -2949,7 +3040,8 @@ function initMissioneAnimations() {
         const bufferEnd = exitEnd + bufferDuration;
 
         console.log('Missione scroll positions (dynamic, no hardcoded pixels):', {
-            episodiBufferEnd,
+            entranceStartBase,
+            hasEpisodi: !!episodiAnimationState,
             entranceStart,
             entranceEnd,
             deadzoneEnd,
@@ -2957,8 +3049,7 @@ function initMissioneAnimations() {
             bufferEnd,
             totalElements,
             lastElementExitEnd,
-            bufferAdded: 50,
-            startsAfterEpisodiBuffer: true
+            bufferAdded: 50
         });
 
         // Font size auto-adjustment system - calculates based on longest text of each type
@@ -3181,6 +3272,12 @@ function initMissioneAnimations() {
             originalContainerTop
         };
 
+        // Register section with Header Registry
+        // Navigate to when last element has fully finished its entrance stagger animation
+        // Last element (highest reverseIndex) finishes at: entranceStart + (reverseIndex * stagger) + animDuration
+        const lastElementEntranceEnd = entranceStart + (lastElementReverseIndex * staggerOffset) + elementAnimationDuration;
+        registerSection('missione', lastElementEntranceEnd);
+
         console.log('Missione Lenis-based animations initialized successfully', {
             elementCount: elements.length,
             reverseStaggerOrder: 'button → middle → top',
@@ -3222,7 +3319,7 @@ function initCandidatiCardStack() {
 
     // Validate elements
     if (!candidatiSpacer || !candidatiTitleWrapper || !candidatiTitle || !cardWrappers || cardWrappers.length !== 5 || !cards || cards.length !== 5 || !submitButtonContainer) {
-        console.error('❌❌❌ VALIDATION FAILED - EARLY RETURN', {
+        console.error('❌❌❌ CANDIDATI VALIDATION FAILED - EARLY RETURN', {
             candidatiSpacer: !!candidatiSpacer,
             candidatiTitleWrapper: !!candidatiTitleWrapper,
             candidatiTitle: !!candidatiTitle,
@@ -3230,6 +3327,12 @@ function initCandidatiCardStack() {
             cards: cards?.length,
             submitButtonContainer: !!submitButtonContainer
         });
+        console.error('🔍 Checking HTML structure:');
+        console.error('  .candidati-spacer exists:', document.querySelectorAll('.candidati-spacer').length);
+        console.error('  .candidati-title-wrapper exists:', document.querySelectorAll('.candidati-title-wrapper').length);
+        console.error('  .candidati-card-wrapper exists:', document.querySelectorAll('.candidati-card-wrapper').length);
+        console.error('  .form-card exists:', document.querySelectorAll('.form-card').length);
+        console.error('  .submit-button-container exists:', document.querySelectorAll('.submit-button-container').length);
         return;
     }
 
@@ -3245,24 +3348,28 @@ function initCandidatiCardStack() {
     const topPosition = 60; // Fixed top position defined in CSS
 
     // Calculate scroll ranges - Start after missione buffer zone
-    const missioneBufferEnd = missioneAnimationState ? missioneAnimationState.bufferEnd : 0;
+    // If missione doesn't exist, calculate fallback position
+    let titleEntranceStartBase;
 
-    if (!missioneBufferEnd) {
-        // Missione might still be initializing (async retry mechanism)
-        // Retry candidati initialization after a delay
-        console.warn('Missione animation state not ready yet - retrying candidati init in 300ms');
-        setTimeout(initCandidatiCardStack, 300);
-        return;
+    if (missioneAnimationState && missioneAnimationState.bufferEnd) {
+        // Missione exists - start after its buffer zone
+        titleEntranceStartBase = missioneAnimationState.bufferEnd;
+        console.log('Candidati starting after missione buffer:', titleEntranceStartBase);
+    } else {
+        // No missione - calculate fallback position (unlikely but handle it)
+        // Use candidati spacer's own position as fallback
+        titleEntranceStartBase = candidatiSpacer.offsetTop;
+        console.log('Candidati starting at own position (no missione):', titleEntranceStartBase);
     }
 
-    const titleEntranceStart = missioneBufferEnd;
+    const titleEntranceStart = titleEntranceStartBase;
     const viewportHeight = window.innerHeight;
 
     console.log('Candidati timing (dynamic):', {
-        missioneBufferEnd,
+        titleEntranceStartBase,
+        hasMissione: !!missioneAnimationState,
         candidatiStart: titleEntranceStart,
-        spacerTop: spacerTop,
-        startsAfterMissioneBuffer: true
+        spacerTop: spacerTop
     });
 
     // Phase 1: Title entrance (0.5vh)
@@ -3335,7 +3442,7 @@ function initCandidatiCardStack() {
         totalScrollRange,
         totalVh: `${(totalScrollRange / viewportHeight).toFixed(1)}vh`,
         spacerHeight: totalScrollRange + 'px',
-        missioneBufferEnd
+        titleEntranceStartBase
     });
 
     // Create background overlay for fade-to-black effect during exit
@@ -3702,6 +3809,13 @@ function initCandidatiCardStack() {
         calculateCardFadeOutMultiplier,  // Helper function for persistent fade-out
         generateCardShadow  // Helper function to generate shadow with opacity
     };
+
+    // Register section with Header Registry
+    // Navigate to when first card (card 0) has fully arrived in position
+    // First card completes at (0+1)/totalCards = 1/5 = 20% through card entrance phase
+    const firstCardCompleteFraction = 1 / totalCards;
+    const firstCardCompleteScroll = cardEntranceStart + (cardEntranceDuration * firstCardCompleteFraction);
+    registerSection('candidati', firstCardCompleteScroll);
 
     // Add resize handler for responsive container and card height recalculation
     let resizeTimeout;

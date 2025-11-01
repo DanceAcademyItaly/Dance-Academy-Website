@@ -8,10 +8,22 @@
     "introText": "Il viaggio che racconta la danza italiana"
   },
   "navigation": [
-    {"text": "EPISODI", "href": "#episodi"},
-    {"text": "MISSIONE", "href": "#missione"},
-    {"text": "CANDIDATI", "href": "#candidati"},
-    {"text": "CONTATTI", "href": "#contatti"}
+    {
+      "text": "EPISODI",
+      "href": "#episodi"
+    },
+    {
+      "text": "MISSIONE",
+      "href": "#missione"
+    },
+    {
+      "text": "CANDIDATI",
+      "href": "#candidati"
+    },
+    {
+      "text": "CONTATTI",
+      "href": "#contatti"
+    }
   ],
   "hero": {
     "title": "Dance Academy",
@@ -25,31 +37,46 @@
         "episodes": [
           {
             "id": 1,
-            "title": "EP. 1: Accademia di Milano",
-            "mainVideo": "https://www.youtube.com/embed/M1F0lBnsnkE",
+            "title": "Accademia Danza Roma",
+            "mainVideo": "https://www.youtube.com/embed/dQw4w9WgXcQ",
             "choreographies": [
               {
-                "title": "Balletto Classico",
-                "video": "https://www.youtube.com/embed/VBZ4Wnm-tuI"
+                "title": "Il Lago dei Cigni",
+                "video": "https://www.youtube.com/embed/jNQXAC9IVRw"
               },
               {
-                "title": "Danza Contemporanea",
-                "video": "https://www.youtube.com/embed/QcIy9NiNbmo"
+                "title": "Romeo e Giulietta",
+                "video": "https://www.youtube.com/embed/9bZkp7q19f0"
               },
               {
-                "title": "Danza Moderna",
-                "video": "https://www.youtube.com/embed/kTJczUoc26U"
+                "title": "La Bella Addormentata",
+                "video": "https://www.youtube.com/embed/kJQP7kiw5Fk"
               }
             ]
           },
           {
             "id": 2,
-            "title": "EP. 2: Studio di Roma",
-            "mainVideo": "https://www.youtube.com/embed/2vjPBrBU-TM",
+            "title": "Scuola di Ballo Milano",
+            "mainVideo": "https://www.youtube.com/embed/L_jWHffIx5E",
             "choreographies": [
               {
-                "title": "Jazz Dance",
-                "video": "https://www.youtube.com/embed/gOsM-DYAEhY"
+                "title": "Urban Dreams",
+                "video": "https://www.youtube.com/embed/fJ9rUzIMcZQ"
+              },
+              {
+                "title": "Ritmi Metropolitani",
+                "video": "https://www.youtube.com/embed/hT_nvWreIhg"
+              }
+            ]
+          },
+          {
+            "id": 3,
+            "title": "Centro Danza Napoli",
+            "mainVideo": "https://www.youtube.com/embed/3JZ_D3ELwOQ",
+            "choreographies": [
+              {
+                "title": "Tarantella Fusion",
+                "video": "https://www.youtube.com/embed/YQHsXMglC9A"
               }
             ]
           }
@@ -60,36 +87,47 @@
         "name": "Stagione 2",
         "episodes": [
           {
-            "id": 3,
-            "title": "EP. 1: Venezia Street Dance",
-            "mainVideo": "https://www.youtube.com/embed/BvSRwAEw1Rk",
+            "id": 4,
+            "title": "Danza Torino Academy",
+            "mainVideo": "https://www.youtube.com/embed/lXMskKTw3Bc",
             "choreographies": [
               {
-                "title": "Street Style",
-                "video": "https://www.youtube.com/embed/1Y5Kdd46aXo"
+                "title": "Valzer Viennese",
+                "video": "https://www.youtube.com/embed/OPf0YbXqDm0"
               },
               {
-                "title": "Urban Choreography",
-                "video": "https://www.youtube.com/embed/TKYbv8vlLnM"
+                "title": "Mazurka Moderna",
+                "video": "https://www.youtube.com/embed/e-ORhEE9VVg"
               }
             ]
           },
           {
-            "id": 4,
-            "title": "EP. 2: Palermo Jazz Studio",
-            "mainVideo": "https://www.youtube.com/embed/4rZZgzQBt1E",
+            "id": 5,
+            "title": "Studio Danza Firenze",
+            "mainVideo": "https://www.youtube.com/embed/V1bFr2SWP1I",
             "choreographies": [
               {
-                "title": "Jazz Fusion",
-                "video": "https://www.youtube.com/embed/7RO35wcVMIE"
+                "title": "Primavera",
+                "video": "https://www.youtube.com/embed/GRxofEmo3HA"
               },
               {
-                "title": "Contemporary Jazz",
-                "video": "https://www.youtube.com/embed/vt2i0ts-uck"
+                "title": "Arte e Movimento",
+                "video": "https://www.youtube.com/embed/pt8VYOfr8To"
               },
               {
-                "title": "Latin Jazz",
-                "video": "https://www.youtube.com/embed/6HCnQ6J-fks"
+                "title": "La Gioconda Danza",
+                "video": "https://www.youtube.com/embed/450p7goxZqg"
+              }
+            ]
+          },
+          {
+            "id": 6,
+            "title": "Accademia Danza Venezia",
+            "mainVideo": "https://www.youtube.com/embed/pRpeEdMmmQ0",
+            "choreographies": [
+              {
+                "title": "Carnevale di Venezia",
+                "video": "https://www.youtube.com/embed/Zi_XLOBDo_Y"
               }
             ]
           }
@@ -120,12 +158,42 @@
     "title": "Candidati",
     "form": {
       "fields": [
-        {"id": "nome", "label": "Il tuo nome", "type": "text", "required": true},
-        {"id": "email", "label": "Email", "type": "email", "required": true},
-        {"id": "telefono", "label": "Telefono *", "type": "tel", "required": true},
-        {"id": "scuola", "label": "Nome della scuola", "type": "text", "required": false},
-        {"id": "citta", "label": "Città", "type": "text", "required": false},
-        {"id": "messaggio", "label": "Raccontaci di te", "type": "textarea", "required": true}
+        {
+          "id": "nome",
+          "label": "Il tuo nome",
+          "type": "text",
+          "required": true
+        },
+        {
+          "id": "email",
+          "label": "Email",
+          "type": "email",
+          "required": true
+        },
+        {
+          "id": "telefono",
+          "label": "Telefono *",
+          "type": "tel",
+          "required": true
+        },
+        {
+          "id": "scuola",
+          "label": "Nome della scuola",
+          "type": "text",
+          "required": false
+        },
+        {
+          "id": "citta",
+          "label": "Città",
+          "type": "text",
+          "required": false
+        },
+        {
+          "id": "messaggio",
+          "label": "Raccontaci di te",
+          "type": "textarea",
+          "required": true
+        }
       ],
       "submitText": "INVIA"
     }
@@ -134,8 +202,14 @@
     "title": "Contatti",
     "description": "Per informazioni, collaborazioni o richieste specifiche, contattaci direttamente.",
     "contacts": [
-      {"type": "Email", "value": "danceacademyitaly@gmail.com"},
-      {"type": "Telefono", "value": "+39 3334528978"}
+      {
+        "type": "Email",
+        "value": "danceacademyitaly@gmail.com"
+      },
+      {
+        "type": "Telefono",
+        "value": "+39 3334528978"
+      }
     ]
   }
 }
