@@ -77,7 +77,7 @@ const SECTIONS = {
     contatti: ['.contatti-container']
 };
 
-let currentActiveSection = 'hero';
+let currentActiveSection = null; // Initialize to null so first setActiveSection() call executes
 
 /**
  * Set the active section - all others become inactive
@@ -725,7 +725,8 @@ function initEnhancedScrollSystem() {
         isScrollSystemInitialized = true;
         document.documentElement.classList.add('js-loaded', 'lenis-enabled', 'lenis', 'lenis-smooth');
 
-        // Initialize section isolation system - hero active by default
+        // Section isolation system already initialized in loadContent() - this is a safety check
+        // Function will return early if hero is already active (performance optimization)
         setActiveSection('hero');
         applyVideoState('hero');
 
@@ -1483,6 +1484,12 @@ async function loadContent() {
     });
 
     populateContent();
+
+    // Initialize section isolation system IMMEDIATELY to hide all non-hero sections
+    // CRITICAL: Must be called after populateContent() but before intro sequence
+    // Prevents contatti section (position:fixed, centered) from appearing during intro
+    setActiveSection('hero');
+    applyVideoState('hero');
 
     // Initialize typography system before scroll system
     initTypographySystem();
