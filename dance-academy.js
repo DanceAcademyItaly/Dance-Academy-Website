@@ -109,6 +109,9 @@ function setActiveSection(sectionName) {
             });
         });
         currentActiveSection = sectionName;
+
+        // Update header highlighting to match active section
+        updateHeaderHighlight(sectionName);
     } else {
         console.warn(`⚠️ Section "${sectionName}" not found in SECTIONS registry!`);
     }
@@ -607,11 +610,11 @@ function initializeAllAnimationSystems() {
     initMissioneAnimations();
 
     // 4. Candidati
-    initCandidatiCardStack();
+    const candidatiBufferEnd = initCandidatiCardStack();
 
-    // 5. Contatti (register with max scroll)
-    const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
-    registerSection('contatti', maxScroll);
+    // 5. Contatti (scroll-based animations with entry/deadzone phases)
+    // Returns maxScroll for HEADER_REGISTRY
+    const maxScroll = initContattiAnimations(candidatiBufferEnd);
     HEADER_REGISTRY.maxScroll = maxScroll;
 
     console.log('✅ All animation system initialization calls completed (async sections may still be registering)');
@@ -1184,6 +1187,11 @@ function updateScrollElements(scrollY) {
     if (candidatiCardState) {
         updateCandidatiCardStack(scrollY, candidatiCardState);
     }
+
+    // Update contatti animations if initialized
+    if (contattiAnimationState) {
+        updateContattiAnimations(scrollY);
+    }
 }
 
 // Cache viewport height and common DOM elements for performance
@@ -1193,8 +1201,6 @@ let cachedBlocks = null;
 let cachedVisibleBlocks = null;
 let cachedProgressBar = null;
 let cachedDocumentHeight = 0;
-let lastHeaderUpdate = 0;
-const HEADER_UPDATE_THROTTLE = 100; // Update header every 100ms max
 
 // Initialize DOM cache after page load
 function initDOMCache() {
@@ -1317,23 +1323,15 @@ function updateProgressBar(scrollY) {
 
     const percentage = getProgressPercentage(scrollY);
     cachedProgressBar.style.width = percentage + '%';
-
-    // Throttled header active state update
-    const now = performance.now();
-    if (now - lastHeaderUpdate > HEADER_UPDATE_THROTTLE) {
-        updateActiveHeaderSection(scrollY);
-        lastHeaderUpdate = now;
-    }
 }
 
-// Update active header section (uses Header Registry system)
-function updateActiveHeaderSection(scrollY) {
+// Update header highlighting to match active section
+// Called automatically by setActiveSection() - no scroll calculation needed
+function updateHeaderHighlight(sectionName) {
     if (!cachedHeaderSpans) return;
 
-    const activeSection = getSectionAtScroll(scrollY);
-
     cachedHeaderSpans.forEach(span => {
-        if (span.dataset.section === activeSection?.name) {
+        if (span.dataset.section === sectionName) {
             span.classList.add('active');
         } else {
             span.classList.remove('active');
@@ -2539,12 +2537,12 @@ function updateEpisodiAnimations(scrollY) {
         // Scrolled back up to hero section
         setActiveSection('hero');
         applyVideoState('hero');
-    } else if (scrollY >= entranceStart && scrollY < bufferEnd) {
-        // In episodi section
+    } else if (scrollY >= entranceStart && scrollY < bufferEnd && (!missioneAnimationState || scrollY < missioneAnimationState.entranceStart)) {
+        // In episodi section (deactivate when missione entrance begins)
         setActiveSection('episodi');
         applyVideoState('episodi');
-    } else if (scrollY >= bufferEnd && missioneAnimationState) {
-        // Transitioned to missione section
+    } else if ((scrollY >= bufferEnd || (missioneAnimationState && scrollY >= missioneAnimationState.entranceStart)) && missioneAnimationState) {
+        // Transitioned to missione section (activate as soon as missione starts)
         setActiveSection('missione');
         applyVideoState('missione');
     }
@@ -2836,6 +2834,9 @@ let missioneAnimationState = null;
 // Candidati card stack animation state
 let candidatiCardState = null;
 
+// Contatti animation state
+let contattiAnimationState = null;
+
 // Initialize missione animations system - LENIS-BASED WITH IMMEDIATE DETACHMENT
 function initMissioneAnimations() {
     console.log('Initializing missione animations with Lenis integration');
@@ -2909,8 +2910,13 @@ function initMissioneAnimations() {
         const viewportCenterY = window.innerHeight / 2;
         const containerCenterY = viewportCenterY - (originalContainerRect.height / 2);
 
+        // Mobile-aware positioning for better space utilization
+        const isMobile = window.innerWidth <= 768;
+        const minTopOffset = isMobile ? 10 : 20;
+        const calculatedTop = isMobile ? Math.max(10, (window.innerHeight - originalContainerRect.height) / 2) : containerCenterY;
+
         missioneContainer.style.position = 'fixed';
-        missioneContainer.style.top = Math.max(containerCenterY, 20) + 'px'; // Ensure minimum 20px from top
+        missioneContainer.style.top = Math.max(calculatedTop, minTopOffset) + 'px';
         missioneContainer.style.left = '50%';
         missioneContainer.style.transform = 'translateX(-50%)'; // Center horizontally
         missioneContainer.style.width = 'clamp(320px, 95vw, 1400px)'; // RESPONSIVE width (wider max for desktop)
@@ -3030,9 +3036,9 @@ function initMissioneAnimations() {
 
         // Start after previous section (episodi or hero)
         const entranceStart = entranceStartBase;
-        const entranceDuration = 0.75 * viewportHeight; // 0.75vh entrance duration
+        const entranceDuration = 0.5 * viewportHeight; // 0.5vh entrance duration (faster)
         const entranceEnd = entranceStart + entranceDuration;
-        const deadzoneDuration = 0.25 * viewportHeight; // 0.25vh deadzone
+        const deadzoneDuration = 0.5 * viewportHeight; // 0.5vh deadzone (matching episodi)
         const deadzoneEnd = entranceEnd + deadzoneDuration;
 
         // Calculate exitEnd based on actual number of elements to prevent premature container hiding
@@ -3227,6 +3233,19 @@ function initMissioneAnimations() {
         // Initial font sizing setup
         setupAutoFontSizing();
 
+        // Recalculate position after font sizing (content height has changed)
+        const newContainerRect = missioneContainer.getBoundingClientRect();
+        const newViewportCenterY = window.innerHeight / 2;
+        const newContainerCenterY = newViewportCenterY - (newContainerRect.height / 2);
+        const newCalculatedTop = isMobile ? Math.max(10, (window.innerHeight - newContainerRect.height) / 2) : newContainerCenterY;
+        missioneContainer.style.top = Math.max(newCalculatedTop, minTopOffset) + 'px';
+
+        console.log('Container position recalculated after font sizing:', {
+            oldHeight: originalContainerRect.height,
+            newHeight: newContainerRect.height,
+            newTop: missioneContainer.style.top
+        });
+
         // Resize handler for positioning and font size updates
         function recalculateMissioneLayout() {
             if (!missioneAnimationState) return;
@@ -3236,12 +3255,15 @@ function initMissioneAnimations() {
             // 1. Recalculate font sizes for new container widths
             setupAutoFontSizing();
 
-            // 2. Recalculate container center position vertically
+            // 2. Recalculate container center position vertically (mobile-aware)
+            const isMobileResize = window.innerWidth <= 768;
+            const minTopOffsetResize = isMobileResize ? 10 : 20;
             const newViewportCenterY = window.innerHeight / 2;
             const newContainerCenterY = newViewportCenterY - (missioneContainer.offsetHeight / 2);
+            const calculatedTopResize = isMobileResize ? Math.max(10, (window.innerHeight - missioneContainer.offsetHeight) / 2) : newContainerCenterY;
 
             // Update container position (keep it centered)
-            missioneContainer.style.top = Math.max(newContainerCenterY, 20) + 'px';
+            missioneContainer.style.top = Math.max(calculatedTopResize, minTopOffsetResize) + 'px';
 
             console.log('Layout recalculated:', {
                 newTop: missioneContainer.style.top,
@@ -3383,13 +3405,14 @@ function initCandidatiCardStack() {
     const titleEntranceDuration = 0.5 * viewportHeight;
     const titleEntranceEnd = titleEntranceStart + titleEntranceDuration;
 
-    // Phase 2: Card entrance (1vh)
+    // Phase 2: Card entrance with per-card deadzones (3.5vh)
+    // Each card gets 0.7vh (0.2vh entrance + 0.5vh deadzone) × 5 cards = 3.5vh
     const cardEntranceStart = titleEntranceEnd;
-    const cardEntranceDuration = 1.0 * viewportHeight;
+    const cardEntranceDuration = 3.5 * viewportHeight;
     const cardEntranceEnd = cardEntranceStart + cardEntranceDuration;
 
-    // Phase 3: Deadzone (2vh)
-    const cardDeadzoneDuration = 2.0 * viewportHeight;
+    // Phase 3: Global deadzone removed - exit starts immediately after last card's deadzone
+    const cardDeadzoneDuration = 0 * viewportHeight;
     const cardDeadzoneEnd = cardEntranceEnd + cardDeadzoneDuration;
 
     // Phase 4: Exit animation (1vh)
@@ -3638,7 +3661,8 @@ function initCandidatiCardStack() {
         return { x: 0, y: 0 };
     }
 
-    const sidebarEasing = t => 1 - Math.pow(1 - t, 2.5);
+    // Inverted episodi lateral motion curve (episodi exits with t^1.25, cards enter with 1-(1-t)^1.25)
+    const sidebarEasing = t => 1 - Math.pow(1 - t, 1.25);
     const contentEasing = t => 1 - Math.pow(1 - t, 1.8);
 
     // Helper function to generate card shadow with opacity
@@ -3854,6 +3878,69 @@ function initCandidatiCardStack() {
     window.addEventListener('resize', handleResize);
 
     console.log('✅ Candidati card stack initialized successfully (4-phase: entrance → deadzone → exit with fade-to-black, scroll-decoupled, responsive)');
+
+    // Return bufferEnd for contatti section registration
+    return bufferEnd;
+}
+
+// Initialize contatti section with scroll-based animations
+function initContattiAnimations(candidatiBufferEnd) {
+    console.log('🚀🚀🚀 CONTATTI INIT START (SCROLL-BASED ANIMATIONS) 🚀🚀🚀');
+
+    const contattiSpacer = document.querySelector('.contatti-spacer');
+    const contattiContainer = document.getElementById('contattiContainer');
+
+    if (!contattiSpacer || !contattiContainer) {
+        console.log('Contatti elements not found');
+        return null;
+    }
+
+    const viewportHeight = window.innerHeight;
+
+    // Animation phases: entry (0.75vh) + deadzone (1.25vh) = 2vh total
+    const entranceDuration = 0.75 * viewportHeight; // 0.75vh entrance duration (same as missione)
+    const deadzoneDuration = 1.25 * viewportHeight; // 1.25vh deadzone (visible at rest)
+
+    const entranceStart = candidatiBufferEnd; // Start right after candidati
+    const entranceEnd = entranceStart + entranceDuration;
+    const deadzoneEnd = entranceEnd + deadzoneDuration;
+
+    // Set spacer height to cover entrance + deadzone (2vh total)
+    // This creates a fixed scroll range without circular dependency
+    const spacerTop = contattiSpacer.offsetTop;
+    const totalScrollRange = entranceDuration + deadzoneDuration;
+    const spacerHeight = Math.floor(totalScrollRange);
+
+    contattiSpacer.style.height = spacerHeight + 'px';
+
+    console.log('Contatti scroll positions:', {
+        candidatiBufferEnd,
+        entranceStart,
+        entranceEnd,
+        deadzoneEnd,
+        spacerTop,
+        spacerHeight,
+        totalScrollRange: `${(totalScrollRange / viewportHeight).toFixed(2)}vh`
+    });
+
+    // Calculate maxScroll AFTER spacer is set
+    const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+
+    // Store animation state
+    contattiAnimationState = {
+        contattiContainer,
+        entranceStart,
+        entranceEnd,
+        deadzoneEnd,
+        maxScroll
+    };
+
+    // Register section with Header Registry at entrance start
+    registerSection('contatti', entranceStart);
+
+    console.log('✅ Contatti section initialized successfully (scroll-based entry animation)');
+
+    return maxScroll; // Return maxScroll for HEADER_REGISTRY
 }
 
 // Update missione animations - OPTIMIZED BATCHED DOM UPDATES
@@ -4136,7 +4223,18 @@ function updateCandidatiCardStack(scrollY, cardState) {
             if (totalProgress >= cardEntranceFraction) {
                 if (totalProgress <= cardCompleteFraction) {
                     const fractionRange = cardCompleteFraction - cardEntranceFraction;
-                    cardProgress = fractionRange > 0 ? (totalProgress - cardEntranceFraction) / fractionRange : 1;
+                    const progressWithinFraction = fractionRange > 0 ? (totalProgress - cardEntranceFraction) / fractionRange : 1;
+
+                    // Per-card deadzone: entrance takes 28.6% of card's time slot, deadzone takes 71.4%
+                    // (0.2vh entrance / 0.7vh total per card = 0.286)
+                    const entranceRatio = 0.286;
+                    if (progressWithinFraction <= entranceRatio) {
+                        // During entrance phase
+                        cardProgress = progressWithinFraction / entranceRatio;
+                    } else {
+                        // During deadzone phase - hold at final position
+                        cardProgress = 1;
+                    }
                 } else {
                     cardProgress = 1;
                 }
@@ -4411,6 +4509,36 @@ function updateCandidatiCardStack(scrollY, cardState) {
 
         // Contatti fade-in removed - now handled by section isolation system
         // Section activates at bufferEnd with CSS transition for smooth appearance
+    }
+}
+
+// Update contatti animations - scroll-based entry with missione's easing curves
+function updateContattiAnimations(scrollY) {
+    if (!contattiAnimationState) return;
+
+    const { contattiContainer, entranceStart, entranceEnd, deadzoneEnd } = contattiAnimationState;
+
+    // Container visibility and animations
+    if (scrollY < entranceStart) {
+        // Before entrance - hidden
+        contattiContainer.style.visibility = 'hidden';
+        contattiContainer.style.opacity = '0';
+        contattiContainer.style.transform = 'translate(-50%, -50%) translateY(8px)';
+
+    } else if (scrollY >= entranceStart && scrollY <= entranceEnd) {
+        // Entrance animation - fade in and move up (same curve as missione)
+        contattiContainer.style.visibility = 'visible';
+        const progress = (scrollY - entranceStart) / (entranceEnd - entranceStart);
+        const easedProgress = 1 - Math.pow(1 - progress, 1.15); // Ease-out with exponent 1.15 (same as missione)
+        const translateY = 8 * (1 - easedProgress); // 8px → 0px
+        contattiContainer.style.opacity = String(easedProgress);
+        contattiContainer.style.transform = `translate(-50%, -50%) translateY(${translateY}px)`;
+
+    } else {
+        // Deadzone - fully visible and in position (stays until end of page)
+        contattiContainer.style.visibility = 'visible';
+        contattiContainer.style.opacity = '1';
+        contattiContainer.style.transform = 'translate(-50%, -50%) translateY(0px)';
     }
 }
 

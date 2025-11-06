@@ -655,7 +655,7 @@
             max-width: clamp(300px, 80vw, 800px);
             text-align: center;
             /* Ensure container scales with viewport height to prevent overlaps */
-            max-height: 85vh;
+            max-height: 90vh;
             overflow-y: auto;
             /* Dynamic padding that scales with viewport */
             padding: clamp(10px, 2vh, 20px) clamp(15px, 3vw, 30px);
@@ -1097,16 +1097,14 @@
             pointer-events: none; /* Don't block clicks when hidden - JS will enable when shown */
         }
 
-        /* Contatti Block - Simple full-viewport section */
-        .contatti-block {
-            min-height: 100vh;
-            padding: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: transparent;
+        /* Contatti Spacer - Creates scroll range */
+        .contatti-spacer {
+            height: 200vh; /* Set dynamically by JS */
+            width: 1px;
+            visibility: hidden;
         }
 
+        /* Contatti Container - Fixed positioned, scroll-animated */
         .contatti-container {
             position: fixed;
             top: 50%;
@@ -1119,8 +1117,9 @@
             width: 100%;
             text-align: center;
             z-index: var(--z-contatti);
-            /* Visibility controlled by .section-inactive class */
-            transition: opacity 0.8s ease-out, visibility 0.8s;
+            /* Initially hidden - controlled by JS animations */
+            opacity: 0;
+            visibility: hidden;
             padding: clamp(20px, 5vw, 40px);
         }
 
@@ -1441,6 +1440,7 @@
             /* Missione responsive */
             .missione-container {
                 max-height: none;
+                overflow-y: visible;
             }
 
 
@@ -1566,8 +1566,8 @@
         /* Extreme small viewport handling */
         @media (max-width: 320px) or (max-height: 480px) {
             .missione-container {
-                max-height: 95vh;
-                padding: clamp(3px, 0.5vh, 10px) clamp(5px, 1vw, 15px);
+                max-height: none;
+                padding: clamp(8px, 1vh, 12px) clamp(10px, 2vw, 15px);
             }
 
             .missione-title {
@@ -1632,7 +1632,6 @@
 
             /* Additional responsive adjustments for mobile */
             .missione-container {
-                max-height: 90vh;
                 padding: clamp(5px, 1vh, 15px) clamp(10px, 2vw, 20px);
             }
 
@@ -1699,9 +1698,12 @@
     <!-- Actual candidati elements (title, cards, button) are fixed at body level below -->
     <div class="candidati-spacer block" data-block="candidati"></div>
 
-    <div class="contatti-block block" data-block="contatti">
-        <div id="contattiContainer" class="contatti-container"></div>
-    </div>
+    <!-- Contatti spacer - creates scroll range for contatti section -->
+    <!-- Actual contatti container is fixed at body level below -->
+    <div class="contatti-spacer block" data-block="contatti"></div>
+
+    <!-- Contatti - Fixed container at body level as sibling to video -->
+    <div id="contattiContainer" class="contatti-container"></div>
 
     <!-- Episodi - Restructured for direct backdrop-filter support -->
     <!-- Fixed container at body level as sibling to video -->
