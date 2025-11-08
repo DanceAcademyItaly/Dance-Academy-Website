@@ -2541,8 +2541,9 @@ function updateEpisodiAnimations(scrollY) {
         // In episodi section (deactivate when missione entrance begins)
         setActiveSection('episodi');
         applyVideoState('episodi');
-    } else if ((scrollY >= bufferEnd || (missioneAnimationState && scrollY >= missioneAnimationState.entranceStart)) && missioneAnimationState) {
-        // Transitioned to missione section (activate as soon as missione starts)
+    } else if (scrollY >= bufferEnd && scrollY < missioneAnimationState.bufferEnd && missioneAnimationState) {
+        // Transitioned to missione section (only within missione's range)
+        // FIX: Added upper bound to prevent interfering with candidati section
         setActiveSection('missione');
         applyVideoState('missione');
     }
@@ -3747,30 +3748,94 @@ function initCandidatiCardStack() {
 
     let currentCardIndex = 0;
 
+    // Helper function: Calculate scroll position for a specific card
+    // Returns the Y position where the card is fully visible (end of deadzone)
+    function calculateCardScrollPosition(cardIndex) {
+        const cardCompleteFraction = (cardIndex + 1) / totalCards;
+        const targetScroll = cardEntranceStart + (cardEntranceDuration * cardCompleteFraction);
+        return targetScroll;
+    }
+
+    // Navigation function: Smoothly scroll to a specific card using Lenis
+    function navigateToCard(targetCardIndex) {
+        // Validate card index
+        if (targetCardIndex < 0 || targetCardIndex >= totalCards) {
+            console.warn(`Invalid card index: ${targetCardIndex}`);
+            return;
+        }
+
+        const currentCardIndex = candidatiCardState.currentCardIndex;
+        const isBackward = targetCardIndex < currentCardIndex;
+
+        // Calculate target scroll position
+        const targetScroll = calculateCardScrollPosition(targetCardIndex);
+
+        console.log(`🔄 Navigating ${isBackward ? 'backward' : 'forward'} to card ${targetCardIndex} at scroll position ${targetScroll}`);
+
+        // Use Lenis for smooth scrolling if available
+        if (lenis && isScrollSystemInitialized) {
+            if (isBackward) {
+                // BACKWARD NAVIGATION: Two-step process to eliminate deadzone delay
+                // Step 1: Instantly jump to START of current card (exit deadzone)
+                const currentCardStart = cardEntranceStart + (cardEntranceDuration * (currentCardIndex / totalCards));
+                lenis.scrollTo(currentCardStart, {
+                    duration: 0,
+                    immediate: true,
+                    onComplete: () => {
+                        // Step 2: Smooth animation to target card (after instant scroll completes)
+                        lenis.scrollTo(targetScroll, {
+                            duration: 2.5,
+                            easing: (t) => {
+                                // cubic-bezier(0.4, 0, 0.2, 1) - Material Design "standard easing"
+                                const p1x = 0.4, p1y = 0, p2x = 0.2, p2y = 1;
+                                const cx = 3 * p1x;
+                                const bx = 3 * (p2x - p1x) - cx;
+                                const ax = 1 - cx - bx;
+                                const cy = 3 * p1y;
+                                const by = 3 * (p2y - p1y) - cy;
+                                const ay = 1 - cy - by;
+
+                                return ((ay * t + by) * t + cy) * t;
+                            }
+                        });
+                    }
+                });
+            } else {
+                // FORWARD NAVIGATION: Direct smooth animation
+                lenis.scrollTo(targetScroll, {
+                    duration: 2.5,
+                    easing: (t) => {
+                        // cubic-bezier(0.4, 0, 0.2, 1) - Material Design "standard easing"
+                        const p1x = 0.4, p1y = 0, p2x = 0.2, p2y = 1;
+                        const cx = 3 * p1x;
+                        const bx = 3 * (p2x - p1x) - cx;
+                        const ax = 1 - cx - bx;
+                        const cy = 3 * p1y;
+                        const by = 3 * (p2y - p1y) - cy;
+                        const ay = 1 - cy - by;
+
+                        return ((ay * t + by) * t + cy) * t;
+                    }
+                });
+            }
+        } else {
+            // Fallback to native smooth scroll
+            window.scrollTo({
+                top: targetScroll,
+                behavior: 'smooth'
+            });
+        }
+    }
+
+    // Simplified button visibility management (called by scroll animation system)
     function updateNavigationButtons(hideNonCurrent = false) {
-        // Show/hide card wrappers and update button visibility
         cardWrappers.forEach((wrapper, index) => {
             const card = cards[index];
             const prevButton = card.querySelector('[data-direction="prev"]');
             const nextButton = card.querySelector('[data-direction="next"]');
 
-            // During deadzone/manual navigation, hide non-current cards
-            // During scroll animations, keep all visible
-            if (hideNonCurrent) {
-                if (index === currentCardIndex) {
-                    wrapper.style.visibility = 'visible';
-                    wrapper.style.pointerEvents = 'auto';
-                } else {
-                    wrapper.style.visibility = 'hidden';
-                    wrapper.style.pointerEvents = 'none';
-                }
-            } else {
-                // During scroll animations, keep all visible
-                wrapper.style.visibility = 'visible';
-                wrapper.style.pointerEvents = 'auto';
-            }
-
-            // Update button visibility
+            // Update button visibility based on current card index
+            // Hide INDIETRO on first card, hide AVANTI on last card
             if (prevButton) {
                 prevButton.style.display = (index === 0) ? 'none' : 'block';
             }
@@ -3780,30 +3845,7 @@ function initCandidatiCardStack() {
         });
     }
 
-    // Attach navigation click listeners
-    cards.forEach((card, index) => {
-        const prevButton = card.querySelector('[data-direction="prev"]');
-        const nextButton = card.querySelector('[data-direction="next"]');
-
-        if (prevButton) {
-            prevButton.addEventListener('click', () => {
-                if (currentCardIndex > 0) {
-                    currentCardIndex--;
-                    updateNavigationButtons(true); // Hide non-current cards during manual navigation
-                }
-            });
-        }
-
-        if (nextButton) {
-            nextButton.addEventListener('click', () => {
-                if (currentCardIndex < totalCards - 1) {
-                    currentCardIndex++;
-                    updateNavigationButtons(true); // Hide non-current cards during manual navigation
-                }
-            });
-        }
-    });
-
+    // Initialize button visibility
     updateNavigationButtons();
 
     // Get video background element for transition effects
@@ -3822,6 +3864,7 @@ function initCandidatiCardStack() {
         titleEntranceStart,
         titleEntranceEnd,
         cardEntranceStart,
+        cardEntranceDuration,  // Duration of card entrance phase (needed for navigation)
         cardEntranceEnd,
         cardDeadzoneEnd,
         exitAnimationStart,
@@ -3831,6 +3874,8 @@ function initCandidatiCardStack() {
         currentCardIndex,
         calculateCardOffsets,
         updateNavigationButtons,
+        calculateCardScrollPosition,  // NEW: Calculate scroll position for card navigation
+        navigateToCard,  // NEW: Navigate to specific card with smooth scroll
         calculateAndSetCardHeight,  // Store for resize recalculation
         optimizeCardInternalSizing, // Store for resize recalculation
         sidebarEasing,
@@ -3840,6 +3885,31 @@ function initCandidatiCardStack() {
         calculateCardFadeOutMultiplier,  // Helper function for persistent fade-out
         generateCardShadow  // Helper function to generate shadow with opacity
     };
+
+    // Attach navigation click listeners to AVANTI/INDIETRO buttons
+    // IMPORTANT: Must be after candidatiCardState initialization to avoid circular dependency
+    cards.forEach((card, index) => {
+        const prevButton = card.querySelector('[data-direction="prev"]');
+        const nextButton = card.querySelector('[data-direction="next"]');
+
+        if (prevButton) {
+            prevButton.addEventListener('click', () => {
+                // Read current card from state (updated by scroll animation system)
+                if (candidatiCardState.currentCardIndex > 0) {
+                    navigateToCard(candidatiCardState.currentCardIndex - 1);
+                }
+            });
+        }
+
+        if (nextButton) {
+            nextButton.addEventListener('click', () => {
+                // Read current card from state (updated by scroll animation system)
+                if (candidatiCardState.currentCardIndex < candidatiCardState.totalCards - 1) {
+                    navigateToCard(candidatiCardState.currentCardIndex + 1);
+                }
+            });
+        }
+    });
 
     // Register section with Header Registry
     // Navigate to when first card (card 0) has fully arrived in position
@@ -3955,7 +4025,8 @@ function updateMissioneAnimations(scrollY, animationState) {
     if (scrollY >= entranceStart && scrollY < bufferEnd) {
         setActiveSection('missione');
         applyVideoState('missione');
-    } else if (scrollY >= bufferEnd && candidatiCardState) {
+    } else if (scrollY >= bufferEnd && candidatiCardState && scrollY < candidatiCardState.bufferEnd) {
+        // FIX: Added upper bound to prevent interfering with contatti section
         setActiveSection('candidati');
         applyVideoState('candidati');
     }
@@ -4276,10 +4347,11 @@ function updateCandidatiCardStack(scrollY, cardState) {
         });
 
         // Update current card index (find highest card >50% visible)
-        let newCardIndex = cardState.currentCardIndex;
+        // FIX: Bidirectional tracking - works for both forward and backward navigation
+        let newCardIndex = 0;  // Reset to 0 instead of inheriting current (enables backward tracking)
         for (const { cardProgress, index } of cardUpdates) {
-            if (cardProgress > 0.5 && index > newCardIndex) {
-                newCardIndex = index;
+            if (cardProgress > 0.5) {
+                newCardIndex = Math.max(newCardIndex, index);  // Find highest visible card
             }
         }
         if (newCardIndex !== cardState.currentCardIndex) {
