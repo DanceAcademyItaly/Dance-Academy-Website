@@ -160,6 +160,9 @@ function applyVideoState(state) {
 // Animation-state-driven: scroll targets come from animation system calculations
 // Section-agnostic: works with any number of enabled sections
 
+// Multi-section navigation state for progress bar smoothing
+let isNavigatingMultiSection = false;
+
 const HEADER_REGISTRY = {
     sections: [
         { name: 'hero', order: 0, enabled: true, targetScroll: 0, registered: false },
@@ -645,36 +648,256 @@ function setupHeaderNavigation() {
     console.log('✅ Header navigation activated');
 }
 
-// Scroll to a registered section
-function scrollToSection(sectionName) {
-    const section = HEADER_REGISTRY.sections.find(s => s.name === sectionName);
+// Helper: Get animation state boundaries for any section
+// Returns normalized object with consistent property names for all sections
+function getSectionBoundaries(sectionName) {
+    switch(sectionName) {
+        case 'episodi':
+            if (!episodiAnimationState) return null;
+            return {
+                entranceStart: episodiAnimationState.entranceStart,
+                entranceEnd: episodiAnimationState.entranceEnd,
+                deadzoneEnd: episodiAnimationState.deadzoneEnd,
+                exitEnd: episodiAnimationState.exitEnd,
+                bufferEnd: episodiAnimationState.bufferEnd
+            };
+        case 'missione':
+            if (!missioneAnimationState) return null;
+            return {
+                entranceStart: missioneAnimationState.entranceStart,
+                entranceEnd: missioneAnimationState.entranceEnd,
+                deadzoneEnd: missioneAnimationState.deadzoneEnd,
+                exitEnd: missioneAnimationState.exitEnd,
+                bufferEnd: missioneAnimationState.bufferEnd
+            };
+        case 'candidati':
+            if (!candidatiCardState) return null;
+            // Map candidati-specific property names to normalized names
+            // Use titleEntranceStart so title animates in when jumping to candidati
+            return {
+                entranceStart: candidatiCardState.titleEntranceStart,
+                entranceEnd: candidatiCardState.cardEntranceEnd,
+                deadzoneEnd: candidatiCardState.cardDeadzoneEnd,
+                exitEnd: candidatiCardState.exitAnimationEnd,
+                bufferEnd: candidatiCardState.bufferEnd
+            };
+        case 'contatti':
+            if (!contattiAnimationState) return null;
+            // Contatti is last section, has no exit - use deadzoneEnd as exitEnd
+            return {
+                entranceStart: contattiAnimationState.entranceStart,
+                entranceEnd: contattiAnimationState.entranceEnd,
+                deadzoneEnd: contattiAnimationState.deadzoneEnd,
+                exitEnd: contattiAnimationState.deadzoneEnd, // No real exit, use deadzone
+                bufferEnd: contattiAnimationState.maxScroll
+            };
+        case 'hero':
+            // Hero occupies scroll range from 0 to where next section starts
+            // exitEnd should be where the next enabled section begins
+            let heroExitEnd = 0;
+            if (episodiAnimationState && episodiAnimationState.entranceStart) {
+                heroExitEnd = episodiAnimationState.entranceStart;
+            } else if (missioneAnimationState && missioneAnimationState.entranceStart) {
+                heroExitEnd = missioneAnimationState.entranceStart;
+            } else if (candidatiCardState && candidatiCardState.titleEntranceStart) {
+                heroExitEnd = candidatiCardState.titleEntranceStart;
+            }
 
-    if (!section || !section.registered) {
+            return {
+                entranceStart: 0,
+                entranceEnd: 0,
+                deadzoneEnd: 0,
+                exitEnd: heroExitEnd,
+                bufferEnd: heroExitEnd
+            };
+        default:
+            return null;
+    }
+}
+
+// Helper: Get current section based on scroll position
+function getCurrentSection() {
+    const scrollY = getCurrentScroll();
+    return getSectionAtScroll(scrollY);
+}
+
+// Helper: Calculate distance between two sections
+function getSectionDistance(fromSection, toSection) {
+    if (!fromSection || !toSection) return 0;
+    return Math.abs(toSection.order - fromSection.order);
+}
+
+// Scroll to a registered section with intelligent multi-section skip
+function scrollToSection(sectionName) {
+    const targetSection = HEADER_REGISTRY.sections.find(s => s.name === sectionName);
+
+    if (!targetSection || !targetSection.registered) {
         console.warn(`Cannot navigate to unregistered section: ${sectionName}`);
         return;
     }
 
-    const targetScroll = section.targetScroll;
+    const targetScroll = targetSection.targetScroll;
+    const currentSection = getCurrentSection();
 
-    // Use Lenis if available, otherwise fallback to native smooth scroll
+    // Standard easing function: cubic-bezier(0.4, 0, 0.2, 1) - Material Design "standard easing"
+    const standardEasing = (t) => {
+        const p1x = 0.4, p1y = 0, p2x = 0.2, p2y = 1;
+        const cx = 3 * p1x;
+        const bx = 3 * (p2x - p1x) - cx;
+        const ax = 1 - cx - bx;
+        const cy = 3 * p1y;
+        const by = 3 * (p2y - p1y) - cy;
+        const ay = 1 - cy - by;
+        return ((ay * t + by) * t + cy) * t;
+    };
+
+    // Edge case: Same section - simple navigation
+    if (currentSection && currentSection.name === sectionName) {
+        if (lenis && isScrollSystemInitialized) {
+            lenis.scrollTo(targetScroll, {
+                duration: 2.5,
+                easing: standardEasing
+            });
+        } else {
+            window.scrollTo({ top: targetScroll, behavior: 'smooth' });
+        }
+        console.log(`Navigating to ${sectionName} at scroll position ${targetScroll}`);
+        return;
+    }
+
+    // Edge case: No current section detected (at hero/top of page)
+    if (!currentSection) {
+        // Treat as navigating FROM hero
+        const heroSection = HEADER_REGISTRY.sections.find(s => s.name === 'hero');
+        if (heroSection) {
+            currentSection = heroSection;
+            console.log(`No current section detected, treating as navigation from hero`);
+        } else {
+            // Fallback: simple navigation if hero not registered
+            if (lenis && isScrollSystemInitialized) {
+                lenis.scrollTo(targetScroll, {
+                    duration: 2.5,
+                    easing: standardEasing
+                });
+            } else {
+                window.scrollTo({ top: targetScroll, behavior: 'smooth' });
+            }
+            console.log(`Navigating to ${sectionName} (no current section, fallback)`);
+            return;
+        }
+    }
+
+    // Calculate section distance
+    const distance = getSectionDistance(currentSection, targetSection);
+
+    // Adjacent sections (distance = 1): Standard navigation
+    if (distance === 1) {
+        if (lenis && isScrollSystemInitialized) {
+            lenis.scrollTo(targetScroll, {
+                duration: 2.5,
+                easing: standardEasing
+            });
+        } else {
+            window.scrollTo({ top: targetScroll, behavior: 'smooth' });
+        }
+        console.log(`Navigating to adjacent section ${sectionName} at scroll position ${targetScroll}`);
+        return;
+    }
+
+    // Multi-section jump (distance > 1): 3-phase navigation
     if (lenis && isScrollSystemInitialized) {
-        lenis.scrollTo(targetScroll, {
-            duration: 2.5, // Slow, guided animation (was 1.2)
-            easing: (t) => {
-                // Smooth ease-in-out for natural, guided feel
-                return t < 0.5
-                    ? 4 * t * t * t
-                    : 1 - Math.pow(-2 * t + 2, 3) / 2;
+        const currentBoundaries = getSectionBoundaries(currentSection.name);
+        const targetBoundaries = getSectionBoundaries(sectionName);
+
+        // Validate boundaries exist
+        if (!currentBoundaries || !targetBoundaries) {
+            lenis.scrollTo(targetScroll, {
+                duration: 2.5,
+                easing: standardEasing
+            });
+            console.log(`Navigating to ${sectionName} (fallback: boundaries not available)`);
+            return;
+        }
+
+        // Determine navigation direction
+        const isForward = targetSection.order > currentSection.order;
+
+        // Calculate phase positions
+        const exitPoint = isForward ? currentBoundaries.exitEnd || currentBoundaries.deadzoneEnd : currentBoundaries.entranceStart;
+        const entrancePoint = isForward ? targetBoundaries.entranceStart : targetBoundaries.exitEnd;
+
+        // Validate all scroll positions are defined
+        if (exitPoint === undefined || entrancePoint === undefined || targetScroll === undefined) {
+            lenis.scrollTo(targetScroll, {
+                duration: 2.5,
+                easing: standardEasing
+            });
+            console.warn(`Missing scroll boundaries (exit: ${exitPoint}, entrance: ${entrancePoint}, target: ${targetScroll}), using fallback`);
+            return;
+        }
+
+        // Calculate Phase 3 distance (entrance to final target)
+        const phase3Distance = Math.abs(targetScroll - entrancePoint);
+
+        console.log(`🚀 Multi-section jump: ${currentSection.name} → ${sectionName} (distance: ${distance})`);
+        console.log(`   Phase 1: Exit to ${exitPoint}`);
+        console.log(`   Phase 2: Skip to ${entrancePoint}`);
+        console.log(`   Phase 3: Enter to ${targetScroll} (${phase3Distance}px)`);
+
+        // Enable navigation mode and extend CSS transition for smooth progress bar
+        isNavigatingMultiSection = true;
+        if (cachedProgressBar) {
+            // Calculate target progress percentage
+            const targetProgress = getProgressPercentage(targetScroll);
+
+            // Set extended transition duration (Phase 1 + Phase 3 = 0.8 + 1.7 = 2.5s, using 2.4s)
+            cachedProgressBar.style.transition = 'width 2.4s cubic-bezier(0.4, 0, 0.2, 1)';
+
+            // Trigger CSS animation by setting target width
+            // This will smoothly animate from current width to target over 2.4s
+            cachedProgressBar.style.width = targetProgress + '%';
+        }
+
+        // PHASE 1: Exit current section (0.8s)
+        lenis.scrollTo(exitPoint, {
+            duration: 0.8,
+            easing: standardEasing,
+            onComplete: () => {
+                // PHASE 2: Instant skip to target section entrance (0s)
+                lenis.scrollTo(entrancePoint, {
+                    duration: 0,
+                    immediate: true,
+                    onComplete: () => {
+                        // PHASE 3: Enter target section (1.7s)
+                        // Skip if distance is negligible (< 5px)
+                        if (phase3Distance >= 5) {
+                            lenis.scrollTo(targetScroll, {
+                                duration: 1.7,
+                                easing: standardEasing,
+                                onComplete: () => {
+                                    // Restore default transition and re-enable automatic updates
+                                    if (cachedProgressBar) {
+                                        cachedProgressBar.style.transition = 'width 0.1s linear';
+                                    }
+                                    isNavigatingMultiSection = false;
+                                }
+                            });
+                        } else {
+                            console.log(`   Phase 3 skipped (distance < 5px)`);
+                            // Restore default transition and re-enable automatic updates
+                            if (cachedProgressBar) {
+                                cachedProgressBar.style.transition = 'width 0.1s linear';
+                            }
+                            isNavigatingMultiSection = false;
+                        }
+                    }
+                });
             }
         });
     } else {
-        window.scrollTo({
-            top: targetScroll,
-            behavior: 'smooth'
-        });
+        // Fallback for no Lenis
+        window.scrollTo({ top: targetScroll, behavior: 'smooth' });
     }
-
-    console.log(`Navigating to ${sectionName} at scroll position ${targetScroll}`);
 }
 
 // Enhanced scroll system initialization
@@ -1320,6 +1543,10 @@ function initializeEnhancedScrollAfterIntro() {
 // Update progress bar (uses Header Registry system)
 function updateProgressBar(scrollY) {
     if (!cachedProgressBar) return;
+
+    // Skip automatic updates during multi-section navigation
+    // Progress bar is animated independently via CSS transition
+    if (isNavigatingMultiSection) return;
 
     const percentage = getProgressPercentage(scrollY);
     cachedProgressBar.style.width = percentage + '%';
@@ -4005,8 +4232,9 @@ function initContattiAnimations(candidatiBufferEnd) {
         maxScroll
     };
 
-    // Register section with Header Registry at entrance start
-    registerSection('contatti', entranceStart);
+    // Register section with Header Registry at maxScroll (end of page)
+    // This ensures navigation to contatti scrolls all the way to the bottom
+    registerSection('contatti', maxScroll);
 
     console.log('✅ Contatti section initialized successfully (scroll-based entry animation)');
 
