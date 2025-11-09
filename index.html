@@ -5,6 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title id="pageTitle">Dance Academy</title>
 
+    <!-- Preload Critical Resources -->
+    <link rel="preload" href="Assets/logo.mp4" as="video" type="video/mp4">
+    <link rel="preload" href="Assets/logo_inline.png" as="image">
+    <link rel="preload" href="content.json" as="fetch" crossorigin>
+
     <!-- Lenis Smooth Scroll Library -->
     <script src="https://unpkg.com/lenis@1.1.20/dist/lenis.min.js"></script>
 
@@ -277,6 +282,40 @@
             animation: textFade 5s ease-in-out forwards;
         }
 
+        /* Intro Loading Spinner - positioned below intro text */
+        .intro-loader {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            margin-top: calc(clamp(1.5rem, 3vw + 1vh, 2.5rem) * 1.2 + 60px); /* Below intro text (text height + 60px) */
+            width: 40px;
+            height: 40px;
+            z-index: 20001; /* Above intro overlay */
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+
+        .intro-loader.visible {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .intro-loader-ring {
+            width: 100%;
+            height: 100%;
+            border: 3px solid rgba(255, 255, 255, 0.1);
+            border-top-color: var(--text-primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
         @keyframes introFade {
             0%, 80% { opacity: 1; visibility: visible; }
             100% { opacity: 0; visibility: hidden; }
@@ -524,6 +563,40 @@
             width: 100%;
             height: 100%;
             border: none;
+        }
+
+        /* Episode Loading Skeleton */
+        .episode-skeleton {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+                90deg,
+                rgba(255, 255, 255, 0.03) 25%,
+                rgba(255, 255, 255, 0.08) 50%,
+                rgba(255, 255, 255, 0.03) 75%
+            );
+            background-size: 200% 100%;
+            animation: skeletonLoading 1.5s ease-in-out infinite;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        .episode-skeleton-spinner {
+            width: 30px;
+            height: 30px;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-top-color: var(--text-secondary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes skeletonLoading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
         }
 
         .coreografie-section {
@@ -1739,6 +1812,11 @@
             <source src="" type="video/mp4">
         </video>
         <p id="introText" class="intro-text"></p>
+    </div>
+
+    <!-- Intro Loader (shown if resources aren't ready when intro video ends) -->
+    <div class="intro-loader" id="introLoader">
+        <div class="intro-loader-ring"></div>
     </div>
 
     <!-- Video Background -->

@@ -1841,6 +1841,12 @@ function initializeEnhancedScrollAfterIntro() {
             initBasicScroll();
         }
     }
+
+    // Start background preloading of remaining episodes
+    // Called here after scroll system initialization and intro completion
+    if (hasEpisodes) {
+        preloadRemainingEpisodes();
+    }
 }
 
 // Update progress bar (uses Header Registry system)
@@ -2258,116 +2264,233 @@ function populateEpisodes() {
         };
     }
 
-    // Build content
+    // Build content - LAZY LOADING: Only create the active episode initially
     contentArea.innerHTML = '';
+
+    // Find the default episode data
+    let defaultEpisodeData = null;
     siteContent.episodes.seasons.forEach(season => {
         season.episodes.forEach(episode => {
-            const div = document.createElement('div');
-            div.className = `episodio-content${episode.id === defaultEpisodeId ? ' active' : ''}`;
-            div.dataset.content = episode.id;
-            
-            const videoDiv = document.createElement('div');
-            videoDiv.className = 'video-principale';
-            videoDiv.innerHTML = `<iframe src="${episode.mainVideo}" allowfullscreen></iframe>`;
-            div.appendChild(videoDiv);
-            
-            if (episode.choreographies?.length) {
-                const choreoSection = document.createElement('div');
-                choreoSection.className = 'coreografie-section';
-
-                const header = document.createElement('h3');
-                header.className = 'coreografie-header';
-                header.textContent = 'Coreografie';
-                choreoSection.appendChild(header);
-
-                // Create carousel container
-                const carouselContainer = document.createElement('div');
-                carouselContainer.className = 'carousel-container';
-                carouselContainer.dataset.episodeId = episode.id; // For tracking carousel state per episode
-                // CRITICAL: Prevent Lenis on carousel to preserve horizontal scroll
-                carouselContainer.setAttribute('data-lenis-prevent', '');
-
-                // Create carousel track (holds all cards)
-                const carouselTrack = document.createElement('div');
-                carouselTrack.className = 'carousel-track';
-
-                // Create choreography cards
-                episode.choreographies.forEach((choreo, index) => {
-                    const card = document.createElement('div');
-                    card.className = 'coreo-card';
-                    card.dataset.index = index;
-
-                    // Generate unique ID for this iframe
-                    const iframeId = `coreo-player-${episode.id}-${index}`;
-
-                    // Add enablejsapi=1 to enable YouTube API
-                    const videoUrl = choreo.video.includes('?')
-                        ? `${choreo.video}&enablejsapi=1`
-                        : `${choreo.video}?enablejsapi=1`;
-
-                    card.innerHTML = `
-                        <div class="coreo-video">
-                            <iframe id="${iframeId}" src="${videoUrl}" allowfullscreen></iframe>
-                        </div>
-                        <div class="coreo-title">${choreo.title}</div>
-                    `;
-                    carouselTrack.appendChild(card);
-                });
-
-                carouselContainer.appendChild(carouselTrack);
-
-                // Only add navigation if there are multiple choreographies
-                if (episode.choreographies.length > 1) {
-                    // Create left arrow
-                    const leftArrow = document.createElement('button');
-                    leftArrow.className = 'carousel-arrow left';
-                    leftArrow.setAttribute('aria-label', 'Previous choreography');
-                    leftArrow.innerHTML = `
-                        <svg viewBox="0 0 24 24">
-                            <polyline points="15 18 9 12 15 6"></polyline>
-                        </svg>
-                    `;
-                    carouselContainer.appendChild(leftArrow);
-
-                    // Create right arrow
-                    const rightArrow = document.createElement('button');
-                    rightArrow.className = 'carousel-arrow right';
-                    rightArrow.setAttribute('aria-label', 'Next choreography');
-                    rightArrow.innerHTML = `
-                        <svg viewBox="0 0 24 24">
-                            <polyline points="9 18 15 12 9 6"></polyline>
-                        </svg>
-                    `;
-                    carouselContainer.appendChild(rightArrow);
-
-                    // Create dot indicators
-                    const dotsContainer = document.createElement('div');
-                    dotsContainer.className = 'carousel-dots';
-
-                    episode.choreographies.forEach((_, index) => {
-                        const dot = document.createElement('button');
-                        dot.className = `carousel-dot${index === 0 ? ' active' : ''}`;
-                        dot.dataset.index = index;
-                        dot.setAttribute('aria-label', `Go to choreography ${index + 1}`);
-                        dotsContainer.appendChild(dot);
-                    });
-
-                    choreoSection.appendChild(carouselContainer);
-                    choreoSection.appendChild(dotsContainer);
-                } else {
-                    // Only one choreography, no navigation needed
-                    choreoSection.appendChild(carouselContainer);
-                }
-
-                div.appendChild(choreoSection);
+            if (episode.id === defaultEpisodeId) {
+                defaultEpisodeData = episode;
             }
-            
-            contentArea.appendChild(div);
         });
     });
 
+    // Create only the active episode (with active class so it's visible)
+    if (defaultEpisodeData) {
+        createEpisodeContent(defaultEpisodeData, defaultEpisodeId, true);
+    }
+
     // Initialize carousel navigation after content is rendered
     initializeCarousels();
+}
+
+// Helper function to create episode content (extracted for lazy loading)
+// isActive: if true, adds 'active' class to make episode visible immediately
+function createEpisodeContent(episode, episodeId, isActive = false) {
+    const contentArea = document.getElementById('contentArea');
+    if (!contentArea) return;
+
+    // Check if episode already exists
+    const existing = contentArea.querySelector(`[data-content="${episodeId}"]`);
+    if (existing) {
+        console.log(`Episode ${episodeId} already loaded`);
+        return;
+    }
+
+    const div = document.createElement('div');
+    div.className = isActive ? 'episodio-content active' : 'episodio-content';
+    div.dataset.content = episodeId;
+
+    const videoDiv = document.createElement('div');
+    videoDiv.className = 'video-principale';
+
+    // Show skeleton while iframe loads
+    videoDiv.innerHTML = `
+        <div class="episode-skeleton">
+            <div class="episode-skeleton-spinner"></div>
+        </div>
+        <iframe src="${episode.mainVideo}" allowfullscreen style="opacity: 0;"></iframe>
+    `;
+    div.appendChild(videoDiv);
+
+    // Remove skeleton once iframe loads
+    const iframe = videoDiv.querySelector('iframe');
+    iframe.onload = () => {
+        const skeleton = videoDiv.querySelector('.episode-skeleton');
+        if (skeleton) skeleton.remove();
+        iframe.style.opacity = '1';
+        iframe.style.transition = 'opacity 0.3s ease';
+    };
+
+    if (episode.choreographies?.length) {
+        const choreoSection = document.createElement('div');
+        choreoSection.className = 'coreografie-section';
+
+        const header = document.createElement('h3');
+        header.className = 'coreografie-header';
+        header.textContent = 'Coreografie';
+        choreoSection.appendChild(header);
+
+        // Create carousel container
+        const carouselContainer = document.createElement('div');
+        carouselContainer.className = 'carousel-container';
+        carouselContainer.dataset.episodeId = episode.id;
+        carouselContainer.setAttribute('data-lenis-prevent', '');
+
+        // Create carousel track
+        const carouselTrack = document.createElement('div');
+        carouselTrack.className = 'carousel-track';
+
+        // Create choreography cards
+        episode.choreographies.forEach((choreo, index) => {
+            const card = document.createElement('div');
+            card.className = 'coreo-card';
+            card.dataset.index = index;
+
+            const iframeId = `coreo-player-${episode.id}-${index}`;
+            const videoUrl = choreo.video.includes('?')
+                ? `${choreo.video}&enablejsapi=1`
+                : `${choreo.video}?enablejsapi=1`;
+
+            card.innerHTML = `
+                <div class="coreo-video">
+                    <iframe id="${iframeId}" src="${videoUrl}" allowfullscreen></iframe>
+                </div>
+                <div class="coreo-title">${choreo.title}</div>
+            `;
+            carouselTrack.appendChild(card);
+        });
+
+        carouselContainer.appendChild(carouselTrack);
+
+        // Add navigation if multiple choreographies
+        if (episode.choreographies.length > 1) {
+            const leftArrow = document.createElement('button');
+            leftArrow.className = 'carousel-arrow left';
+            leftArrow.setAttribute('aria-label', 'Previous choreography');
+            leftArrow.innerHTML = `
+                <svg viewBox="0 0 24 24">
+                    <polyline points="15 18 9 12 15 6"></polyline>
+                </svg>
+            `;
+            carouselContainer.appendChild(leftArrow);
+
+            const rightArrow = document.createElement('button');
+            rightArrow.className = 'carousel-arrow right';
+            rightArrow.setAttribute('aria-label', 'Next choreography');
+            rightArrow.innerHTML = `
+                <svg viewBox="0 0 24 24">
+                    <polyline points="9 18 15 12 9 6"></polyline>
+                </svg>
+            `;
+            carouselContainer.appendChild(rightArrow);
+
+            const dotsContainer = document.createElement('div');
+            dotsContainer.className = 'carousel-dots';
+
+            episode.choreographies.forEach((_, index) => {
+                const dot = document.createElement('button');
+                dot.className = `carousel-dot${index === 0 ? ' active' : ''}`;
+                dot.dataset.index = index;
+                dot.setAttribute('aria-label', `Go to choreography ${index + 1}`);
+                dotsContainer.appendChild(dot);
+            });
+
+            choreoSection.appendChild(carouselContainer);
+            choreoSection.appendChild(dotsContainer);
+        } else {
+            choreoSection.appendChild(carouselContainer);
+        }
+
+        div.appendChild(choreoSection);
+    }
+
+    contentArea.appendChild(div);
+
+    // Reinitialize carousels for this episode
+    initializeCarousels();
+}
+
+// Background preloading system - loads remaining episodes after initial page load
+// Priority order: Active season first (latest), then previous seasons (newest to oldest)
+// For each episode: main video → choreographies
+function preloadRemainingEpisodes() {
+    if (!siteContent?.episodes?.seasons) {
+        console.log('No episodes to preload');
+        return;
+    }
+
+    console.log('🔄 Starting background preload of remaining episodes');
+
+    // Get all seasons sorted by priority (latest first)
+    const seasons = [...siteContent.episodes.seasons].reverse(); // Reverse to get latest first
+
+    // Find active season (last season)
+    const activeSeason = seasons[0];
+
+    // Get currently loaded episode
+    const loadedEpisodes = new Set();
+    document.querySelectorAll('.episodio-content').forEach(el => {
+        loadedEpisodes.add(parseInt(el.dataset.content));
+    });
+
+    // Build preload queue: active season first, then others
+    const preloadQueue = [];
+
+    // Priority 1: Remaining episodes from active season
+    if (activeSeason?.episodes) {
+        activeSeason.episodes.forEach(episode => {
+            if (!loadedEpisodes.has(episode.id)) {
+                preloadQueue.push(episode);
+            }
+        });
+    }
+
+    // Priority 2: Episodes from previous seasons (newest to oldest)
+    for (let i = 1; i < seasons.length; i++) {
+        const season = seasons[i];
+        if (season?.episodes) {
+            season.episodes.forEach(episode => {
+                if (!loadedEpisodes.has(episode.id)) {
+                    preloadQueue.push(episode);
+                }
+            });
+        }
+    }
+
+    console.log(`📋 Preload queue: ${preloadQueue.length} episodes`);
+
+    // Preload episodes one at a time with delays to avoid blocking
+    let currentIndex = 0;
+
+    function preloadNext() {
+        if (currentIndex >= preloadQueue.length) {
+            console.log('✅ All episodes preloaded');
+            return;
+        }
+
+        const episode = preloadQueue[currentIndex];
+        console.log(`⬇️ Preloading episode ${episode.id}: ${episode.title}`);
+
+        // Create episode content in background (not active)
+        createEpisodeContent(episode, episode.id, false);
+
+        currentIndex++;
+
+        // Use requestIdleCallback if available, otherwise setTimeout
+        if (typeof requestIdleCallback !== 'undefined') {
+            requestIdleCallback(() => preloadNext(), { timeout: 2000 });
+        } else {
+            setTimeout(preloadNext, 500); // Small delay between episodes
+        }
+    }
+
+    // Start preloading after a short delay to ensure initial animations are smooth
+    setTimeout(() => {
+        preloadNext();
+    }, 2000); // Wait 2 seconds after intro completes
 }
 
 // Initialize coreografie carousels (MOBILE ONLY - desktop shows all videos)
@@ -2685,8 +2808,33 @@ function toggleSeason(seasonId) {
     }, 300);
 }
 
-// Switch episode
+// Switch episode - LAZY LOADING: Create episode on-demand if not already loaded
 function switchEpisode(episodeId) {
+    // Check if episode content exists
+    const contentArea = document.getElementById('contentArea');
+    const episodeContent = contentArea?.querySelector(`[data-content="${episodeId}"]`);
+
+    // If episode doesn't exist, create it (lazy loading)
+    if (!episodeContent && siteContent?.episodes) {
+        console.log(`Lazy loading episode ${episodeId}`);
+
+        // Find episode data
+        let episodeData = null;
+        siteContent.episodes.seasons.forEach(season => {
+            season.episodes.forEach(episode => {
+                if (episode.id === episodeId) {
+                    episodeData = episode;
+                }
+            });
+        });
+
+        // Create episode content
+        if (episodeData) {
+            createEpisodeContent(episodeData, episodeId);
+        }
+    }
+
+    // Update active states
     document.querySelectorAll('.episodio-item').forEach(item => {
         item.classList.toggle('active', item.dataset.episodio == episodeId);
     });
@@ -3216,10 +3364,10 @@ function updateEpisodiAnimations(scrollY) {
 // Initialize scroll system
 function initializeScrollSystem() {
     let scrollEnabled = false;
-    
+
     // Disable scrolling initially with CSS
     document.body.style.overflow = 'hidden';
-    
+
     // Disable scrolling initially with events (backup)
     function preventScroll(e) {
         if (!scrollEnabled) {
@@ -3227,7 +3375,7 @@ function initializeScrollSystem() {
             return false;
         }
     }
-    
+
     // Add scroll prevention
     window.addEventListener('scroll', preventScroll, { passive: false });
     window.addEventListener('wheel', preventScroll, { passive: false });
@@ -3238,7 +3386,83 @@ function initializeScrollSystem() {
             return false;
         }
     });
-    
+
+    // CRITICAL RESOURCES LOADING CHECK
+    // Check if critical resources are ready before allowing intro to complete
+    function checkCriticalResourcesReady() {
+        return new Promise((resolve) => {
+            const resources = {
+                heroLogo: false,
+                activeEpisode: false,
+                backgroundVideo: false
+            };
+
+            // Check hero logo
+            const heroLogo = document.getElementById('heroLogo');
+            if (heroLogo) {
+                if (heroLogo.complete) {
+                    resources.heroLogo = true;
+                } else {
+                    heroLogo.onload = () => {
+                        resources.heroLogo = true;
+                        checkAllReady();
+                    };
+                    heroLogo.onerror = () => {
+                        console.warn('Hero logo failed to load');
+                        resources.heroLogo = true; // Continue anyway
+                        checkAllReady();
+                    };
+                }
+            } else {
+                resources.heroLogo = true;
+            }
+
+            // Check active episode iframe (YouTube thumbnail)
+            const activeEpisode = document.querySelector('.episodio-content.active iframe');
+            if (activeEpisode) {
+                if (activeEpisode.contentWindow) {
+                    // Give iframe 1 second to start loading
+                    setTimeout(() => {
+                        resources.activeEpisode = true;
+                        checkAllReady();
+                    }, 1000);
+                }
+            } else {
+                resources.activeEpisode = true;
+            }
+
+            // Check background video
+            const videoBg = document.getElementById('videoBg');
+            if (videoBg) {
+                if (videoBg.readyState >= 3) {
+                    resources.backgroundVideo = true;
+                } else {
+                    videoBg.addEventListener('canplay', () => {
+                        resources.backgroundVideo = true;
+                        checkAllReady();
+                    }, { once: true });
+                }
+            } else {
+                resources.backgroundVideo = true;
+            }
+
+            function checkAllReady() {
+                if (resources.heroLogo && resources.activeEpisode && resources.backgroundVideo) {
+                    resolve();
+                }
+            }
+
+            // Initial check in case some are already ready
+            checkAllReady();
+
+            // Timeout: resolve after 5 seconds max
+            setTimeout(() => {
+                console.log('Resource loading timeout, proceeding anyway', resources);
+                resolve();
+            }, 5000);
+        });
+    }
+
     // Wait for intro video to load and start intro sequence
     const introLogo = document.getElementById('introLogo');
     if (introLogo) {
@@ -3247,11 +3471,12 @@ function initializeScrollSystem() {
             // Start intro video
             introLogo.play().then(() => {
                 console.log('Intro video started playing');
-                
+
                 // Start animations immediately when video starts
                 const introOverlay = document.querySelector('.intro-overlay');
                 const introText = document.getElementById('introText');
                 const videoBg = document.getElementById('videoBg');
+                const introLoader = document.getElementById('introLoader');
 
                 // Start intro animations
                 introLogo.classList.add('animate');
@@ -3265,9 +3490,29 @@ function initializeScrollSystem() {
                         videoBg.play().catch(e => console.log('Background video autoplay prevented'));
                     }
                 }, 5000);
-                
-                // Enable scrolling when intro is complete (5.5s from video start)
-                setTimeout(() => {
+
+                // SMART INTRO GATE: Check resources when intro video ends (5.5s)
+                setTimeout(async () => {
+                    // Check if resources are ready
+                    const resourcesReady = await Promise.race([
+                        checkCriticalResourcesReady(),
+                        new Promise(resolve => setTimeout(resolve, 0)) // Check immediately
+                    ]);
+
+                    // If resources aren't ready yet, pause intro and show loader
+                    const allReady = await checkCriticalResourcesReady();
+
+                    if (allReady !== undefined) {
+                        // Resources took time to load - show loader was visible
+                        console.log('Resources loaded, completing intro');
+                    }
+
+                    // Hide loader
+                    if (introLoader) {
+                        introLoader.classList.remove('visible');
+                    }
+
+                    // Complete intro fade-out
                     scrollEnabled = true;
                     document.body.style.overflow = 'auto';
                     window.removeEventListener('scroll', preventScroll);
@@ -3276,10 +3521,25 @@ function initializeScrollSystem() {
                     console.log('Scrolling enabled');
 
                     // Initialize enhanced scroll system after intro
-                    // T010: Intro sequence timing preserved - scroll system initializes AFTER intro completion
                     initializeEnhancedScrollAfterIntro();
                 }, 5500);
-                
+
+                // Show loader if resources aren't ready when video should end
+                setTimeout(() => {
+                    checkCriticalResourcesReady().then((ready) => {
+                        // Resources are ready, no loader needed
+                    }).catch(() => {
+                        // Resources not ready, show loader
+                        if (introLoader && !scrollEnabled) {
+                            console.log('Resources not ready, showing loader');
+                            introLoader.classList.add('visible');
+
+                            // Pause intro video on last frame
+                            introLogo.pause();
+                        }
+                    });
+                }, 5400); // Check 100ms before intro ends
+
             }).catch(e => {
                 console.log('Intro video autoplay prevented, starting sequence anyway');
                 // If autoplay fails, still start animations and enable scrolling
@@ -3292,7 +3552,7 @@ function initializeScrollSystem() {
                 if (introOverlay) introOverlay.classList.add('animate');
                 if (introText) introText.classList.add('animate');
                 if (videoBg) videoBg.classList.add('animate');
-                
+
                 setTimeout(() => {
                     scrollEnabled = true;
                     document.body.style.overflow = 'auto';
