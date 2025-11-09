@@ -1850,7 +1850,7 @@ function populateContent() {
             link.textContent = siteContent.missione.ctaText;
             link.onclick = (e) => {
                 e.preventDefault();
-                document.querySelector('.candidati-block').scrollIntoView({ behavior: 'smooth' });
+                scrollToSection('candidati');
             };
             ctaDiv.appendChild(link);
             missioneContainer.appendChild(ctaDiv);
@@ -4003,11 +4003,18 @@ function initCandidatiCardStack() {
         if (lenis && isScrollSystemInitialized) {
             if (isBackward) {
                 // BACKWARD NAVIGATION: Two-step process to eliminate deadzone delay
-                // Step 1: Instantly jump to START of current card (exit deadzone)
+                // Step 1: Instantly jump to SAFE POSITION of current card (past entrance, visible)
+                // CRITICAL: Must jump to where card has COMPLETED its entrance animation (not where it starts)
+                // Otherwise card will have entranceOpacity = 0 and instantly disappear
                 const currentCardStart = cardEntranceStart + (cardEntranceDuration * (currentCardIndex / totalCards));
-                lenis.scrollTo(currentCardStart, {
+                const currentCardEnd = cardEntranceStart + (cardEntranceDuration * ((currentCardIndex + 1) / totalCards));
+                const entranceRatio = 0.286; // Must match per-card deadzone ratio (line 4528)
+                // Jump to 30% through card's slot (safely past 28.6% entrance phase where card is fully visible)
+                const currentCardSafePosition = currentCardStart + ((currentCardEnd - currentCardStart) * 0.30);
+
+                lenis.scrollTo(currentCardSafePosition, {
                     duration: 0,
-                    immediate: true,
+                    immediate: true, // Skip all animation frames to prevent RAF interference
                     onComplete: () => {
                         // Step 2: Smooth animation to target card (after instant scroll completes)
                         lenis.scrollTo(targetScroll, {
