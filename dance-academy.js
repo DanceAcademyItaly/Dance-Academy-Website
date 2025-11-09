@@ -183,7 +183,7 @@ const HEADER_REGISTRY = {
  * @param {string} name - Section name
  * @param {number} targetScroll - Scroll Y position to navigate to
  */
-function registerSection(name, targetScroll) {
+function registerSection(name, targetScroll, boundaries = null) {
     const section = HEADER_REGISTRY.sections.find(s => s.name === name);
 
     if (!section) {
@@ -193,6 +193,11 @@ function registerSection(name, targetScroll) {
 
     section.targetScroll = targetScroll;
     section.registered = true;
+
+    // Store boundary information for progress calculation
+    if (boundaries) {
+        section.boundaries = boundaries;
+    }
 
     // Invalidate caches
     HEADER_REGISTRY._enabledSectionsCache = null;
@@ -270,6 +275,7 @@ function recalculateProgressDivisions() {
     const divisions = sections.map((section, index) => ({
         name: section.name,
         targetScroll: section.targetScroll,
+        boundaries: section.boundaries,
         progressStart: index * divisionSize,
         progressEnd: (index + 1) * divisionSize,
         divisionSize: divisionSize
@@ -345,12 +351,13 @@ function getProgressPercentage(scrollY) {
         const division = divisions[i];
         const nextDivision = divisions[i + 1];
 
-        // Last division
+        // Last division - use boundaries if available for accurate progress calculation
         if (!nextDivision) {
-            if (scrollY >= division.targetScroll) {
-                // Calculate progress from this section to maxScroll
-                const range = maxScroll - division.targetScroll;
-                const progress = range > 0 ? (scrollY - division.targetScroll) / range : 1;
+            const rangeStart = division.boundaries?.entranceStart ?? division.targetScroll;
+            if (scrollY >= rangeStart) {
+                // Calculate progress from section start (or targetScroll) to maxScroll
+                const range = maxScroll - rangeStart;
+                const progress = range > 0 ? (scrollY - rangeStart) / range : 1;
                 const clampedProgress = Math.min(1, Math.max(0, progress));
                 return division.progressStart + (clampedProgress * division.divisionSize);
             }
@@ -719,6 +726,302 @@ function getSectionBoundaries(sectionName) {
 function getCurrentSection() {
     const scrollY = getCurrentScroll();
     return getSectionAtScroll(scrollY);
+}
+
+// ============================================================================
+// RESIZE HANDLING - PROGRESS PRESERVATION
+// ============================================================================
+
+/**
+ * Calculate user's progress (0-1) through a section based on boundaries
+ * @param {number} scrollY - Current scroll position
+ * @param {Object} boundaries - Section boundaries {entranceStart, entranceEnd, deadzoneEnd, exitEnd}
+ * @returns {number} Progress through section (0-1)
+ */
+function calculateSectionProgress(scrollY, boundaries) {
+    if (!boundaries) return 0.5;
+
+    const { entranceStart, exitEnd } = boundaries;
+    const totalRange = exitEnd - entranceStart;
+
+    if (totalRange <= 0) return 0.5;
+
+    const progressInRange = scrollY - entranceStart;
+    return Math.max(0, Math.min(1, progressInRange / totalRange));
+}
+
+/**
+ * Calculate scroll position for a given progress through a section
+ * @param {Object} boundaries - Section boundaries {entranceStart, exitEnd}
+ * @param {number} progress - Desired progress (0-1)
+ * @returns {number} Scroll Y position
+ */
+function calculateScrollForProgress(boundaries, progress) {
+    if (!boundaries) return 0;
+
+    const { entranceStart, exitEnd } = boundaries;
+    const totalRange = exitEnd - entranceStart;
+
+    return entranceStart + (totalRange * progress);
+}
+
+/**
+ * Recalculate missione section boundaries on resize
+ * Reads updated episodi bufferEnd and recalculates all scroll positions
+ */
+function recalculateMissioneBoundaries() {
+    if (!missioneAnimationState) return;
+
+    const viewportHeight = window.innerHeight;
+
+    // Re-read episodi's UPDATED bufferEnd
+    let entranceStartBase;
+    if (episodiAnimationState && episodiAnimationState.bufferEnd) {
+        entranceStartBase = episodiAnimationState.bufferEnd;
+    } else {
+        const heroBlock = document.querySelector('.hero-block');
+        if (heroBlock) {
+            entranceStartBase = heroBlock.offsetTop + heroBlock.offsetHeight + (SECTION_BUFFER_VH * viewportHeight);
+        } else {
+            entranceStartBase = document.querySelector('.missione-block').offsetTop;
+        }
+    }
+
+    const entranceStart = entranceStartBase;
+    const entranceDuration = 0.5 * viewportHeight;
+    const entranceEnd = entranceStart + entranceDuration;
+    const deadzoneDuration = 0.5 * viewportHeight;
+    const deadzoneEnd = entranceEnd + deadzoneDuration;
+
+    const elementData = missioneAnimationState.elements;
+    const lastElementReverseIndex = elementData.length - 1;
+    const staggerOffset = 50;
+    const elementAnimationDuration = 500;
+    const lastElementExitEnd = deadzoneEnd + (lastElementReverseIndex * staggerOffset) + elementAnimationDuration;
+    const exitEnd = lastElementExitEnd + 50;
+
+    const bufferDuration = SECTION_BUFFER_VH * viewportHeight;
+    const bufferEnd = exitEnd + bufferDuration;
+
+    // Update state
+    missioneAnimationState.entranceStart = entranceStart;
+    missioneAnimationState.entranceEnd = entranceEnd;
+    missioneAnimationState.deadzoneEnd = deadzoneEnd;
+    missioneAnimationState.exitEnd = exitEnd;
+    missioneAnimationState.bufferEnd = bufferEnd;
+
+    // Re-register section
+    const lastElementEntranceEnd = entranceStart + (lastElementReverseIndex * staggerOffset) + elementAnimationDuration;
+    registerSection('missione', lastElementEntranceEnd);
+
+    console.log('✅ Missione boundaries recalculated:', { entranceStart, entranceEnd, deadzoneEnd, exitEnd, bufferEnd });
+}
+
+/**
+ * Recalculate candidati section boundaries on resize
+ * Reads updated missione bufferEnd and recalculates all scroll positions
+ */
+function recalculateCandidatiBoundaries() {
+    if (!candidatiCardState) return;
+
+    const viewportHeight = window.innerHeight;
+
+    // Re-read missione's UPDATED bufferEnd
+    let titleEntranceStartBase;
+    if (missioneAnimationState && missioneAnimationState.bufferEnd) {
+        titleEntranceStartBase = missioneAnimationState.bufferEnd;
+    } else if (episodiAnimationState && episodiAnimationState.bufferEnd) {
+        titleEntranceStartBase = episodiAnimationState.bufferEnd;
+    } else {
+        titleEntranceStartBase = document.querySelector('.candidati-spacer').offsetTop;
+    }
+
+    const titleEntranceStart = titleEntranceStartBase;
+    const titleEntranceDuration = 0.5 * viewportHeight;
+    const titleEntranceEnd = titleEntranceStart + titleEntranceDuration;
+
+    const cardEntranceStart = titleEntranceEnd;
+    const cardEntranceDuration = 3.5 * viewportHeight;
+    const cardEntranceEnd = cardEntranceStart + cardEntranceDuration;
+
+    const cardDeadzoneDuration = 0 * viewportHeight;
+    const cardDeadzoneEnd = cardEntranceEnd + cardDeadzoneDuration;
+
+    const exitAnimationDuration = 1.0 * viewportHeight;
+    const exitAnimationStart = cardDeadzoneEnd;
+    const exitAnimationEnd = exitAnimationStart + exitAnimationDuration;
+
+    const bufferDuration = SECTION_BUFFER_VH * viewportHeight;
+    const bufferEnd = Math.floor(exitAnimationEnd + bufferDuration);
+
+    // Update state
+    candidatiCardState.titleEntranceStart = titleEntranceStart;
+    candidatiCardState.titleEntranceEnd = titleEntranceEnd;
+    candidatiCardState.cardEntranceStart = cardEntranceStart;
+    candidatiCardState.cardEntranceDuration = cardEntranceDuration;
+    candidatiCardState.cardEntranceEnd = cardEntranceEnd;
+    candidatiCardState.cardDeadzoneEnd = cardDeadzoneEnd;
+    candidatiCardState.exitAnimationStart = exitAnimationStart;
+    candidatiCardState.exitAnimationEnd = exitAnimationEnd;
+    candidatiCardState.bufferEnd = bufferEnd;
+
+    // Recalculate spacer height with UPDATED boundaries
+    const candidatiSpacer = candidatiCardState.candidatiSpacer;
+    const spacerDocumentTop = candidatiSpacer.offsetTop;
+    const totalScrollRange = Math.floor(bufferEnd - spacerDocumentTop);
+    candidatiSpacer.style.height = totalScrollRange + 'px';
+
+    // Re-register section with boundaries
+    registerSection('candidati', titleEntranceStart, {
+        entranceStart: titleEntranceStart,
+        entranceEnd: cardEntranceEnd,
+        deadzoneEnd: cardDeadzoneEnd
+    });
+
+    console.log('✅ Candidati boundaries recalculated:', { titleEntranceStart, cardEntranceEnd, exitAnimationEnd, bufferEnd, totalScrollRange });
+}
+
+/**
+ * Recalculate contatti section boundaries on resize
+ * Reads updated candidati bufferEnd and recalculates all scroll positions
+ */
+function recalculateContattiBoundaries() {
+    if (!contattiAnimationState) return;
+
+    const viewportHeight = window.innerHeight;
+
+    // Re-read candidati's UPDATED bufferEnd
+    const candidatiBufferEnd = candidatiCardState ? candidatiCardState.bufferEnd : 0;
+
+    const entranceDuration = 0.75 * viewportHeight;
+    const deadzoneDuration = 1.25 * viewportHeight;
+
+    const entranceStart = candidatiBufferEnd;
+    const entranceEnd = entranceStart + entranceDuration;
+    const deadzoneEnd = entranceEnd + deadzoneDuration;
+
+    // Update state
+    contattiAnimationState.entranceStart = entranceStart;
+    contattiAnimationState.entranceEnd = entranceEnd;
+    contattiAnimationState.deadzoneEnd = deadzoneEnd;
+
+    // Recalculate spacer height
+    const contattiSpacer = document.querySelector('.contatti-spacer');
+    const totalScrollRange = entranceDuration + deadzoneDuration;
+    const spacerHeight = Math.floor(totalScrollRange);
+    contattiSpacer.style.height = spacerHeight + 'px';
+
+    // Recalculate maxScroll
+    const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+    contattiAnimationState.maxScroll = maxScroll;
+
+    // Re-register section with boundaries
+    registerSection('contatti', maxScroll, {
+        entranceStart,
+        entranceEnd,
+        deadzoneEnd
+    });
+
+    console.log('✅ Contatti boundaries recalculated:', { candidatiBufferEnd, entranceStart, entranceEnd, deadzoneEnd, maxScroll });
+}
+
+/**
+ * Master resize handler with progress preservation
+ * Captures user's position before resize, recalculates all boundaries, restores position
+ */
+let masterResizeTimeout = null;
+let preResizeState = null;
+
+function handleMasterResize() {
+    // Capture state immediately (before debounce) to preserve user's exact position
+    if (!preResizeState) {
+        const scrollY = getCurrentScroll();
+        const section = getCurrentSection();
+
+        preResizeState = {
+            scrollY,
+            section,
+            boundaries: null,
+            progress: 0.5
+        };
+
+        if (section) {
+            preResizeState.boundaries = getSectionBoundaries(section.name);
+            if (preResizeState.boundaries) {
+                preResizeState.progress = calculateSectionProgress(scrollY, preResizeState.boundaries);
+            }
+        }
+
+        console.log('📐 Resize started - captured state:', {
+            section: section?.name,
+            scrollY,
+            progress: preResizeState.progress
+        });
+    }
+
+    // Debounce the actual recalculation
+    clearTimeout(masterResizeTimeout);
+    masterResizeTimeout = setTimeout(() => {
+        performResize(preResizeState);
+        preResizeState = null; // Reset for next resize
+    }, 150);
+}
+
+function performResize(state) {
+    console.log('🔄 Performing resize recalculation...');
+
+    // Recalculate all boundaries in dependency order
+    // Note: Episodi has its own resize handler that's already attached
+    if (episodiAnimationState && typeof handleEpisodiResizeImmediate === 'function') {
+        handleEpisodiResizeImmediate();
+    }
+
+    if (missioneAnimationState) {
+        recalculateMissioneBoundaries();
+    }
+
+    if (candidatiCardState) {
+        recalculateCandidatiBoundaries();
+    }
+
+    if (contattiAnimationState) {
+        recalculateContattiBoundaries();
+    }
+
+    // Update global maxScroll
+    HEADER_REGISTRY.maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+
+    // Recalculate progress divisions
+    recalculateProgressDivisions();
+
+    // Restore user's progress if applicable
+    if (state && state.section && state.progress !== undefined) {
+        const newBoundaries = getSectionBoundaries(state.section.name);
+        if (newBoundaries) {
+            const newScrollY = calculateScrollForProgress(newBoundaries, state.progress);
+
+            console.log('↩️  Restoring progress:', {
+                section: state.section.name,
+                oldScrollY: state.scrollY,
+                newScrollY,
+                progress: state.progress
+            });
+
+            // Scroll to new position instantly (no animation)
+            if (lenis) {
+                lenis.scrollTo(newScrollY, { duration: 0, immediate: true });
+            } else {
+                window.scrollTo({ top: newScrollY, behavior: 'instant' });
+            }
+        }
+    }
+
+    // Force immediate scroll update with new boundaries
+    if (lenis) {
+        updateScrollElements(lenis.scroll);
+    }
+
+    console.log('✅ Resize complete');
 }
 
 // Helper: Calculate distance between two sections
@@ -4239,9 +4542,13 @@ function initContattiAnimations(candidatiBufferEnd) {
         maxScroll
     };
 
-    // Register section with Header Registry at maxScroll (end of page)
-    // This ensures navigation to contatti scrolls all the way to the bottom
-    registerSection('contatti', maxScroll);
+    // Register section with Header Registry at maxScroll (navigation target)
+    // Pass boundaries for progress calculation to prevent jumping
+    registerSection('contatti', maxScroll, {
+        entranceStart,
+        entranceEnd,
+        deadzoneEnd
+    });
 
     console.log('✅ Contatti section initialized successfully (scroll-based entry animation)');
 
@@ -4467,11 +4774,6 @@ function updateCandidatiCardStack(scrollY, cardState) {
         if (submitButtonContainer) {
             submitButtonContainer.style.opacity = '0';
             submitButtonContainer.style.visibility = 'hidden';
-        }
-
-        // Keep video fully blurred and dark for contatti section
-        if (videoBg) {
-            videoBg.style.filter = 'grayscale(25%) brightness(0.05) contrast(1.2) blur(50px)';
         }
     }
 
@@ -4770,17 +5072,7 @@ function updateCandidatiCardStack(scrollY, cardState) {
             submitButtonContainer.style.opacity = exitFadeMultiplier;
         }
 
-        // Progressively blur and darken video to black
-        if (videoBg) {
-            // Blur: from 0px to 50px
-            const blurAmount = 50 * easedExitProgress;
-            // Brightness: from 0.50 to 0.05 (near complete darkness, but not absolute zero for better visuals)
-            const brightness = 0.50 - (0.45 * easedExitProgress);
-            // Grayscale and contrast remain constant
-            videoBg.style.filter = `grayscale(25%) brightness(${brightness}) contrast(1.2) blur(${blurAmount}px)`;
-        }
-
-        // Keep background overlay transparent during exit (video darkening is sufficient)
+        // Keep background overlay transparent during exit
         if (backgroundOverlay) {
             backgroundOverlay.style.visibility = 'visible';
             backgroundOverlay.style.opacity = '0';
@@ -4788,8 +5080,8 @@ function updateCandidatiCardStack(scrollY, cardState) {
     }
 
     // AFTER Phase 4: Hide candidati elements and fade in contatti
-    else if (scrollY > exitAnimationEnd) {
-        // Hide all candidati elements
+    else if (scrollY > exitAnimationEnd && scrollY < bufferEnd) {
+        // Hide all candidati elements during buffer zone only
         candidatiTitleWrapper.style.opacity = '0';
         candidatiTitleWrapper.style.visibility = 'hidden';
 
@@ -4803,12 +5095,12 @@ function updateCandidatiCardStack(scrollY, cardState) {
             submitButtonContainer.style.visibility = 'hidden';
         }
 
-        // Keep video fully blurred and dark for contatti section
+        // Keep video at normal state during buffer zone (fade happens in contatti entrance)
         if (videoBg) {
-            videoBg.style.filter = 'grayscale(25%) brightness(0.05) contrast(1.2) blur(50px)';
+            videoBg.style.filter = 'grayscale(25%) brightness(0.50) contrast(1.2) blur(0px)';
         }
 
-        // Keep background overlay transparent and hidden (video darkness is sufficient)
+        // Keep background overlay transparent and hidden
         if (backgroundOverlay) {
             backgroundOverlay.style.opacity = '0';
             backgroundOverlay.style.visibility = 'hidden';
@@ -4841,6 +5133,21 @@ function updateContattiAnimations(scrollY) {
         contattiContainer.style.opacity = String(easedProgress);
         contattiContainer.style.transform = `translate(-50%, -50%) translateY(${translateY}px)`;
 
+        // Progressively blur and darken video to black at START of entrance
+        const videoBg = document.querySelector('.video-bg');
+        if (videoBg) {
+            // Fade happens at START: use raw progress (not eased) for faster fade
+            // When progress = 0 (start) → bright (0.50), when progress increases → dark (0.05)
+            // But we want it to complete quickly, so use steeper curve
+            const fadeProgress = Math.min(1, progress * 3); // Completes in first 33% of entrance
+            // Blur: from 0px to 50px (quickly)
+            const blurAmount = 50 * fadeProgress;
+            // Brightness: from 0.50 to 0.05 (fade to darkness quickly)
+            const brightness = 0.50 - (0.45 * fadeProgress);
+            // Grayscale and contrast remain constant
+            videoBg.style.filter = `grayscale(25%) brightness(${brightness}) contrast(1.2) blur(${blurAmount}px)`;
+        }
+
     } else {
         // Deadzone - fully visible and in position (stays until end of page)
         contattiContainer.style.visibility = 'visible';
@@ -4851,3 +5158,6 @@ function updateContattiAnimations(scrollY) {
 
 // Start
 document.addEventListener('DOMContentLoaded', loadContent);
+
+// Master resize handler for progress preservation
+window.addEventListener('resize', handleMasterResize);
