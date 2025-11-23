@@ -54,4 +54,5 @@ position_diagnostic.html
 final_*_test.html
 quick_fix_test.html
 check_scroll.html
-test_scroll.js
+test_scroll.js# Temporary documentation and tracking files
+docs/
