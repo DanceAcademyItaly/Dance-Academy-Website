@@ -15,7 +15,7 @@
 
 import { getState, updateState } from './state.js';
 import { SCROLL, BREAKPOINTS } from './config.js';
-import { registerSection, setActiveSection, applyVideoState } from './navigation.js';
+import { registerSection, setActiveSection, applyVideoState, standardEasing } from './navigation.js';
 
 // ============================================
 // MODULE STATE
@@ -362,6 +362,19 @@ export function initCandidatiCardStack() {
 
         const targetScroll = calculateCardScrollPosition(targetCardIndex);
 
+        // DEBUG: Log scroll positions to diagnose speed issue
+        const currentScrollY = getState('scroll.y') || window.scrollY || 0;
+        const scrollDistance = Math.abs(targetScroll - currentScrollY);
+        console.log('[Candidati Navigation]', {
+            from: currentCardIndex,
+            to: targetCardIndex,
+            currentScrollY: currentScrollY.toFixed(0),
+            targetScroll: targetScroll.toFixed(0),
+            distance: scrollDistance.toFixed(0) + 'px',
+            duration: '2.5s',
+            speed: (scrollDistance / 2.5).toFixed(0) + 'px/s'
+        });
+
         const lenis = getState('lenis');
         const isScrollSystemInitialized = getState('flags.isScrollSystemInitialized');
 
@@ -383,18 +396,8 @@ export function initCandidatiCardStack() {
                         // Step 2: Smooth animation to target card (after instant scroll completes)
                         lenis.scrollTo(targetScroll, {
                             duration: 2.5,
-                            easing: (t) => {
-                                // cubic-bezier(0.4, 0, 0.2, 1) - Material Design "standard easing"
-                                const p1x = 0.4, p1y = 0, p2x = 0.2, p2y = 1;
-                                const cx = 3 * p1x;
-                                const bx = 3 * (p2x - p1x) - cx;
-                                const ax = 1 - cx - bx;
-                                const cy = 3 * p1y;
-                                const by = 3 * (p2y - p1y) - cy;
-                                const ay = 1 - cy - by;
-
-                                return ((ay * t + by) * t + cy) * t;
-                            }
+                            easing: standardEasing,
+                            lock: true  // Force duration-based animation, prevent lerp interference
                         });
                     }
                 });
@@ -402,18 +405,8 @@ export function initCandidatiCardStack() {
                 // FORWARD NAVIGATION: Direct smooth animation
                 lenis.scrollTo(targetScroll, {
                     duration: 2.5,
-                    easing: (t) => {
-                        // cubic-bezier(0.4, 0, 0.2, 1) - Material Design "standard easing"
-                        const p1x = 0.4, p1y = 0, p2x = 0.2, p2y = 1;
-                        const cx = 3 * p1x;
-                        const bx = 3 * (p2x - p1x) - cx;
-                        const ax = 1 - cx - bx;
-                        const cy = 3 * p1y;
-                        const by = 3 * (p2y - p1y) - cy;
-                        const ay = 1 - cy - by;
-
-                        return ((ay * t + by) * t + cy) * t;
-                    }
+                    easing: standardEasing,
+                    lock: true  // Force duration-based animation, prevent lerp interference
                 });
             }
         } else {

@@ -502,6 +502,21 @@ function handleResize() {
         recalculateMissioneBoundaries();
         recalculateCandidatiBoundaries();
 
+        // CRITICAL: Force animation updates with new boundaries
+        // After recalculating boundaries, section elements are in stale state until next scroll
+        // Force immediate update with current scroll position to prevent disappearance/misalignment
+        const currentScrollY = getState('scroll.y') || window.scrollY || window.pageYOffset || 0;
+
+        const missioneState = getState('animations.missione');
+        if (missioneState) {
+            updateMissioneAnimations(currentScrollY, missioneState);
+        }
+
+        const candidatiState = getState('animations.candidati');
+        if (candidatiState) {
+            updateCandidatiCardStack(currentScrollY, candidatiState);
+        }
+
         // Recalculate episodi (if exists)
         if (hasEpisodes) {
             handleEpisodiResize();
@@ -513,7 +528,6 @@ function handleResize() {
         }
 
         // Recalculate contatti
-        const candidatiState = getState('animations.candidati');
         if (candidatiState && candidatiState.bufferEnd) {
             handleContactsResize(candidatiState.bufferEnd, registerSection);
         }

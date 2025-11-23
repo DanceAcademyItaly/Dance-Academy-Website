@@ -603,20 +603,26 @@ export function initializeCarousels() {
 
         function startAutoPlay() {
             stopAutoPlay();
-            autoPlayInterval = setInterval(advanceSlide, ANIMATION.carouselAutoPlayMs);
+            // Store on carousel element so cleanupCarousels() can access it
+            autoPlayInterval = carousel._autoPlayInterval = setInterval(advanceSlide, ANIMATION.carouselAutoPlayMs);
         }
 
         function stopAutoPlay() {
             if (autoPlayInterval) {
                 clearInterval(autoPlayInterval);
                 autoPlayInterval = null;
+                carousel._autoPlayInterval = null;
             }
         }
 
         function resetAutoPlay() {
             stopAutoPlay();
-            clearTimeout(autoPlayPauseTimeout);
-            autoPlayPauseTimeout = setTimeout(startAutoPlay, ANIMATION.carouselPauseMs);
+            // Clear any existing timeout
+            if (autoPlayPauseTimeout) {
+                clearTimeout(autoPlayPauseTimeout);
+            }
+            // Store on carousel element so cleanupCarousels() can access it
+            autoPlayPauseTimeout = carousel._autoPlayPauseTimeout = setTimeout(startAutoPlay, ANIMATION.carouselPauseMs);
         }
 
         // Arrow click handlers
@@ -720,6 +726,16 @@ function cleanupCarousels() {
     const carousels = document.querySelectorAll('.carousel-container');
 
     carousels.forEach((carousel, index) => {
+        // CRITICAL: Stop all auto-play timers FIRST to prevent carousel from continuing to run
+        if (carousel._autoPlayInterval) {
+            clearInterval(carousel._autoPlayInterval);
+            delete carousel._autoPlayInterval;
+        }
+        if (carousel._autoPlayPauseTimeout) {
+            clearTimeout(carousel._autoPlayPauseTimeout);
+            delete carousel._autoPlayPauseTimeout;
+        }
+
         const cards = Array.from(carousel.querySelectorAll('.coreo-card'));
 
         // Reset all cards to visible state (desktop shows all videos)

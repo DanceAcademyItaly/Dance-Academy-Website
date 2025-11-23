@@ -513,6 +513,21 @@ function getSectionDistance(fromSection, toSection) {
 }
 
 /**
+ * Standard easing function: cubic-bezier(0.4, 0, 0.2, 1) - Material Design "standard easing"
+ * Exported for use in other modules (e.g., candidati navigation)
+ */
+export const standardEasing = (t) => {
+    const p1x = 0.4, p1y = 0, p2x = 0.2, p2y = 1;
+    const cx = 3 * p1x;
+    const bx = 3 * (p2x - p1x) - cx;
+    const ax = 1 - cx - bx;
+    const cy = 3 * p1y;
+    const by = 3 * (p2y - p1y) - cy;
+    const ay = 1 - cy - by;
+    return ((ay * t + by) * t + cy) * t;
+};
+
+/**
  * Scroll to a registered section with intelligent multi-section skip
  * Handles adjacent sections (standard scroll) and multi-section jumps (3-phase)
  * @param {string} sectionName - Name of section to scroll to
@@ -527,18 +542,6 @@ export function scrollToSection(sectionName) {
 
     const targetScroll = targetSection.targetScroll;
     let currentSection = getCurrentSection();
-
-    // Standard easing function: cubic-bezier(0.4, 0, 0.2, 1) - Material Design "standard easing"
-    const standardEasing = (t) => {
-        const p1x = 0.4, p1y = 0, p2x = 0.2, p2y = 1;
-        const cx = 3 * p1x;
-        const bx = 3 * (p2x - p1x) - cx;
-        const ax = 1 - cx - bx;
-        const cy = 3 * p1y;
-        const by = 3 * (p2y - p1y) - cy;
-        const ay = 1 - cy - by;
-        return ((ay * t + by) * t + cy) * t;
-    };
 
     // Already on target section - don't scroll (user is already viewing this section)
     if (currentSection && currentSection.name === sectionName) {
