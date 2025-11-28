@@ -159,7 +159,7 @@ export function updateHero(scrollY) {
         const opacity = 1 - easedProgress;
 
         // Determine distance based on viewport size
-        const isMobile = window.innerWidth <= 768;
+        const isMobile = getState('cache.isMobile');
         const translateX = isMobile ? easedProgress * 150 : easedProgress * 100;
 
         setStyles(heroElements.logo, {
@@ -173,7 +173,7 @@ export function updateHero(scrollY) {
         const opacity = 1 - easedProgress;
 
         // Determine distance based on viewport size
-        const isMobile = window.innerWidth <= 768;
+        const isMobile = getState('cache.isMobile');
         const translateX = isMobile ? easedProgress * 150 : easedProgress * 100;
 
         setStyles(heroElements.subtitle, {

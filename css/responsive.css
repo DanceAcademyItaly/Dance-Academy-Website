@@ -98,7 +98,7 @@
                 color: var(--text-secondary);
                 font-family: inherit;
                 font-size: clamp(11px, 1.2vw + 0.3vh, 14px);
-                text-transform: uppercase;
+                text-transform: none;
                 letter-spacing: var(--letter-spacing-wide);
                 cursor: pointer;
                 transition: all 0.3s;

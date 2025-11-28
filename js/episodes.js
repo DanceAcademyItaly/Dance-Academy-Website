@@ -28,6 +28,12 @@ import { registerSection, enableSection, setActiveSection, applyVideoState } fro
 let episodiAnimationState = null;
 
 /**
+ * MutationObserver for episode navigation
+ * Monitors DOM changes and enhances episode links dynamically
+ */
+let episodiMutationObserver = null;
+
+/**
  * Last viewport width (for detecting mobile/desktop transitions)
  */
 let lastViewportWidth = window.innerWidth;
@@ -65,7 +71,7 @@ export function checkEpisodesExist(content) {
  */
 function preserveEpisodeNavigation() {
     // Monitor for dynamically added episode navigation
-    const observer = new MutationObserver((mutations) => {
+    episodiMutationObserver = new MutationObserver((mutations) => {
         mutations.forEach((mutation) => {
             if (mutation.type === 'childList') {
                 mutation.addedNodes.forEach((node) => {
@@ -89,7 +95,7 @@ function preserveEpisodeNavigation() {
     // Observe sidebar for changes
     const sidebar = document.getElementById('sidebar');
     if (sidebar) {
-        observer.observe(sidebar, {
+        episodiMutationObserver.observe(sidebar, {
             childList: true,
             subtree: true
         });
@@ -1343,6 +1349,21 @@ export function updateEpisodiAnimations(scrollY) {
             mobileSelector.style.opacity = 0;
             mobileSelector.style.pointerEvents = 'none';
         }
+    }
+}
+
+// ============================================
+// CLEANUP
+// ============================================
+
+/**
+ * Clean up MutationObserver when Episodes section is deactivated
+ * Prevents memory leak by disconnecting observer when not in use
+ */
+export function cleanupEpisodiObservers() {
+    if (episodiMutationObserver) {
+        episodiMutationObserver.disconnect();
+        episodiMutationObserver = null;
     }
 }
 

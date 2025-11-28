@@ -6,6 +6,7 @@
 
 import { getState, updateState } from './state.js';
 import { getLenis, scrollTo as scrollToPosition, getScrollY } from './scroll.js';
+import { cleanupEpisodiObservers } from './episodes.js';
 
 // ============================================
 // NAVIGATION CONFIGURATIONS
@@ -79,6 +80,12 @@ const HEADER_REGISTRY = {
 export function setActiveSection(sectionName) {
     // Skip if already active (performance optimization)
     if (currentActiveSection === sectionName) return;
+
+    // Cleanup observers when switching away from episodi section
+    const previousSection = currentActiveSection;
+    if (previousSection === 'episodi' && sectionName !== 'episodi') {
+        cleanupEpisodiObservers();
+    }
 
     currentActiveSection = sectionName;
 

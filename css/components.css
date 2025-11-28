@@ -187,7 +187,7 @@
 }
 
 .episodio-item {
-    text-transform: uppercase;
+    text-transform: none;
     letter-spacing: var(--letter-spacing-wide);
     font-size: clamp(0.6rem, 0.55rem + 0.6vw, 0.875rem);
     color: var(--text-secondary);
@@ -326,7 +326,7 @@
 .coreo-title {
     padding: 5px;
     font-size: var(--text-xs);
-    text-transform: uppercase;
+    text-transform: none;
     letter-spacing: var(--letter-spacing-wide);
     color: var(--text-secondary);
 }

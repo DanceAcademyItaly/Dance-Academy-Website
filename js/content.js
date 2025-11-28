@@ -4,7 +4,7 @@
  */
 
 import { setState } from './state.js';
-import { API } from './config.js';
+import { API, ITALIAN_PROVINCES } from './config.js';
 
 // ============================================
 // CONTENT LOADING
@@ -185,6 +185,9 @@ export function populateContent(content, dependencies = {}) {
 
     // Contatti
     populateContatti(content);
+
+    // Populate province dropdown in Candidati form
+    populateProvinceDropdown();
 }
 
 /**
@@ -247,6 +250,32 @@ function populateContatti(content) {
             `).join('') || ''}
         </div>
     `;
+}
+
+// ============================================
+// PROVINCE DROPDOWN POPULATION
+// ============================================
+
+/**
+ * Populate province dropdown in Candidati form
+ * Dynamically creates options from ITALIAN_PROVINCES array
+ */
+function populateProvinceDropdown() {
+    const select = document.getElementById('provincia');
+    if (!select) return;
+
+    // Clear existing options except the first one (placeholder)
+    while (select.options.length > 1) {
+        select.remove(1);
+    }
+
+    // Add province options
+    ITALIAN_PROVINCES.forEach(province => {
+        const option = document.createElement('option');
+        option.value = province;
+        option.textContent = province;
+        select.appendChild(option);
+    });
 }
 
 // ============================================

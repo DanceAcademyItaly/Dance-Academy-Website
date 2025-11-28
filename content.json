@@ -33,103 +33,13 @@
     "seasons": [
       {
         "id": 1,
-        "name": "Stagione 1",
+        "name": "2025/26",
         "episodes": [
           {
             "id": 1,
-            "title": "Accademia Danza Roma",
-            "mainVideo": "https://www.youtube.com/embed/dQw4w9WgXcQ",
-            "choreographies": [
-              {
-                "title": "Il Lago dei Cigni",
-                "video": "https://www.youtube.com/embed/jNQXAC9IVRw"
-              },
-              {
-                "title": "Romeo e Giulietta",
-                "video": "https://www.youtube.com/embed/9bZkp7q19f0"
-              },
-              {
-                "title": "La Bella Addormentata",
-                "video": "https://www.youtube.com/embed/kJQP7kiw5Fk"
-              }
-            ]
-          },
-          {
-            "id": 2,
-            "title": "Scuola di Ballo Milano",
-            "mainVideo": "https://www.youtube.com/embed/L_jWHffIx5E",
-            "choreographies": [
-              {
-                "title": "Urban Dreams",
-                "video": "https://www.youtube.com/embed/fJ9rUzIMcZQ"
-              },
-              {
-                "title": "Ritmi Metropolitani",
-                "video": "https://www.youtube.com/embed/hT_nvWreIhg"
-              }
-            ]
-          },
-          {
-            "id": 3,
-            "title": "Centro Danza Napoli",
-            "mainVideo": "https://www.youtube.com/embed/3JZ_D3ELwOQ",
-            "choreographies": [
-              {
-                "title": "Tarantella Fusion",
-                "video": "https://www.youtube.com/embed/YQHsXMglC9A"
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "id": 2,
-        "name": "Stagione 2",
-        "episodes": [
-          {
-            "id": 4,
-            "title": "Danza Torino Academy",
-            "mainVideo": "https://www.youtube.com/embed/lXMskKTw3Bc",
-            "choreographies": [
-              {
-                "title": "Valzer Viennese",
-                "video": "https://www.youtube.com/embed/OPf0YbXqDm0"
-              },
-              {
-                "title": "Mazurka Moderna",
-                "video": "https://www.youtube.com/embed/e-ORhEE9VVg"
-              }
-            ]
-          },
-          {
-            "id": 5,
-            "title": "Studio Danza Firenze",
-            "mainVideo": "https://www.youtube.com/embed/V1bFr2SWP1I",
-            "choreographies": [
-              {
-                "title": "Primavera",
-                "video": "https://www.youtube.com/embed/GRxofEmo3HA"
-              },
-              {
-                "title": "Arte e Movimento",
-                "video": "https://www.youtube.com/embed/pt8VYOfr8To"
-              },
-              {
-                "title": "La Gioconda Danza",
-                "video": "https://www.youtube.com/embed/450p7goxZqg"
-              }
-            ]
-          },
-          {
-            "id": 6,
-            "title": "Accademia Danza Venezia",
-            "mainVideo": "https://www.youtube.com/embed/pRpeEdMmmQ0",
-            "choreographies": [
-              {
-                "title": "Carnevale di Venezia",
-                "video": "https://www.youtube.com/embed/Zi_XLOBDo_Y"
-              }
-            ]
+            "title": "Cecchetti Academy - Ravenna",
+            "mainVideo": "https://www.youtube.com/embed/L_cHp3yYADI",
+            "choreographies": []
           }
         ]
       }

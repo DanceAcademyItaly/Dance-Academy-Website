@@ -362,19 +362,6 @@ export function initCandidatiCardStack() {
 
         const targetScroll = calculateCardScrollPosition(targetCardIndex);
 
-        // DEBUG: Log scroll positions to diagnose speed issue
-        const currentScrollY = getState('scroll.y') || window.scrollY || 0;
-        const scrollDistance = Math.abs(targetScroll - currentScrollY);
-        console.log('[Candidati Navigation]', {
-            from: currentCardIndex,
-            to: targetCardIndex,
-            currentScrollY: currentScrollY.toFixed(0),
-            targetScroll: targetScroll.toFixed(0),
-            distance: scrollDistance.toFixed(0) + 'px',
-            duration: '2.5s',
-            speed: (scrollDistance / 2.5).toFixed(0) + 'px/s'
-        });
-
         const lenis = getState('lenis');
         const isScrollSystemInitialized = getState('flags.isScrollSystemInitialized');
 
