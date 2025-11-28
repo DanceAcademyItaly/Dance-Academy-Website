@@ -548,12 +548,16 @@ export function scrollToSection(sectionName) {
     }
 
     const targetScroll = targetSection.targetScroll;
-    let currentSection = getCurrentSection();
 
-    // Already on target section - don't scroll (user is already viewing this section)
-    if (currentSection && currentSection.name === sectionName) {
-        return;
+    // Check if already at exact target position - don't scroll if so
+    const currentScroll = getScrollY();
+    const tolerance = 10; // 10px tolerance - imperceptible to users
+
+    if (Math.abs(currentScroll - targetScroll) < tolerance) {
+        return; // Already at target - don't scroll
     }
+
+    let currentSection = getCurrentSection();
 
     // No current section detected - treat as navigating from hero
     if (!currentSection) {
@@ -577,8 +581,8 @@ export function scrollToSection(sectionName) {
 
     const distance = getSectionDistance(currentSection, targetSection);
 
-    // Adjacent sections (distance = 1): Standard navigation
-    if (distance === 1) {
+    // Same section or adjacent sections (distance = 0 or 1): Standard navigation
+    if (distance === 0 || distance === 1) {
         const lenis = getLenis();
         if (lenis) {
             lenis.scrollTo(targetScroll, {
