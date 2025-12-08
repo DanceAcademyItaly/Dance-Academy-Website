@@ -39,7 +39,20 @@
             "id": 1,
             "title": "Cecchetti Academy - Ravenna",
             "mainVideo": "https://www.youtube.com/embed/L_cHp3yYADI",
-            "choreographies": []
+            "choreographies": [
+              {
+                "title": "Exit Run",
+                "video": "https://www.youtube.com/embed/6bjkc19UxhI"
+              },
+              {
+                "title": "Fortissimo",
+                "video": "https://www.youtube.com/embed/HuAM6QMP5g0"
+              },
+              {
+                "title": "Love Time",
+                "video": "https://www.youtube.com/embed/XJrdRxhfvRA"
+              }
+            ]
           }
         ]
       }
