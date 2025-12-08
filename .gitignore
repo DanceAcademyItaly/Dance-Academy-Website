@@ -25,9 +25,12 @@ contentbackup.json
 *_LOGIC*.md
 SCROLL_*.md
 DEAD_CODE*.md
-RESTRUCTURING-PLAN.md
+RESTRUCTURING-PLAN*.md
 TESTING-CHECKLIST.md
 ARCHITECTURE.md
+FINAL-METRICS.md
+OPTIMIZATION-TASKS.md
+TEST-SCRIPT.md
 
 # Experimental/unused code
 missione-mathematical-animations.js
