@@ -39,6 +39,8 @@ let currentActiveSection = null;
 
 // Flag to prevent progress bar updates during multi-section navigation
 let isNavigatingMultiSection = false;
+let multiSectionNavStartTime = 0;
+const MULTI_SECTION_NAV_DURATION = 2500;
 
 // Cached DOM references
 let cachedHeaderSpans = null;
@@ -372,7 +374,7 @@ function setupHeaderNavigation() {
         span.style.pointerEvents = 'all';
         span.style.opacity = ''; // Remove disabled opacity
 
-        span.addEventListener('click', () => scrollToSection(sectionName));
+        span.addEventListener('click', () => scrollToSection(sectionName), { passive: true });
     });
 }
 
@@ -626,6 +628,7 @@ export function scrollToSection(sectionName) {
         const phase3Distance = Math.abs(targetScroll - entrancePoint);
 
         isNavigatingMultiSection = true;
+        multiSectionNavStartTime = Date.now();
 
         // Animate progress bar independently using CSS transition
         if (cachedProgressBar) {
@@ -656,18 +659,24 @@ export function scrollToSection(sectionName) {
                                 easing: standardEasing,
                                 onComplete: () => {
                                     // Restore default transition and re-enable automatic updates
-                                    if (cachedProgressBar) {
-                                        cachedProgressBar.style.transition = 'width 0.1s linear';
-                                    }
-                                    isNavigatingMultiSection = false;
+                                    setTimeout(() => {
+                                        if (cachedProgressBar) {
+                                            cachedProgressBar.style.transition = 'width 0.1s linear';
+                                        }
+                                        isNavigatingMultiSection = false;
+                                        multiSectionNavStartTime = 0;
+                                    }, 100);
                                 }
                             });
                         } else {
                             // Restore default transition and re-enable automatic updates
-                            if (cachedProgressBar) {
-                                cachedProgressBar.style.transition = 'width 0.1s linear';
-                            }
-                            isNavigatingMultiSection = false;
+                            setTimeout(() => {
+                                if (cachedProgressBar) {
+                                    cachedProgressBar.style.transition = 'width 0.1s linear';
+                                }
+                                isNavigatingMultiSection = false;
+                                multiSectionNavStartTime = 0;
+                            }, 100);
                         }
                     }
                 });
@@ -691,9 +700,12 @@ export function scrollToSection(sectionName) {
 export function updateProgressBar(scrollY) {
     if (!cachedProgressBar) return;
 
-    // Skip automatic updates during multi-section navigation
-    // Progress bar is animated independently via CSS transition
-    if (isNavigatingMultiSection) return;
+    if (isNavigatingMultiSection) {
+        const elapsed = Date.now() - multiSectionNavStartTime;
+        if (elapsed < MULTI_SECTION_NAV_DURATION) {
+            return;
+        }
+    }
 
     const percentage = getProgressPercentage(scrollY);
     cachedProgressBar.style.width = percentage + '%';
@@ -766,7 +778,7 @@ function setupNavigationHighlighting() {
         // Fallback: listen to window scroll events
         window.addEventListener('scroll', () => {
             updateNavigationHighlight(window.scrollY);
-        });
+        }, { passive: true });
     }
 }
 

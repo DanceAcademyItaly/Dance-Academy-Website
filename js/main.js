@@ -26,7 +26,8 @@ import {
     switchEpisode,
     preloadRemainingEpisodes,
     handleEpisodiResize,
-    handleMobileDesktopTransition
+    handleMobileDesktopTransition,
+    initializeCarousels
 } from './episodes.js';
 import {
     initMissioneAnimations,
@@ -56,6 +57,34 @@ let introComplete = false;
 let episodiAnimationState = null;
 let missioneAnimationState = null;
 let candidatiCardState = null;
+
+// ============================================
+// VIEWPORT HEIGHT MANAGEMENT
+// ============================================
+
+/**
+ * Update CSS custom property for dynamic viewport height
+ * Accounts for mobile browser address bar showing/hiding
+ */
+function updateViewportHeight() {
+    const vh = window.innerHeight;
+    document.documentElement.style.setProperty('--viewport-height', `${vh}px`);
+    document.documentElement.style.setProperty('--viewport-height-px', `${vh}px`);
+}
+
+/**
+ * Lock orientation to portrait on mobile devices
+ */
+function lockOrientationToPortrait() {
+    // Check if on mobile and orientation API is available
+    if (window.innerWidth <= 768) {
+        if (screen.orientation && screen.orientation.lock) {
+            screen.orientation.lock('portrait').catch((err) => {
+                console.log('Orientation lock not supported:', err);
+            });
+        }
+    }
+}
 
 // ============================================
 // CONTENT LOADING & POPULATION
@@ -96,10 +125,7 @@ async function loadAndPopulateContent() {
             },
             toggleSeason,
             switchEpisode,
-            initializeCarousels: () => {
-                // Carousel initialization is handled inside episodes.js
-                // This dependency is for content.js calling createEpisodeContent
-            },
+            initializeCarousels, // ✅ FIX: Actually call the imported function instead of empty stub
             updateVisibleBlocks: () => {
                 // Update cached visible blocks (for section isolation)
                 const blocks = document.querySelectorAll('.block');
@@ -482,6 +508,7 @@ function handleResize() {
 
     resizeTimeout = setTimeout(() => {
         const previousWidth = getState('viewport.width');
+        const previousHeight = getState('viewport.height');
         const currentWidth = window.innerWidth;
         const currentHeight = window.innerHeight;
 
@@ -489,6 +516,14 @@ function handleResize() {
         const wasMobile = previousWidth <= 768;
         const isMobile = currentWidth <= 768;
         const crossedThreshold = wasMobile !== isMobile;
+
+        // Detect significant height changes (address bar toggle)
+        const heightChanged = Math.abs(currentHeight - previousHeight) > 50;
+
+        // Update viewport height CSS custom property if height changed
+        if (heightChanged) {
+            updateViewportHeight();
+        }
 
         // Update viewport dimensions in state
         updateState('viewport.height', currentHeight);
@@ -535,6 +570,12 @@ function handleResize() {
         // Update cached document height
         const docHeight = document.documentElement.scrollHeight - window.innerHeight;
         updateState('dom.documentHeight', docHeight);
+
+        // Update max scroll if height changed (for progress bar calculation)
+        if (heightChanged) {
+            const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+            updateState('scroll.maxScroll', maxScroll);
+        }
     }, 150); // Debounce 150ms
 }
 
@@ -543,6 +584,12 @@ window.addEventListener('resize', handleResize);
 // ============================================
 // INITIALIZATION
 // ============================================
+
+// Set initial viewport height
+updateViewportHeight();
+
+// Lock orientation to portrait on mobile
+lockOrientationToPortrait();
 
 // Initialize on DOMContentLoaded
 document.addEventListener('DOMContentLoaded', loadAndPopulateContent);

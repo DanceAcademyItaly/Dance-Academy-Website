@@ -35,7 +35,7 @@
    ============================================ */
 
 .hero-block {
-    height: 100vh;
+    height: var(--viewport-height);
     padding: clamp(40px, 10vh, 80px) clamp(20px, 5vw, 40px);
     display: flex;
     align-items: center;
@@ -75,7 +75,7 @@
 
 /* Episodi Spacer - Creates scroll range */
 .episodi-spacer {
-    height: 100vh;
+    height: var(--viewport-height);
     width: 1px;
     visibility: hidden;
 }
@@ -146,7 +146,7 @@
     flex-shrink: 0;
     width: fit-content;
     max-width: 100%;
-    touch-action: auto;
+    touch-action: pan-x pan-y;
     pointer-events: auto;
     will-change: scroll-position;
 }
@@ -170,7 +170,7 @@
    ============================================ */
 
 .missione-block {
-    min-height: 100vh;
+    min-height: var(--viewport-height);
     display: flex;
     align-items: center;
     justify-content: center;

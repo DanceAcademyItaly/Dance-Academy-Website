@@ -90,30 +90,31 @@ export function initCandidatiCardStack() {
 
     // CRITICAL: Use spacer's actual document position (offsetTop), not titleEntranceStart (scroll position)
     // to ensure contatti-block aligns with bufferEnd scroll position
-    // TIMING FIX: Delay reading offsetTop to ensure previous sections have fully laid out
     let spacerDocumentTop = candidatiSpacer.offsetTop;
     let totalScrollRange = bufferEnd - spacerDocumentTop;
+    let spacerHeightUpdateTimer = null;
 
     function setSpacerHeight() {
         spacerDocumentTop = candidatiSpacer.offsetTop;
-        // CRITICAL: Round DOWN to ensure clean pixel boundaries
         totalScrollRange = Math.floor(bufferEnd - spacerDocumentTop);
         candidatiSpacer.style.height = totalScrollRange + 'px';
     }
 
-    // Call immediately for initial setup
+    function scheduleSpacerHeightUpdate() {
+        if (spacerHeightUpdateTimer) {
+            clearTimeout(spacerHeightUpdateTimer);
+        }
+
+        spacerHeightUpdateTimer = setTimeout(() => {
+            requestAnimationFrame(() => {
+                setSpacerHeight();
+                spacerHeightUpdateTimer = null;
+            });
+        }, 50);
+    }
+
     setSpacerHeight();
-
-    // Also call after layout settles to fix any timing issues
-    requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-            setSpacerHeight();
-        });
-    });
-
-    setTimeout(() => {
-        setSpacerHeight();
-    }, 100);
+    scheduleSpacerHeightUpdate();
 
     let backgroundOverlay = document.querySelector('.candidati-background-overlay');
     if (!backgroundOverlay) {
@@ -501,19 +502,16 @@ export function initCandidatiCardStack() {
     let resizeTimeout;
     const handleResize = () => {
         clearTimeout(resizeTimeout);
+        if (spacerHeightUpdateTimer) {
+            clearTimeout(spacerHeightUpdateTimer);
+            spacerHeightUpdateTimer = null;
+        }
+
         resizeTimeout = setTimeout(() => {
-            // Recalculate card heights
             const { cardHeight: newCardHeight } = calculateAndSetCardHeight();
             optimizeCardInternalSizing(newCardHeight);
-
-            // CRITICAL: Recalculate spacer height based on new layout
-            // offsetTop changes when previous sections resize, must update spacer height
-            const newViewportHeight = window.innerHeight;
-            const newBufferEnd = exitAnimationEnd + (SCROLL.sectionBufferVH * newViewportHeight);
-            const newSpacerDocumentTop = candidatiSpacer.offsetTop;
-            const newTotalScrollRange = newBufferEnd - newSpacerDocumentTop;
-            candidatiSpacer.style.height = newTotalScrollRange + 'px';
-        }, 150); // Debounce 150ms
+            scheduleSpacerHeightUpdate();
+        }, 150);
     };
 
     window.addEventListener('resize', handleResize);

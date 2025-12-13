@@ -264,7 +264,7 @@ function createEpisodeContent(episode, episodeId, isActive = false) {
         <div class="episode-skeleton">
             <div class="episode-skeleton-spinner"></div>
         </div>
-        <iframe src="${episode.mainVideo}" allowfullscreen style="opacity: 0;"></iframe>
+        <iframe data-video-url="${episode.mainVideo}" allowfullscreen style="opacity: 0;"></iframe>
     `;
     div.appendChild(videoDiv);
 
@@ -305,7 +305,7 @@ function createEpisodeContent(episode, episodeId, isActive = false) {
 
             card.innerHTML = `
                 <div class="coreo-video">
-                    <iframe id="${iframeId}" src="${videoUrl}" allowfullscreen></iframe>
+                    <iframe id="${iframeId}" data-video-url="${videoUrl}" allowfullscreen></iframe>
                 </div>
                 <div class="coreo-title">${choreo.title}</div>
             `;
@@ -359,6 +359,43 @@ function createEpisodeContent(episode, episodeId, isActive = false) {
 
     // Reinitialize carousels for this episode
     initializeCarousels();
+}
+
+/**
+ * Lazy load YouTube videos when carousel becomes visible
+ */
+function lazyLoadEpisodeVideos() {
+    const iframes = document.querySelectorAll('.coreo-card iframe[data-video-url]:not([src]), .video-principale iframe[data-video-url]:not([src])');
+    iframes.forEach(iframe => {
+        const videoUrl = iframe.getAttribute('data-video-url');
+        if (videoUrl) {
+            iframe.src = videoUrl;
+            iframe.removeAttribute('data-video-url');
+        }
+    });
+}
+
+/**
+ * Setup observer to lazy-load videos when Episodes section visible
+ */
+function setupEpisodeLazyLoading() {
+    const episodiSpacer = document.querySelector('.episodi-spacer');
+    if (!episodiSpacer || !('IntersectionObserver' in window)) {
+        // Fallback: load immediately if no IntersectionObserver
+        lazyLoadEpisodeVideos();
+        return;
+    }
+
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                lazyLoadEpisodeVideos();
+                observer.disconnect(); // Only need to load once
+            }
+        });
+    }, { root: null, threshold: 0.1 });
+
+    observer.observe(episodiSpacer);
 }
 
 /**
@@ -430,6 +467,9 @@ export function preloadRemainingEpisodes() {
     setTimeout(() => {
         preloadNext();
     }, 2000); // Wait 2 seconds after intro completes
+
+    // Setup lazy loading for YouTube videos
+    setupEpisodeLazyLoading();
 }
 
 // ============================================
@@ -454,16 +494,18 @@ export function initializeCarousels() {
     }
 
     carousels.forEach((carousel, carouselIndex) => {
-        // Skip if already initialized (prevent memory leaks)
-        if (carousel.dataset.carouselInitialized === 'true') {
-            return;
-        }
-
         const cards = Array.from(carousel.querySelectorAll('.coreo-card'));
         const leftArrow = carousel.querySelector('.carousel-arrow.left');
         const rightArrow = carousel.querySelector('.carousel-arrow.right');
         const section = carousel.closest('.coreografie-section');
         const dots = section ? Array.from(section.querySelectorAll('.carousel-dot')) : [];
+
+        // Check if event listeners already attached to THIS carousel
+        // Instead of boolean flag, check if handlers exist on the actual elements
+        if (leftArrow && leftArrow._carouselClickHandler) {
+            // Already initialized with working event listeners
+            return;
+        }
 
         // Handle single card (no carousel navigation needed, but must make visible)
         if (cards.length === 0) {
@@ -474,7 +516,8 @@ export function initializeCarousels() {
             const card = cards[0];
             card.classList.add('active');
             card.style.cssText = 'opacity: 1 !important; transform: translateX(0) !important; pointer-events: auto !important; position: relative !important;';
-            carousel.dataset.carouselInitialized = 'true';
+            // PHASE 1 FIX: Removed dataset.carouselInitialized flag
+            // Single card has no event listeners, so no need to track initialization
             return;
         }
 
@@ -485,14 +528,15 @@ export function initializeCarousels() {
         let isAnyVideoPlaying = false;
 
         // Initialize - start at index 0, set first card as active
+        // Using cssText with !important to ensure styles override any CSS rules
+        // CRITICAL: Include transition: none to prevent unwanted animations during initialization
         cards.forEach((card, index) => {
             if (index === 0) {
                 card.classList.add('active');
-                // CRITICAL: Use !important via cssText to override any conflicting styles
-                card.style.cssText = 'opacity: 1 !important; transform: translateX(0) !important; pointer-events: auto !important;';
+                card.style.cssText = 'position: relative !important; opacity: 1 !important; transform: translateX(0) !important; pointer-events: auto !important; transition: none !important;';
             } else {
                 card.classList.remove('active');
-                card.style.cssText = 'opacity: 0 !important; transform: translateX(100%) !important; pointer-events: none !important;';
+                card.style.cssText = 'position: absolute !important; opacity: 0 !important; transform: translateX(100%) !important; pointer-events: none !important; transition: none !important;';
             }
         });
 
@@ -516,29 +560,31 @@ export function initializeCarousels() {
             pauseCurrentVideo();
 
             // Exit animation for current card
-            currentCard.style.transition = 'opacity 1s ease, transform 1s ease';
-            currentCard.style.opacity = '0';
-            currentCard.style.transform = `translateX(${exitDirection})`;
-            currentCard.style.pointerEvents = 'none';  // Disable clicks on exiting card
+            currentCard.style.setProperty('transition', 'opacity 1s ease, transform 1s ease', 'important');
+            currentCard.style.setProperty('opacity', '0', 'important');
+            currentCard.style.setProperty('transform', `translateX(${exitDirection})`, 'important');
+            currentCard.style.setProperty('pointer-events', 'none', 'important');
 
             // Prepare new card (positioned off-screen)
-            newCard.style.transition = 'none';
-            newCard.style.opacity = '0';
-            newCard.style.transform = `translateX(${enterFrom})`;
+            newCard.style.setProperty('transition', 'none', 'important');
+            newCard.style.setProperty('opacity', '0', 'important');
+            newCard.style.setProperty('transform', `translateX(${enterFrom})`, 'important');
             newCard.classList.add('active');
-            newCard.style.pointerEvents = 'auto';  // Enable clicks on new card immediately
+            newCard.style.setProperty('pointer-events', 'auto', 'important');
 
             // Enter animation for new card (small delay for visual clarity)
             setTimeout(() => {
-                newCard.style.transition = 'opacity 1s ease, transform 1s ease';
-                newCard.style.opacity = '1';
-                newCard.style.transform = 'translateX(0)';
+                newCard.style.setProperty('transition', 'opacity 1s ease, transform 1s ease', 'important');
+                newCard.style.setProperty('opacity', '1', 'important');
+                newCard.style.setProperty('transform', 'translateX(0)', 'important');
             }, 50);
 
             // Cleanup after animation
             setTimeout(() => {
                 currentCard.classList.remove('active');
+                currentCard.style.setProperty('position', 'absolute', 'important');
                 currentIndex = newIndex;
+                newCard.style.setProperty('position', (newIndex === 0) ? 'relative' : 'absolute', 'important');
                 updateDots();
                 checkVideoPlayback();
             }, 1050);
@@ -631,34 +677,62 @@ export function initializeCarousels() {
             autoPlayPauseTimeout = carousel._autoPlayPauseTimeout = setTimeout(startAutoPlay, ANIMATION.carouselPauseMs);
         }
 
-        // Arrow click handlers
+        // Pause carousel when section is not visible
+        function setupCarouselVisibilityObserver(carousel) {
+            const episodiSpacer = document.querySelector('.episodi-spacer');
+            if (!episodiSpacer || !('IntersectionObserver' in window)) return;
+
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (!entry.isIntersecting) {
+                        stopAutoPlay();
+                        if (carousel._autoPlayPauseTimeout) {
+                            clearTimeout(carousel._autoPlayPauseTimeout);
+                            carousel._autoPlayPauseTimeout = null;
+                        }
+                    }
+                });
+            }, { root: null, threshold: 0.1 });
+
+            observer.observe(episodiSpacer);
+            carousel._visibilityObserver = observer;
+        }
+
+        // Arrow click handlers with stored references
         if (leftArrow) {
-            leftArrow.addEventListener('click', () => {
+            const leftHandler = () => {
                 goPrev();
                 resetAutoPlay();
-            });
+            };
+            leftArrow.addEventListener('click', leftHandler);
+            leftArrow._carouselClickHandler = leftHandler; // Mark as initialized
         }
 
         if (rightArrow) {
-            rightArrow.addEventListener('click', () => {
+            const rightHandler = () => {
                 goNext();
                 resetAutoPlay();
-            });
+            };
+            rightArrow.addEventListener('click', rightHandler);
+            rightArrow._carouselClickHandler = rightHandler; // Mark as initialized
         }
 
-        // Dot click handlers
+        // Dot click handlers with stored references
         dots.forEach((dot, index) => {
-            dot.addEventListener('click', () => {
+            const dotHandler = () => {
                 goToIndex(index);
                 resetAutoPlay();
-            });
+            };
+            dot.addEventListener('click', dotHandler);
+            dot._carouselClickHandler = dotHandler; // Mark as initialized
         });
 
         // Initialize YouTube players
         function initYouTubePlayers() {
             cards.forEach((card, index) => {
                 const iframe = card.querySelector('iframe');
-                if (iframe && iframe.id) {
+                // Only initialize if iframe has src (loaded)
+                if (iframe && iframe.id && iframe.src) {
                     try {
                         const player = new YT.Player(iframe.id, {
                             events: {
@@ -677,6 +751,47 @@ export function initializeCarousels() {
             });
         }
 
+        // Watch for lazy-loaded iframes and initialize YouTube players
+        function watchForLazyLoadedPlayers(carousel) {
+            const observer = new MutationObserver((mutations) => {
+                mutations.forEach(mutation => {
+                    if (mutation.type === 'attributes' && mutation.attributeName === 'src') {
+                        const iframe = mutation.target;
+                        if (iframe.tagName === 'IFRAME' && iframe.src && iframe.id) {
+                            const card = iframe.closest('.coreo-card');
+                            const cards = Array.from(carousel.querySelectorAll('.coreo-card'));
+                            const index = cards.indexOf(card);
+
+                            if (index >= 0 && !players[index]) {
+                                try {
+                                    const player = new YT.Player(iframe.id, {
+                                        events: {
+                                            'onStateChange': (event) => {
+                                                if (index === currentIndex) {
+                                                    checkVideoPlayback();
+                                                }
+                                            }
+                                        }
+                                    });
+                                    players[index] = player;
+                                } catch (e) {
+                                    players[index] = null;
+                                }
+                            }
+                        }
+                    }
+                });
+            });
+
+            observer.observe(carousel, {
+                attributes: true,
+                attributeFilter: ['src'],
+                subtree: true
+            });
+
+            carousel._playerObserver = observer;
+        }
+
         if (window.YT && window.YT.Player) {
             initYouTubePlayers();
         } else {
@@ -688,13 +803,22 @@ export function initializeCarousels() {
             };
         }
 
+        // Store players array on carousel for cleanup
+        carousel._players = players;
+
         // Initialize dots
         updateDots();
 
         startAutoPlay();
 
-        // Mark as initialized to prevent re-initialization
-        carousel.dataset.carouselInitialized = 'true';
+        // Setup visibility observer to stop auto-play when section is off-screen
+        setupCarouselVisibilityObserver(carousel);
+
+        // Setup player observer to watch for lazy-loaded iframes
+        watchForLazyLoadedPlayers(carousel);
+
+        // PHASE 1 FIX: Removed dataset.carouselInitialized flag
+        // Initialization is now tracked by presence of _carouselClickHandler on event listeners
     });
 }
 
@@ -741,20 +865,38 @@ function cleanupCarousels() {
             clearTimeout(carousel._autoPlayPauseTimeout);
             delete carousel._autoPlayPauseTimeout;
         }
+        if (carousel._visibilityObserver) {
+            carousel._visibilityObserver.disconnect();
+            delete carousel._visibilityObserver;
+        }
+        if (carousel._players && Array.isArray(carousel._players)) {
+            carousel._players.forEach(player => {
+                if (player && typeof player.destroy === 'function') {
+                    try {
+                        player.destroy();
+                    } catch (e) {
+                        // Player already destroyed
+                    }
+                }
+            });
+            delete carousel._players;
+        }
+        if (carousel._playerObserver) {
+            carousel._playerObserver.disconnect();
+            delete carousel._playerObserver;
+        }
 
         const cards = Array.from(carousel.querySelectorAll('.coreo-card'));
 
         // Reset all cards to visible state (desktop shows all videos)
+        // Must remove all inline styles including !important ones
         cards.forEach(card => {
             card.classList.remove('active');
-            card.style.opacity = '';
-            card.style.transform = '';
-            card.style.transition = '';
-            card.style.pointerEvents = '';
+            card.removeAttribute('style');
         });
 
-        // Remove carousel-specific event listeners by cloning nodes
-        // (removes all event listeners without needing references)
+        // PHASE 1: Remove carousel-specific event listeners by cloning nodes
+        // This removes all listeners AND the _carouselClickHandler tracking property
         const leftArrow = carousel.querySelector('.carousel-arrow.left');
         const rightArrow = carousel.querySelector('.carousel-arrow.right');
 
@@ -768,7 +910,7 @@ function cleanupCarousels() {
             rightArrow.parentNode.replaceChild(newRightArrow, rightArrow);
         }
 
-        // Clear dots
+        // Clear dots (removes listeners and _carouselClickHandler properties)
         const section = carousel.closest('.coreografie-section');
         if (section) {
             const dots = Array.from(section.querySelectorAll('.carousel-dot'));
@@ -779,8 +921,8 @@ function cleanupCarousels() {
             });
         }
 
-        // Remove initialized flag so it can be re-initialized if switching back to mobile
-        delete carousel.dataset.carouselInitialized;
+        // PHASE 1 FIX: Removed dataset.carouselInitialized deletion
+        // No longer using boolean flag - tracking via _carouselClickHandler on elements
     });
 }
 

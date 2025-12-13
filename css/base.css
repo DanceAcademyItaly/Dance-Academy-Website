@@ -16,6 +16,10 @@
     --text-secondary: rgba(255, 255, 255, 0.8);
     --text-muted: rgba(255, 255, 255, 0.5);
 
+    /* Dynamic viewport height - updates when address bar shows/hides */
+    --viewport-height: 100vh;
+    --viewport-height-px: 100vh; /* Fallback */
+
     /* Background overlays - dark (most commonly used values) */
     --bg-dark: rgba(0, 0, 0, 0.02);
     --bg-overlay-20: rgba(0, 0, 0, 0.2);
@@ -83,6 +87,8 @@
 
 html {
     scroll-behavior: smooth;
+    overscroll-behavior: contain;
+    overscroll-behavior-y: none; /* Prevent pull-to-refresh on mobile */
 }
 
 /* Lenis smooth scroll foundation */
@@ -157,6 +163,8 @@ body {
     background: var(--black);
     color: var(--text-primary);
     overflow-x: hidden;
+    overscroll-behavior: contain;
+    overscroll-behavior-y: none; /* Extra enforcement for pull-to-refresh prevention */
 }
 
 /* Hide scrollbar - webkit browsers (Chrome, Safari, Edge) */
@@ -200,4 +208,28 @@ html {
     opacity: 0 !important;
     pointer-events: none !important;
     visibility: hidden !important;
+}
+
+/* ============================================
+   FORCE PORTRAIT MODE ON MOBILE
+   ============================================ */
+@media (max-width: 768px) and (orientation: landscape) {
+    /* If user forces landscape, show warning overlay */
+    body::before {
+        content: "Please rotate your device to portrait mode";
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.95);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        font-size: 24px;
+        padding: 40px;
+        z-index: 999999;
+    }
 }

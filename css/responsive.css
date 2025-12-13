@@ -154,8 +154,8 @@
                 overflow-y: visible !important;
                 overflow-x: visible !important;
                 padding: 0 !important;
-                /* No touch-action restrictions - let children control completely */
-                touch-action: manipulation !important;
+                /* Allow pan-y and pinch-zoom without blocking scroll */
+                touch-action: pan-y pinch-zoom;
             }
 
             /* Episode content: Ensure proper spacing */
@@ -168,8 +168,8 @@
                 flex-direction: column;
                 gap: clamp(12px, 2vh, 18px);
                 width: 100%;
-                /* CRITICAL: Allow child horizontal scroll containers to function */
-                touch-action: auto !important;
+                /* Allow all touch actions */
+                touch-action: auto;
             }
 
             /* Main video: Full width, responsive aspect ratio */
@@ -220,9 +220,14 @@
                 width: 100% !important;
                 max-width: 400px !important;
                 overflow: hidden !important;
+                /* CRITICAL: Set min-height to prevent collapse when cards are absolutely positioned */
+                min-height: 225px !important; /* 16:9 aspect ratio for 400px width */
+                aspect-ratio: 16/9 !important;
             }
 
             /* Individual cards - positioned absolutely for slide+fade */
+            /* Position must have !important to override desktop CSS in components.css */
+            /* JS uses inline styles with !important which will override this */
             .coreo-card {
                 width: 100% !important;
                 position: absolute !important;
@@ -235,8 +240,12 @@
             }
 
             /* First card gets relative positioning to establish container height */
+            /* REMOVED !important flags to allow JavaScript carousel to override these values */
             .coreo-card:first-child {
-                position: relative !important;
+                position: relative;
+                opacity: 1;
+                transform: translateX(0);
+                pointer-events: auto;
             }
 
             .coreo-video {
@@ -352,6 +361,48 @@
                 gap: 20px;
             }
         }
+
+/* ============================================
+   MOBILE GLASSMORPHISM PERFORMANCE FIX
+   Remove expensive backdrop-filter on mobile
+   ============================================ */
+@media (max-width: 768px) {
+    .candidati-card-wrapper,
+    .episodi-mobile-selector,
+    .submit-button,
+    .popup-button {
+        background: rgba(0, 0, 0, 0.85) !important;
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+    }
+
+    .accordion-header,
+    .card-nav-button,
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+        background: rgba(0, 0, 0, 0.75) !important;
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+    }
+}
+
+/* ============================================
+   PREVENT iOS AUTO-ZOOM ON FORM INPUTS
+   ============================================ */
+@media (max-width: 768px) {
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+        /* Force minimum 16px to prevent iOS auto-zoom */
+        font-size: max(16px, var(--text-sm)) !important;
+    }
+
+    /* Ensure labels and placeholders remain proportional */
+    .form-group label {
+        font-size: max(14px, var(--text-xs)) !important;
+    }
+}
 
 /* ============================================
    EXTREME SMALL VIEWPORT (320px or 480px height)
