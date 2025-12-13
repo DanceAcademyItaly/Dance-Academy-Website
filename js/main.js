@@ -518,7 +518,7 @@ function handleResize() {
         const crossedThreshold = wasMobile !== isMobile;
 
         // Detect significant height changes (address bar toggle)
-        const heightChanged = Math.abs(currentHeight - previousHeight) > 50;
+        const heightChanged = Math.abs(currentHeight - previousHeight) > 20;
 
         // Update viewport height CSS custom property if height changed
         if (heightChanged) {
@@ -580,6 +580,12 @@ function handleResize() {
 }
 
 window.addEventListener('resize', handleResize);
+
+// Add visualViewport listener for reliable mobile viewport tracking
+// This fires when address bar collapses/expands, which window.resize misses
+if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', handleResize);
+}
 
 // ============================================
 // INITIALIZATION
