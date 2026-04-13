@@ -53,11 +53,30 @@
                 "video": "https://www.youtube.com/embed/XJrdRxhfvRA"
               }
             ]
+          },
+          {
+            "id": 2,
+            "title": "Arti's - Genova",
+            "mainVideo": "https://www.youtube.com/embed/AHqX2iVy8Yc",
+            "choreographies": [
+              {
+                "title": "Sing Gently",
+                "video": "https://www.youtube.com/embed/HuYVjnrX9R8"
+              },
+              {
+                "title": "For Two",
+                "video": "https://www.youtube.com/embed/4olSRfUjqjw"
+              },
+              {
+                "title": "To Get Started",
+                "video": "https://www.youtube.com/embed/i7oRgAEcE8M"
+              }
+            ]
           }
         ]
       }
     ],
-    "defaultActiveEpisode": 1
+    "defaultActiveEpisode": 2
   },
   "missione": {
     "copyBlocks": [
