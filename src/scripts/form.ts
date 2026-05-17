@@ -103,12 +103,12 @@ async function submitForm() {
   const gasUrl = import.meta.env.PUBLIC_GAS_URL as string ?? '';
 
   try {
-    const res = await fetch(gasUrl, {
+    await fetch(gasUrl, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'text/plain' },
       body: JSON.stringify(result.data),
     });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
     showFeedback('success', 'Candidatura inviata! Ti contatteremo presto.');
     form!.reset();
     showStep(1);
