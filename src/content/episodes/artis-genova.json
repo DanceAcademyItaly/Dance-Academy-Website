@@ -1,0 +1,13 @@
+{
+  "id": 2,
+  "season": 1,
+  "seasonName": "2025/26",
+  "title": "Arti's - Genova",
+  "slug": "artis-genova",
+  "mainVideoId": "AHqX2iVy8Yc",
+  "choreographies": [
+    { "title": "Sing Gently", "videoId": "HuYVjnrX9R8" },
+    { "title": "For Two", "videoId": "4olSRfUjqjw" },
+    { "title": "To Get Started", "videoId": "i7oRgAEcE8M" }
+  ]
+}

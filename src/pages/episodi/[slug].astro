@@ -1,0 +1,35 @@
+---
+import { getCollection } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import Header from '../../components/Header.astro';
+import ImageBackground from '../../components/ImageBackground.astro';
+import EpisodePlayer from '../../components/EpisodePlayer.astro';
+
+export async function getStaticPaths() {
+  const episodes = await getCollection('episodes');
+  return episodes.map(ep => ({
+    params: { slug: ep.data.slug },
+    props: { episode: ep.data },
+  }));
+}
+
+const { episode } = Astro.props;
+const ogImage = `https://img.youtube.com/vi/${episode.mainVideoId}/maxresdefault.jpg`;
+const ogUrl = `https://dance-academy.it/episodi/${episode.slug}`;
+---
+<Base
+  title={`${episode.title} — Dance Academy Italy`}
+  description={`Guarda l'episodio completo di ${episode.title} su Dance Academy Italy.`}
+  ogTitle={`${episode.title} — Dance Academy Italy`}
+  ogImage={ogImage}
+  ogUrl={ogUrl}
+>
+  <ImageBackground />
+  <Header />
+  <main>
+    <EpisodePlayer episode={episode} />
+  </main>
+  <script>
+    import '../../scripts/episodes.ts';
+  </script>
+</Base>

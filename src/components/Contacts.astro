@@ -1,0 +1,22 @@
+---
+interface Props {
+  email: string;
+  telefono: string;
+}
+const { email, telefono } = Astro.props;
+---
+<section class="contatti-section" id="contatti">
+  <div class="contatti-container">
+    <h2>Contatti</h2>
+    <div class="contatti-info">
+      <div class="contatto-item">
+        <h3>Email</h3>
+        <p><a href={`mailto:${email}`}>{email}</a></p>
+      </div>
+      <div class="contatto-item">
+        <h3>Telefono</h3>
+        <p><a href={`tel:${telefono}`}>{telefono}</a></p>
+      </div>
+    </div>
+  </div>
+</section>

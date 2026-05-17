@@ -1,0 +1,55 @@
+---
+interface Choreography {
+  title: string;
+  videoId: string;
+}
+interface EpisodeData {
+  id: number;
+  season: number;
+  seasonName: string;
+  title: string;
+  slug: string;
+  mainVideoId: string;
+  choreographies: Choreography[];
+  thumbnail?: string;
+}
+interface Props {
+  episode: EpisodeData;
+}
+const { episode } = Astro.props;
+---
+<div class="episode-player-page">
+  <a href="/episodi" class="episode-player-back">← Tutti gli episodi</a>
+  <h1 class="episode-player-title">{episode.title}</h1>
+  <div class="episode-player-content">
+    <div class="video-principale">
+      <iframe
+        src={`https://www.youtube.com/embed/${episode.mainVideoId}`}
+        title={episode.title}
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+        allowfullscreen
+      ></iframe>
+    </div>
+
+    {episode.choreographies.length > 0 && (
+      <div class="coreografie-section">
+        <p class="coreografie-header">Coreografie</p>
+        <div class="coreografie-grid">
+          {episode.choreographies.map(coreo => (
+            <div class="coreo-card">
+              <div class="coreo-video">
+                <iframe
+                  src={`https://www.youtube.com/embed/${coreo.videoId}`}
+                  title={coreo.title}
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowfullscreen
+                ></iframe>
+              </div>
+              <p class="coreo-title">{coreo.title}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    )}
+  </div>
+</div>

@@ -1,0 +1,21 @@
+---
+const navLinks = [
+  { label: 'Home', href: '/' },
+  { label: 'Episodi', href: '/episodi' },
+  { label: 'Missione', href: '/missione' },
+  { label: 'Candidati', href: '/candidati' },
+  { label: 'Contatti', href: '/contatti' },
+];
+
+const currentPath = Astro.url.pathname;
+---
+<header class="header-fixed" id="header">
+  <nav aria-label="Navigazione principale">
+    {navLinks.map(link => (
+      <a
+        href={link.href}
+        class={currentPath === link.href || (link.href !== '/' && currentPath.startsWith(link.href)) ? 'active' : ''}
+      >{link.label}</a>
+    ))}
+  </nav>
+</header>

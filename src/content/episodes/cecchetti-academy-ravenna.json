@@ -1,0 +1,13 @@
+{
+  "id": 1,
+  "season": 1,
+  "seasonName": "2025/26",
+  "title": "Cecchetti Academy - Ravenna",
+  "slug": "cecchetti-academy-ravenna",
+  "mainVideoId": "L_cHp3yYADI",
+  "choreographies": [
+    { "title": "Exit Run", "videoId": "6bjkc19UxhI" },
+    { "title": "Fortissimo", "videoId": "HuAM6QMP5g0" },
+    { "title": "Love Time", "videoId": "XJrdRxhfvRA" }
+  ]
+}

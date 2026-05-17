@@ -1,0 +1,20 @@
+---
+import { getCollection } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import Header from '../../components/Header.astro';
+import ImageBackground from '../../components/ImageBackground.astro';
+import EpisodeGrid from '../../components/EpisodeGrid.astro';
+
+const episodes = await getCollection('episodes');
+const sorted = episodes.sort((a, b) => a.data.id - b.data.id);
+---
+<Base
+  title="Episodi — Dance Academy Italy"
+  description="Guarda tutti gli episodi di Dance Academy Italy: le scuole di danza italiane in un format unico."
+>
+  <ImageBackground />
+  <Header />
+  <main>
+    <EpisodeGrid episodes={sorted.map(e => e.data)} />
+  </main>
+</Base>

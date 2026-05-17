@@ -1,0 +1,39 @@
+---
+interface Choreography {
+  title: string;
+  videoId: string;
+}
+interface EpisodeData {
+  id: number;
+  season: number;
+  seasonName: string;
+  title: string;
+  slug: string;
+  mainVideoId: string;
+  choreographies: Choreography[];
+  thumbnail?: string;
+}
+interface Props {
+  episodes: EpisodeData[];
+}
+const { episodes } = Astro.props;
+---
+<div class="episodi-page">
+  <h1 class="episodi-page-title">Episodi</h1>
+  <div class="episode-grid">
+    {episodes.map(ep => (
+      <a href={`/episodi/${ep.slug}`} class="episode-card">
+        <img
+          src={ep.thumbnail ?? `https://img.youtube.com/vi/${ep.mainVideoId}/mqdefault.jpg`}
+          alt={ep.title}
+          class="episode-card-thumbnail"
+          loading="lazy"
+        />
+        <div class="episode-card-info">
+          <p class="episode-card-season">Stagione {ep.seasonName}</p>
+          <p class="episode-card-title">{ep.title}</p>
+        </div>
+      </a>
+    ))}
+  </div>
+</div>

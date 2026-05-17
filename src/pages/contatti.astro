@@ -1,0 +1,17 @@
+---
+import Base from '../layouts/Base.astro';
+import Header from '../components/Header.astro';
+import ImageBackground from '../components/ImageBackground.astro';
+import Contacts from '../components/Contacts.astro';
+import siteData from '../content/site.json';
+---
+<Base
+  title="Contatti — Dance Academy Italy"
+  description="Contatta Dance Academy Italy: email e telefono."
+>
+  <ImageBackground />
+  <Header />
+  <main>
+    <Contacts email={siteData.contatti.email} telefono={siteData.contatti.telefono} />
+  </main>
+</Base>

@@ -1,0 +1,13 @@
+---
+interface Props {
+  subtitle: string;
+}
+const { subtitle } = Astro.props;
+---
+<section class="hero-block block" id="hero">
+  <div class="hero-container">
+    <img src="/assets/logo.png" alt="Dance Academy" class="hero-logo" />
+    <p class="hero-text">{subtitle}</p>
+    <a href="/episodi" class="missione-button">Episodi</a>
+  </div>
+</section>

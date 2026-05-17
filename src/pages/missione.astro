@@ -1,0 +1,17 @@
+---
+import Base from '../layouts/Base.astro';
+import Header from '../components/Header.astro';
+import ImageBackground from '../components/ImageBackground.astro';
+import Mission from '../components/Mission.astro';
+import siteData from '../content/site.json';
+---
+<Base
+  title="Missione — Dance Academy Italy"
+  description="La missione di Dance Academy Italy: raccontare le scuole di danza italiane."
+>
+  <ImageBackground />
+  <Header />
+  <main>
+    <Mission copyBlocks={siteData.missione.copyBlocks} />
+  </main>
+</Base>

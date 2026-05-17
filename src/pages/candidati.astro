@@ -1,0 +1,19 @@
+---
+import Base from '../layouts/Base.astro';
+import Header from '../components/Header.astro';
+import ImageBackground from '../components/ImageBackground.astro';
+import CandidatesForm from '../components/CandidatesForm.astro';
+---
+<Base
+  title="Candidati — Dance Academy Italy"
+  description="Candida la tua scuola di danza a Dance Academy Italy. Compila il modulo per partecipare al format."
+>
+  <ImageBackground />
+  <Header />
+  <main>
+    <CandidatesForm />
+  </main>
+  <script>
+    import '../scripts/form.ts';
+  </script>
+</Base>

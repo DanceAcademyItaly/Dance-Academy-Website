@@ -1,0 +1,145 @@
+---
+import { ITALIAN_PROVINCES } from '../lib/provinces';
+---
+<div class="candidati-page">
+  <h1 class="candidati-title">Candidati</h1>
+  <div class="step-indicator" aria-hidden="true">
+    <span class="step-dot active" data-label="La scuola"></span>
+    <span class="step-line"></span>
+    <span class="step-dot" data-label="Il referente"></span>
+    <span class="step-line"></span>
+    <span class="step-dot" data-label="Il progetto"></span>
+  </div>
+  <div class="candidati-form-wrapper">
+    <form id="candidatiForm" novalidate>
+
+      <div class="form-step" data-step="1">
+        <div class="card-header">
+          <h2 class="card-title">La scuola</h2>
+        </div>
+        <div class="card-content">
+          <div class="form-group">
+            <label for="nomeScuola" class="sr-only">Nome della scuola</label>
+            <input type="text" id="nomeScuola" name="nomeScuola" placeholder="Nome della scuola" class="required" required autocomplete="organization" />
+          </div>
+          <div class="form-group">
+            <label for="citta" class="sr-only">Città</label>
+            <input type="text" id="citta" name="citta" placeholder="Città" class="required" required autocomplete="address-level2" />
+          </div>
+          <div class="form-group">
+            <label for="provincia" class="sr-only">Provincia</label>
+            <select id="provincia" name="provincia" class="required" required>
+              <option value="" disabled selected>Provincia</option>
+              {ITALIAN_PROVINCES.map(p => (
+                <option value={p}>{p}</option>
+              ))}
+            </select>
+          </div>
+          <div class="form-group full-width">
+            <label for="indirizzo" class="sr-only">Indirizzo completo</label>
+            <input type="text" id="indirizzo" name="indirizzo" placeholder="Indirizzo completo" class="required" required autocomplete="street-address" />
+          </div>
+          <div class="form-group">
+            <label for="annoFondazione" class="sr-only">Anno di fondazione</label>
+            <input type="text" id="annoFondazione" name="annoFondazione" placeholder="Anno di fondazione" class="required" required maxlength="4" inputmode="numeric" pattern="[0-9]{4}" />
+          </div>
+          <div class="form-group">
+            <label for="numeroAllievi" class="sr-only">Numero di allievi attivi</label>
+            <select id="numeroAllievi" name="numeroAllievi" class="required" required>
+              <option value="" disabled selected>Numero di allievi attivi</option>
+              <option value="<50">Meno di 50</option>
+              <option value="50-100">50–100</option>
+              <option value="100-200">100–200</option>
+              <option value="200-500">200–500</option>
+              <option value="500+">Oltre 500</option>
+            </select>
+          </div>
+        </div>
+        <div class="card-navigation">
+          <span></span>
+          <button type="button" class="card-nav-button" data-direction="next">Avanti</button>
+        </div>
+      </div>
+
+      <div class="form-step" data-step="2">
+        <div class="card-header">
+          <h2 class="card-title">Il referente</h2>
+        </div>
+        <div class="card-content">
+          <div class="form-group">
+            <label for="nome" class="sr-only">Nome</label>
+            <input type="text" id="nome" name="nome" placeholder="Nome" class="required" required autocomplete="given-name" />
+          </div>
+          <div class="form-group">
+            <label for="cognome" class="sr-only">Cognome</label>
+            <input type="text" id="cognome" name="cognome" placeholder="Cognome" class="required" required autocomplete="family-name" />
+          </div>
+          <div class="form-group full-width">
+            <label for="ruolo" class="sr-only">Ruolo</label>
+            <select id="ruolo" name="ruolo" class="required" required>
+              <option value="" disabled selected>Ruolo</option>
+              <option value="proprietario">Proprietario/a</option>
+              <option value="direttore">Direttore/direttrice artistico/a</option>
+              <option value="amministratore">Amministratore/amministratrice</option>
+              <option value="insegnante">Insegnante principale</option>
+              <option value="altro">Altro</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="email" class="sr-only">E-mail</label>
+            <input type="email" id="email" name="email" placeholder="E-mail" class="required" required autocomplete="email" />
+          </div>
+          <div class="form-group">
+            <label for="telefono" class="sr-only">Telefono</label>
+            <input type="tel" id="telefono" name="telefono" placeholder="Telefono" class="required" required autocomplete="tel" />
+          </div>
+        </div>
+        <div class="card-navigation">
+          <button type="button" class="card-nav-button" data-direction="prev">Indietro</button>
+          <button type="button" class="card-nav-button" data-direction="next">Avanti</button>
+        </div>
+      </div>
+
+      <div class="form-step" data-step="3">
+        <div class="card-header">
+          <h2 class="card-title">Il progetto</h2>
+        </div>
+        <div class="card-content">
+          <div class="form-group full-width">
+            <label for="discipline" class="sr-only">Discipline insegnate</label>
+            <textarea id="discipline" name="discipline" placeholder="Discipline insegnate" class="required" required></textarea>
+          </div>
+          <div class="form-group full-width">
+            <label for="unicita" class="sr-only">Cosa rende unica la vostra scuola?</label>
+            <textarea id="unicita" name="unicita" placeholder="Cosa rende unica la vostra scuola?" class="required tall" required></textarea>
+          </div>
+          <div class="form-group full-width">
+            <label for="contenutiSocial" class="sr-only">Come utilizzate i social media?</label>
+            <textarea id="contenutiSocial" name="contenutiSocial" placeholder="Come utilizzate i social media?" class="required" required></textarea>
+          </div>
+          <div class="form-group full-width">
+            <label for="perche" class="sr-only">Perché volete partecipare a Dance Academy?</label>
+            <textarea id="perche" name="perche" placeholder="Perché volete partecipare a Dance Academy?" class="required tall" required></textarea>
+          </div>
+          <div class="form-group full-width">
+            <label for="disponibilita" class="sr-only">Disponibilità alle riprese</label>
+            <select id="disponibilita" name="disponibilita" class="required" required>
+              <option value="" disabled selected>Disponibilità alle riprese</option>
+              <option value="ottobre-dicembre">Ottobre – Dicembre 2025</option>
+              <option value="gennaio-marzo">Gennaio – Marzo 2026</option>
+              <option value="aprile-giugno">Aprile – Giugno 2026</option>
+              <option value="flessibile">Flessibile</option>
+            </select>
+          </div>
+        </div>
+        <div class="card-navigation">
+          <button type="button" class="card-nav-button" data-direction="prev">Indietro</button>
+          <button type="submit" class="card-nav-button submit-button">Invia candidatura</button>
+        </div>
+      </div>
+
+      <div class="form-feedback" id="formFeedback" aria-live="polite" aria-atomic="true"></div>
+
+    </form>
+  </div>
+</div>

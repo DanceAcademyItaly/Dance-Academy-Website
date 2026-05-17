@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://www.dance-academy.it/sitemap-index.xml

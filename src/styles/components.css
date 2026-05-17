@@ -1,0 +1,691 @@
+/* ============================================
+   COMPONENT STYLES
+   Buttons, Forms, Cards, Navigation
+   ============================================ */
+
+/* ============================================
+   HEADER
+   ============================================ */
+
+.header-fixed {
+    position: fixed;
+    top: 20px;
+    left: 0;
+    right: 0;
+    z-index: var(--z-system-ui);
+    padding: 0 40px;
+    pointer-events: none;
+}
+
+.header-fixed nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+}
+
+.header-fixed a {
+    font-size: var(--text-sm);
+    letter-spacing: var(--letter-spacing-wider);
+    text-transform: uppercase;
+    color: var(--text-muted);
+    font-weight: 300;
+    transition: all 0.35s ease;
+    cursor: pointer;
+    pointer-events: all;
+    text-decoration: none;
+}
+
+.header-fixed a:hover {
+    color: var(--text-primary);
+}
+
+.header-fixed a.active {
+    color: var(--text-primary);
+}
+
+/* ============================================
+   VIDEO COMPONENTS
+   ============================================ */
+
+.video-principale {
+    width: 100%;
+    aspect-ratio: 16/9;
+    background: var(--bg-dark);
+    border: 1px solid var(--border-default);
+    margin-bottom: clamp(7px, 1.5vh, 15px);
+    box-shadow:
+        var(--shadow-8),
+        var(--shadow-5),
+        0 3px 6px rgba(0, 0, 0, 0.25),
+        0 1px 3px rgba(0, 0, 0, 0.2),
+        var(--shadow-inset-1);
+    position: relative;
+}
+
+.video-principale iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+/* ============================================
+   COREOGRAFIE
+   ============================================ */
+
+.coreografie-header {
+    text-transform: uppercase;
+    letter-spacing: var(--letter-spacing-wider);
+    font-size: var(--text-sm);
+    font-weight: 300;
+    color: var(--text-secondary);
+    margin-bottom: 7px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid var(--border-light);
+    text-align: center;
+}
+
+.coreo-card {
+    background: var(--bg-medium);
+    border: 1px solid var(--border-default);
+    transition: all 0.3s;
+    box-shadow:
+        var(--shadow-8),
+        var(--shadow-5),
+        0 3px 6px rgba(0, 0, 0, 0.25),
+        0 1px 3px rgba(0, 0, 0, 0.2),
+        var(--shadow-inset-1);
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.coreo-card:hover {
+    border-color: var(--border-hover);
+}
+
+.coreo-card.active {
+    border-color: var(--accent);
+}
+
+.coreo-thumb {
+    border-radius: 0;
+}
+
+.coreo-play-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.65);
+    border: 1.5px solid rgba(255, 255, 255, 0.6);
+    position: relative;
+    flex-shrink: 0;
+}
+
+.coreo-play-icon::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 55%;
+    transform: translate(-50%, -50%);
+    border-style: solid;
+    border-width: 7px 0 7px 12px;
+    border-color: transparent transparent transparent rgba(255, 255, 255, 0.9);
+}
+
+.coreo-video {
+    aspect-ratio: 16/9;
+    background: var(--black);
+    width: 100%;
+    position: relative;
+}
+
+.coreo-video iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+.coreo-title {
+    padding: 5px;
+    font-size: var(--text-xs);
+    text-transform: none;
+    letter-spacing: var(--letter-spacing-wide);
+    color: var(--text-secondary);
+}
+
+/* ============================================
+   MISSIONE COMPONENTS
+   ============================================ */
+
+.copy-block {
+    margin: clamp(15px, 3vh, 40px) 0;
+}
+
+.missione-title {
+    font-size: var(--text-2xl);
+    font-weight: 300;
+    letter-spacing: var(--letter-spacing-widest);
+    margin-bottom: clamp(15px, 2.5vh, 30px);
+    color: var(--text-primary);
+}
+
+.missione-copy {
+    font-size: var(--text-xl);
+    line-height: 1.8;
+    color: var(--text-secondary);
+    margin-bottom: clamp(20px, 4vh, 40px);
+}
+
+.cta-container {
+    margin-top: clamp(40px, 6vh, 80px);
+}
+
+.missione-button {
+    display: inline-block;
+    padding: clamp(14px, 2vh, 18px) clamp(28px, 4vw, 48px);
+    background: var(--bg-overlay-30);
+    backdrop-filter: blur(20px) saturate(90%);
+    -webkit-backdrop-filter: blur(20px) saturate(90%);
+    border: 1px solid var(--border-medium);
+    border-radius: 2px;
+    color: var(--text-secondary);
+    font-size: var(--text-base);
+    font-weight: 300;
+    letter-spacing: var(--letter-spacing-wider);
+    text-transform: uppercase;
+    text-decoration: none;
+    transition: all 0.3s;
+    max-width: 300px;
+    text-align: center;
+    box-shadow:
+        var(--shadow-8),
+        var(--shadow-5),
+        0 3px 6px rgba(0, 0, 0, 0.25),
+        0 1px 3px rgba(0, 0, 0, 0.2),
+        var(--shadow-inset-1);
+}
+
+.missione-button:hover {
+    border-color: var(--border-hover);
+    color: var(--text-primary);
+    transform: translateY(-1px);
+}
+
+/* ============================================
+   STEP INDICATOR
+   ============================================ */
+
+.step-indicator {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    margin-bottom: clamp(20px, 3vh, 32px);
+}
+
+.step-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--border-default);
+    border: 1px solid var(--border-medium);
+    transition: all 0.3s;
+    position: relative;
+    flex-shrink: 0;
+}
+
+.step-dot::after {
+    content: none;
+}
+
+.step-dot.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    transform: scale(1.3);
+}
+
+.step-dot.done {
+    background: var(--border-hover);
+    border-color: var(--border-hover);
+}
+
+.step-line {
+    flex: 1;
+    max-width: 80px;
+    height: 1px;
+    background: var(--border-default);
+    margin: 0 4px;
+}
+
+/* ============================================
+   CANDIDATI - FORM CARDS
+   ============================================ */
+
+.form-step {
+    background: rgba(0, 0, 0, 0.18);
+    backdrop-filter: blur(100px) saturate(120%) brightness(0.85);
+    -webkit-backdrop-filter: blur(100px) saturate(120%) brightness(0.85);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 2px;
+    box-shadow:
+        var(--shadow-8),
+        var(--shadow-5),
+        0 3px 6px rgba(0, 0, 0, 0.25),
+        0 1px 3px rgba(0, 0, 0, 0.2),
+        var(--shadow-inset-1);
+    width: clamp(300px, 88vw, 500px);
+    padding: clamp(20px, 2.5vh, 32px) clamp(20px, 3vw, 32px);
+    margin-bottom: clamp(20px, 4vh, 40px);
+}
+
+.form-step[data-step="2"],
+.form-step[data-step="3"] {
+    display: none;
+}
+
+.form-card {
+    position: relative;
+    overflow: hidden;
+    border-radius: 2px;
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    min-height: 400px;
+}
+
+.card-header {
+    border-bottom: 1px solid var(--border-light);
+    padding-bottom: 8px;
+    margin-bottom: 0;
+}
+
+.card-title {
+    font-size: var(--text-sm);
+    font-weight: 300;
+    letter-spacing: var(--letter-spacing-widest);
+    text-transform: uppercase;
+    text-align: center;
+    margin: 0;
+    color: var(--text-primary);
+}
+
+.card-content {
+    overflow: visible;
+    display: grid;
+    grid-template-columns: 1fr;
+    grid-auto-rows: auto;
+    gap: 6px;
+    align-content: start;
+    padding-top: 10px;
+}
+
+.card-navigation {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    padding-top: 10px;
+    margin-top: 0;
+    border-top: 1px solid var(--border-light);
+}
+
+.card-nav-button {
+    width: 100%;
+    padding: clamp(10px, 1.5vh, 14px) clamp(16px, 2.5vw, 28px);
+    background: var(--bg-overlay-30);
+    backdrop-filter: blur(20px) saturate(90%);
+    -webkit-backdrop-filter: blur(20px) saturate(90%);
+    border: 1px solid var(--border-medium);
+    color: var(--text-secondary);
+    font-size: var(--text-sm);
+    font-weight: 300;
+    letter-spacing: var(--letter-spacing-wider);
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.3s;
+    border-radius: 2px;
+    font-family: inherit;
+}
+
+.card-nav-button:hover {
+    border-color: var(--border-hover);
+    color: var(--text-primary);
+}
+
+.card-nav-button:active {
+    transform: scale(0.98);
+}
+
+/* ============================================
+   FORM COMPONENTS
+   ============================================ */
+
+.form-group {
+    display: grid;
+    gap: 4px;
+    position: relative;
+    width: 100%;
+    margin-bottom: 0;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+    width: 100%;
+    box-sizing: border-box;
+    padding: clamp(12px, 1.5vh, 16px) clamp(14px, 2vw, 18px);
+    background: var(--bg-strong);
+    border: 1px solid var(--border-default);
+    color: var(--text-secondary);
+    font-family: inherit;
+    font-size: var(--text-sm);
+    font-weight: 300;
+    letter-spacing: var(--letter-spacing-wide);
+    transition: all 0.3s;
+    display: block;
+}
+
+.form-group select {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    border-radius: 0;
+    cursor: pointer;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='rgba(255,255,255,0.5)' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 15px center;
+    background-size: 20px;
+    padding-right: 45px;
+}
+
+.form-group input::placeholder,
+.form-group select::placeholder,
+.form-group textarea::placeholder {
+    color: var(--bg-white-40);
+    opacity: 1;
+}
+
+.form-group input:hover,
+.form-group select:hover,
+.form-group textarea:hover {
+    border-color: var(--border-hover);
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: var(--border-hover);
+}
+
+.form-group input.invalid,
+.form-group select.invalid,
+.form-group textarea.invalid {
+    border: 1px solid #5c0010;
+}
+
+.form-group select option[disabled] {
+    color: var(--bg-white-40);
+}
+
+.form-group select option {
+    background: var(--bg-ultra);
+    color: var(--text-secondary);
+    padding: 12px 18px;
+}
+
+.form-group select:invalid {
+    color: var(--bg-white-40);
+}
+
+.form-group select:valid {
+    color: var(--text-secondary);
+}
+
+.form-group textarea {
+    min-height: clamp(60px, 8vh, 80px);
+    max-height: clamp(120px, 18vh, 200px);
+    resize: vertical;
+}
+
+.form-group textarea.tall {
+    min-height: clamp(80px, 12vh, 120px);
+    max-height: clamp(150px, 22vh, 250px);
+}
+
+.form-group:has(input.required)::after,
+.form-group:has(select.required)::after {
+    content: '*';
+    position: absolute;
+    right: clamp(14px, 2vw, 18px);
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--accent);
+    font-size: clamp(11px, 1.1vw + 0.3vh, 14px);
+    pointer-events: none;
+    z-index: 1;
+}
+
+.form-group:has(select.required)::after {
+    right: clamp(40px, 4vw, 50px);
+}
+
+.form-group:has(textarea.required)::after {
+    content: '*';
+    position: absolute;
+    right: clamp(14px, 2vw, 18px);
+    top: clamp(16px, 2vh, 22px);
+    transform: none;
+    color: var(--accent);
+    font-size: clamp(11px, 1.1vw + 0.3vh, 14px);
+    pointer-events: none;
+    z-index: 1;
+}
+
+.form-info {
+    padding: clamp(10px, 1.5vh, 14px) clamp(12px, 2vw, 16px);
+    background: var(--bg-overlay-30);
+    border: 1px solid var(--border-default);
+    font-size: clamp(9px, 0.9vw + 0.2vh, 11px);
+    letter-spacing: var(--letter-spacing-wide);
+    color: var(--text-secondary);
+    margin: 0;
+    line-height: 1.4;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.submit-button {
+    display: inline-block;
+    background: var(--bg-overlay-30);
+    backdrop-filter: blur(20px) saturate(90%);
+    -webkit-backdrop-filter: blur(20px) saturate(90%);
+    border: 1px solid var(--border-medium);
+    border-radius: 2px;
+    color: var(--text-secondary);
+    padding: clamp(12px, 2vh, 20px) clamp(25px, 4vw, 50px);
+    text-transform: uppercase;
+    letter-spacing: var(--letter-spacing-wider);
+    font-size: var(--text-sm);
+    cursor: pointer;
+    transition: all 0.3s;
+    font-family: inherit;
+    font-weight: 300;
+    max-width: 300px;
+    text-align: center;
+    box-shadow:
+        var(--shadow-8),
+        var(--shadow-5),
+        0 3px 6px rgba(0, 0, 0, 0.25),
+        0 1px 3px rgba(0, 0, 0, 0.2),
+        var(--shadow-inset-1);
+}
+
+.submit-button:hover {
+    border-color: var(--border-hover);
+    color: var(--text-primary);
+    transform: translateY(-1px);
+}
+
+.form-feedback {
+    padding: clamp(12px, 2vh, 16px) clamp(16px, 2.5vw, 20px);
+    border: 1px solid;
+    border-radius: 2px;
+    font-size: var(--text-sm);
+    letter-spacing: var(--letter-spacing-wide);
+    text-align: center;
+    margin-top: clamp(12px, 2vh, 20px);
+    display: none;
+}
+
+.form-feedback.success {
+    border-color: rgba(100, 200, 100, 0.4);
+    color: rgba(100, 200, 100, 0.9);
+    background: rgba(100, 200, 100, 0.05);
+    display: block;
+}
+
+.form-feedback.error {
+    border-color: rgba(255, 100, 100, 0.4);
+    color: rgba(255, 100, 100, 0.9);
+    background: rgba(255, 100, 100, 0.05);
+    display: block;
+}
+
+/* ============================================
+   CONTATTI COMPONENTS
+   ============================================ */
+
+.contatti-container h2 {
+    font-size: var(--text-4xl);
+    font-weight: 300;
+    letter-spacing: var(--letter-spacing-widest);
+    text-transform: uppercase;
+    margin-bottom: clamp(30px, 5vh, 60px);
+    color: var(--text-primary);
+}
+
+.contatto-item h3 {
+    font-size: clamp(1.1rem, 2vw + 0.5vh, 1.75rem);
+    font-weight: 300;
+    text-transform: uppercase;
+    letter-spacing: var(--letter-spacing-wider);
+    color: var(--text-secondary);
+    margin-bottom: clamp(10px, 1.5vh, 20px);
+}
+
+.contatto-item p {
+    color: var(--text-secondary);
+    font-size: clamp(0.95rem, 1.5vw + 0.3vh, 1.35rem);
+    line-height: 1.6;
+}
+
+.contatto-item a {
+    color: var(--text-secondary);
+    text-decoration: none;
+    transition: color 0.3s;
+}
+
+.contatto-item a:hover {
+    color: var(--text-primary);
+}
+
+/* ============================================
+   POPUP COMPONENTS
+   ============================================ */
+
+.popup-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    z-index: var(--z-popups);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.popup-content {
+    background: var(--bg-ultra);
+    border: 1px solid var(--border-default);
+    color: var(--text-primary);
+    padding: 40px 50px;
+    text-align: center;
+    max-width: 500px;
+    width: 90%;
+    font-weight: 300;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+
+@media (min-width: 769px) {
+    .form-step {
+        width: clamp(550px, 70vw, 900px);
+    }
+
+    .card-content {
+        grid-template-columns: 1fr 1fr;
+        gap: 6px 12px;
+    }
+
+    .card-content .form-info,
+    .card-content .form-group.full-width {
+        grid-column: 1 / -1;
+    }
+}
+
+@media (max-width: 768px) {
+    .header-fixed {
+        padding: 0 20px;
+    }
+
+    .header-fixed a {
+        letter-spacing: var(--letter-spacing-wide);
+    }
+
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+        font-size: max(16px, var(--text-sm));
+        padding: 15px;
+    }
+}
+
+@media (max-width: 768px) {
+    .form-step,
+    .submit-button {
+        background: rgba(0, 0, 0, 0.85);
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+    }
+
+    .card-nav-button,
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+        background: rgba(0, 0, 0, 0.75);
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+    }
+}
+
+@media (max-width: 480px) {
+    .header-fixed {
+        padding: 0 10px;
+        flex-wrap: wrap;
+        gap: 5px;
+    }
+
+    .header-fixed a {
+        letter-spacing: var(--letter-spacing-normal);
+    }
+}

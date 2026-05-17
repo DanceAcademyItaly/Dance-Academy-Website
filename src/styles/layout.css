@@ -1,0 +1,310 @@
+/* ============================================
+   LAYOUT STYLES
+   Section containers, positioning, grid layouts
+   ============================================ */
+
+/* Image Background Slideshow */
+.image-bg {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: var(--z-video-bg);
+}
+
+.bg-slide {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0;
+}
+
+/* ============================================
+   BLOCKS - Base Container System
+   ============================================ */
+
+.block {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+}
+
+/* ============================================
+   HERO SECTION LAYOUT
+   ============================================ */
+
+.hero-block {
+    min-height: 100dvh;
+    padding: clamp(40px, 10vh, 80px) clamp(20px, 5vw, 40px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.hero-container {
+    display: grid;
+    gap: clamp(20px, 4vh, 40px);
+    justify-items: center;
+    max-width: min(800px, 90vw);
+    width: 100%;
+    text-align: center;
+}
+
+.hero-logo {
+    height: auto;
+    width: clamp(200px, 40vw, 480px);
+    max-width: 85vw;
+    object-fit: contain;
+}
+
+.hero-text {
+    font-size: var(--text-xl);
+    color: var(--text-secondary);
+    line-height: 1.6;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    max-width: 100%;
+    white-space: pre-line;
+}
+
+/* ============================================
+   EPISODI PAGE LAYOUT
+   ============================================ */
+
+.episodi-page {
+    padding: clamp(80px, 12vh, 120px) clamp(20px, 5vw, 60px) clamp(40px, 8vh, 80px);
+    min-height: 100dvh;
+}
+
+.episodi-page-title {
+    font-size: var(--text-4xl);
+    font-weight: 300;
+    letter-spacing: var(--letter-spacing-widest);
+    text-transform: uppercase;
+    text-align: center;
+    margin-bottom: clamp(40px, 6vh, 80px);
+    color: var(--text-primary);
+}
+
+.episode-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: clamp(20px, 3vw, 40px);
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.episode-card {
+    display: block;
+    text-decoration: none;
+    border: 1px solid var(--border-default);
+    border-radius: 2px;
+    overflow: hidden;
+    transition: border-color 0.3s, transform 0.3s;
+    background: var(--bg-overlay-20);
+}
+
+.episode-card:hover {
+    border-color: var(--border-hover);
+    transform: translateY(-3px);
+}
+
+.episode-card-thumbnail {
+    width: 100%;
+    aspect-ratio: 16/9;
+    object-fit: cover;
+    display: block;
+    background: var(--bg-dark);
+}
+
+.episode-card-info {
+    padding: clamp(12px, 2vh, 20px) clamp(14px, 2vw, 20px);
+}
+
+.episode-card-season {
+    font-size: var(--text-2xs);
+    letter-spacing: var(--letter-spacing-wider);
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+}
+
+.episode-card-title {
+    font-size: var(--text-base);
+    font-weight: 300;
+    letter-spacing: var(--letter-spacing-wide);
+    color: var(--text-primary);
+    line-height: 1.4;
+}
+
+/* ============================================
+   EPISODE PLAYER PAGE LAYOUT
+   ============================================ */
+
+.episode-player-page {
+    padding: clamp(80px, 12vh, 120px) clamp(20px, 5vw, 60px) clamp(40px, 8vh, 80px);
+    min-height: 100dvh;
+}
+
+.episode-player-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text-muted);
+    text-decoration: none;
+    font-size: var(--text-sm);
+    letter-spacing: var(--letter-spacing-wide);
+    text-transform: uppercase;
+    margin-bottom: clamp(20px, 4vh, 40px);
+    transition: color 0.3s;
+}
+
+.episode-player-back:hover {
+    color: var(--text-primary);
+}
+
+.episode-player-title {
+    font-size: var(--text-3xl);
+    font-weight: 300;
+    letter-spacing: var(--letter-spacing-widest);
+    text-transform: uppercase;
+    margin-bottom: clamp(20px, 4vh, 40px);
+    color: var(--text-primary);
+    max-width: 800px;
+}
+
+.episode-player-content {
+    max-width: 900px;
+}
+
+.coreografie-section {
+    margin-top: clamp(20px, 3vh, 40px);
+    display: flex;
+    flex-direction: column;
+}
+
+.coreografie-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+}
+
+/* ============================================
+   MISSIONE SECTION LAYOUT
+   ============================================ */
+
+.missione-block {
+    min-height: 100dvh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: clamp(80px, 12vh, 120px) clamp(15px, 5vw, 40px);
+}
+
+.missione-container {
+    max-width: clamp(300px, 80vw, 800px);
+    text-align: center;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+/* ============================================
+   CANDIDATI SECTION LAYOUT
+   ============================================ */
+
+.candidati-page {
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: clamp(80px, 12vh, 120px) clamp(20px, 5vw, 40px) clamp(40px, 8vh, 80px);
+}
+
+.candidati-title {
+    font-size: clamp(1.5rem, 3vw + 1vh, 2.5rem);
+    font-weight: 300;
+    letter-spacing: var(--letter-spacing-widest);
+    text-transform: uppercase;
+    text-align: center;
+    margin: 0 0 clamp(20px, 4vh, 40px) 0;
+}
+
+.candidati-form-wrapper {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+}
+
+/* ============================================
+   CONTATTI SECTION LAYOUT
+   ============================================ */
+
+.contatti-section {
+    position: relative;
+    z-index: 1;
+    min-height: 100dvh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: clamp(60px, 10vh, 100px) clamp(20px, 5vw, 40px);
+}
+
+.contatti-container {
+    display: grid;
+    gap: clamp(20px, 4vh, 40px);
+    justify-items: center;
+    max-width: min(800px, 85vw);
+    width: 100%;
+    text-align: center;
+    padding: clamp(20px, 5vw, 40px);
+}
+
+.contatti-info {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: clamp(40px, 5vw, 80px);
+    margin-top: 50px;
+    width: 100%;
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+
+@media (max-width: 768px) {
+    .episode-grid {
+        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    }
+
+    .coreografie-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .contatti-info {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+
+    .hero-text {
+        padding: 0 20px;
+    }
+}
+
+@media (max-width: 480px) {
+    .episode-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .missione-block {
+        padding: clamp(60px, 10vh, 100px) clamp(10px, 3vw, 15px);
+    }
+}

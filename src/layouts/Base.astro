@@ -1,0 +1,112 @@
+---
+interface Props {
+  title: string;
+  description?: string;
+  ogTitle?: string;
+  ogDescription?: string;
+  ogImage?: string;
+  ogUrl?: string;
+}
+const { title, description, ogTitle, ogDescription, ogImage, ogUrl } = Astro.props;
+
+import '../styles/base.css';
+import '../styles/layout.css';
+import '../styles/components.css';
+---
+<html lang="it">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    {description && <meta name="description" content={description} />}
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="it_IT" />
+    {ogTitle && <meta property="og:title" content={ogTitle} />}
+    {(ogDescription ?? description) && <meta property="og:description" content={ogDescription ?? description} />}
+    {ogImage && <meta property="og:image" content={ogImage} />}
+    {ogUrl && <meta property="og:url" content={ogUrl} />}
+    <meta name="twitter:card" content="summary_large_image" />
+    {ogTitle && <meta name="twitter:title" content={ogTitle} />}
+    {(ogDescription ?? description) && <meta name="twitter:description" content={ogDescription ?? description} />}
+    {ogImage && <meta name="twitter:image" content={ogImage} />}
+    <link rel="canonical" href={ogUrl ?? Astro.url.href} />
+    <link rel="preload" as="image" href="/assets/bg/1.jpg" />
+    <link rel="icon" href="/favicon.ico" />
+  </head>
+  <body>
+    <slot />
+    <script is:inline>
+      (function () {
+        if (window.__slideshowRunning) return;
+        window.__slideshowRunning = true;
+
+        var FADE_MS = 11000;
+        var HOLD_MS = 500;
+
+        function shuffle(arr) {
+          for (var i = arr.length - 1; i > 0; i--) {
+            var j = Math.floor(Math.random() * (i + 1));
+            var tmp = arr[i]; arr[i] = arr[j]; arr[j] = tmp;
+          }
+          return arr;
+        }
+
+        var slides = Array.from(document.querySelectorAll('.bg-slide'));
+        if (!slides.length) return;
+
+        var opacities = slides.map(function() { return 0; });
+        var rafId = null;
+        var timerId = null;
+
+        function applyOpacity(idx, v) {
+          opacities[idx] = v;
+          slides[idx].style.opacity = v;
+        }
+
+        var order = shuffle(slides.map(function(_, i) { return i; }));
+        var cursor = 0;
+
+        function startFade(prevIdx, nextIdx, t0) {
+          if (rafId) cancelAnimationFrame(rafId);
+          var p0 = opacities[prevIdx];
+          var n0 = opacities[nextIdx];
+          var remainingMs = (1 - (t0 || 0)) * FADE_MS;
+          var startTime = null;
+
+          function step(now) {
+            if (!startTime) startTime = now;
+            var p = Math.min((now - startTime) / remainingMs, 1);
+            applyOpacity(nextIdx, n0 + p * (1 - n0));
+            applyOpacity(prevIdx, p0 * (1 - p));
+            if (p < 1) {
+              rafId = requestAnimationFrame(step);
+            } else {
+              rafId = null;
+              applyOpacity(prevIdx, 0);
+              applyOpacity(nextIdx, 1);
+              timerId = setTimeout(tick, HOLD_MS);
+            }
+          }
+          rafId = requestAnimationFrame(step);
+        }
+
+        function tick() {
+          var prevIdx = order[cursor % order.length];
+          cursor++;
+          startFade(prevIdx, order[cursor % order.length], 0);
+        }
+
+        applyOpacity(order[0], 1);
+
+        window.addEventListener('load', function() {
+          order.slice(1).forEach(function(i) {
+            var src = slides[i].getAttribute('src');
+            if (src) { var img = new Image(); img.src = src; }
+          });
+        }, { once: true });
+
+        timerId = setTimeout(tick, FADE_MS);
+      })();
+    </script>
+  </body>
+</html>
