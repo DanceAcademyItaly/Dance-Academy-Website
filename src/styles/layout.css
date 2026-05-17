@@ -108,7 +108,9 @@
     border-radius: 2px;
     overflow: hidden;
     transition: border-color 0.3s, transform 0.3s;
-    background: var(--bg-overlay-20);
+    background: rgba(0, 0, 0, 0.18);
+    backdrop-filter: blur(100px) saturate(120%) brightness(0.85);
+    -webkit-backdrop-filter: blur(100px) saturate(120%) brightness(0.85);
 }
 
 .episode-card:hover {
