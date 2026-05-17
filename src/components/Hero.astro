@@ -6,7 +6,17 @@ const { subtitle } = Astro.props;
 ---
 <section class="hero-block block" id="hero">
   <div class="hero-container">
-    <img src="/assets/logo.png" alt="Dance Academy" class="hero-logo" />
+    <picture>
+      <source srcset="/assets/logo.webp 700w" sizes="(max-width: 768px) 85vw, 480px" type="image/webp" />
+      <img
+        src="/assets/logo.png"
+        alt="Dance Academy"
+        class="hero-logo"
+        width="700"
+        height="545"
+        fetchpriority="high"
+      />
+    </picture>
     <p class="hero-text">{subtitle}</p>
     <a href="/episodi" class="missione-button">Episodi</a>
   </div>

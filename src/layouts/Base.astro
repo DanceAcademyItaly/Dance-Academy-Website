@@ -30,7 +30,7 @@ import '../styles/components.css';
     {(ogDescription ?? description) && <meta name="twitter:description" content={ogDescription ?? description} />}
     {ogImage && <meta name="twitter:image" content={ogImage} />}
     <link rel="canonical" href={ogUrl ?? Astro.url.href} />
-    <link rel="preload" as="image" href="/assets/bg/1.jpg" />
+    <slot name="head" />
     <link rel="icon" href="/favicon.ico" />
   </head>
   <body>

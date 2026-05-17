@@ -12,6 +12,8 @@ import siteData from '../content/site.json';
   ogImage="https://img.youtube.com/vi/L_cHp3yYADI/maxresdefault.jpg"
   ogUrl="https://www.dance-academy.it"
 >
+  <link rel="preload" slot="head" as="image" href="/assets/logo.webp" type="image/webp" fetchpriority="high" />
+  <link rel="preload" slot="head" as="image" href="/assets/bg/4.jpg" />
   <ImageBackground initialIndex={3} />
   <Header />
   <main>
