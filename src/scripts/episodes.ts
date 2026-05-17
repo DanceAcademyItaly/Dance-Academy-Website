@@ -3,9 +3,22 @@ function initEpisodes() {
   if (!mainIframe) return;
 
   const originalSrc = mainIframe.src;
+  const title = document.querySelector<HTMLElement>('.episode-player-title');
 
   function buildEmbedSrc(videoId: string): string {
     return `https://www.youtube.com/embed/${videoId}?autoplay=1`;
+  }
+
+  function resetToEpisode() {
+    mainIframe.src = originalSrc;
+    document.querySelectorAll('.coreo-card').forEach(c => c.classList.remove('active'));
+    title?.classList.remove('episode-title-dirty');
+  }
+
+  if (title) {
+    title.addEventListener('click', () => {
+      if (title.classList.contains('episode-title-dirty')) resetToEpisode();
+    });
   }
 
   document.querySelectorAll<HTMLElement>('.coreo-card').forEach(card => {
@@ -39,6 +52,7 @@ function initEpisodes() {
       mainIframe.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
       document.querySelectorAll('.coreo-card').forEach(c => c.classList.remove('active'));
       card.classList.add('active');
+      title?.classList.add('episode-title-dirty');
     });
   });
 }

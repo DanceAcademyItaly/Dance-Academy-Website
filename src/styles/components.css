@@ -112,6 +112,25 @@
     border-color: var(--accent);
 }
 
+.episode-player-title.episode-title-dirty {
+    cursor: pointer;
+}
+
+.episode-player-title.episode-title-dirty::after {
+    content: '← Episodio completo';
+    display: block;
+    font-size: var(--text-xs);
+    letter-spacing: var(--letter-spacing-wide);
+    color: var(--text-muted);
+    text-transform: uppercase;
+    margin-top: 6px;
+    transition: color 0.3s;
+}
+
+.episode-player-title.episode-title-dirty:hover::after {
+    color: var(--text-primary);
+}
+
 .coreo-thumb {
     border-radius: 0;
 }
