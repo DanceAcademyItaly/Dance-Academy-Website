@@ -77,6 +77,8 @@
    ============================================ */
 
 .episodi-page {
+    position: relative;
+    z-index: 1;
     padding: clamp(80px, 12vh, 120px) clamp(20px, 5vw, 60px) clamp(40px, 8vh, 80px);
     min-height: 100dvh;
 }
@@ -147,6 +149,8 @@
    ============================================ */
 
 .episode-player-page {
+    position: relative;
+    z-index: 1;
     padding: clamp(80px, 12vh, 120px) clamp(20px, 5vw, 60px) clamp(40px, 8vh, 80px);
     min-height: 100dvh;
 }
