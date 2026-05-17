@@ -12,7 +12,7 @@ const sorted = episodes.sort((a, b) => a.data.id - b.data.id);
   title="Episodi — Dance Academy Italy"
   description="Guarda tutti gli episodi di Dance Academy Italy: le scuole di danza italiane in un format unico."
 >
-  <ImageBackground />
+  <ImageBackground initialIndex={5} />
   <Header />
   <main>
     <EpisodeGrid episodes={sorted.map(e => e.data)} />
