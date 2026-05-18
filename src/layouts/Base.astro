@@ -68,6 +68,8 @@ import '../styles/components.css';
         var rest = shuffle(slides.map(function(_, i) { return i; }).filter(function(i) { return i !== initialIndex; }));
         var order = [initialIndex].concat(rest);
         var cursor = 0;
+        var FRAME_INTERVAL = 1000 / 30;
+        var lastFrameTime = 0;
 
         function startFade(prevIdx, nextIdx) {
           if (rafId) cancelAnimationFrame(rafId);
@@ -76,6 +78,11 @@ import '../styles/components.css';
           var startTime = null;
 
           function step(now) {
+            if (now - lastFrameTime < FRAME_INTERVAL) {
+              rafId = requestAnimationFrame(step);
+              return;
+            }
+            lastFrameTime = now;
             if (!startTime) startTime = now;
             var p = Math.min((now - startTime) / FADE_MS, 1);
             applyOpacity(nextIdx, n0 + p * (1 - n0));
