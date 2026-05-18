@@ -5,24 +5,24 @@ interface Props {
 const { initialIndex = 0 } = Astro.props;
 
 const images = [
-  '/assets/bg/1.jpg',
-  '/assets/bg/2.jpg',
-  '/assets/bg/3.jpg',
-  '/assets/bg/4.jpg',
-  '/assets/bg/5.jpg',
-  '/assets/bg/6.jpg',
+  { src: '/assets/bg/1.jpg', mobilePosition: '55% center' },
+  { src: '/assets/bg/2.jpg', mobilePosition: '53% center' },
+  { src: '/assets/bg/3.jpg', mobilePosition: '62% center' },
+  { src: '/assets/bg/4.jpg', mobilePosition: '85% center' },
+  { src: '/assets/bg/5.jpg', mobilePosition: '60% center' },
+  { src: '/assets/bg/6.jpg', mobilePosition: '75% center' },
 ];
 ---
 <div class="image-bg" id="image-bg" data-initial={initialIndex}>
-  {images.map((src, i) => (
+  {images.map((img, i) => (
     <img
-      src={src}
+      src={img.src}
       class="bg-slide"
       data-index={i}
       alt=""
       aria-hidden="true"
       loading={i === initialIndex ? 'eager' : 'lazy'}
-      style="will-change: opacity"
+      style={`will-change: opacity${img.mobilePosition ? `; --mobile-position: ${img.mobilePosition}` : ''}`}
     />
   ))}
 </div>
