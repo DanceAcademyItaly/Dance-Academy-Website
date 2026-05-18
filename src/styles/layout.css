@@ -21,6 +21,7 @@
     height: 100%;
     object-fit: cover;
     opacity: 0;
+    filter: grayscale(45%) brightness(0.4) contrast(1.2) saturate(1.1) sepia(20%);
 }
 
 /* ============================================
