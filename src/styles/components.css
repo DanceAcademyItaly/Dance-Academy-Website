@@ -28,20 +28,38 @@
     font-size: var(--text-sm);
     letter-spacing: var(--letter-spacing-wider);
     text-transform: uppercase;
-    color: var(--text-muted);
+    color: var(--text-primary);
     font-weight: 300;
-    transition: all 0.35s ease;
     cursor: pointer;
     pointer-events: all;
     text-decoration: none;
 }
 
-.header-fixed a:hover {
-    color: var(--text-primary);
+.header-fixed a span {
+    display: inline-block;
+    position: relative;
+    padding-bottom: 4px;
 }
 
-.header-fixed a.active {
-    color: var(--text-primary);
+.header-fixed a span::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background: var(--border-hover);
+    clip-path: inset(0 50%);
+    transition: clip-path 0.6s ease;
+}
+
+.header-fixed a:hover span::after {
+    clip-path: inset(0 0%);
+}
+
+.header-fixed a.active span::after {
+    background: var(--accent);
+    clip-path: inset(0 0%);
 }
 
 /* ============================================
@@ -109,7 +127,7 @@
 }
 
 .coreo-card.active {
-    border-color: var(--accent);
+    border-color: var(--border-active);
 }
 
 .episode-player-title.episode-title-dirty {
@@ -190,10 +208,7 @@
 
 .missione-title {
     font-size: var(--text-2xl);
-    font-weight: 300;
-    letter-spacing: var(--letter-spacing-widest);
     margin-bottom: clamp(15px, 2.5vh, 30px);
-    color: var(--text-primary);
 }
 
 .missione-copy {
@@ -583,11 +598,7 @@
 
 .contatti-container h2 {
     font-size: var(--text-4xl);
-    font-weight: 300;
-    letter-spacing: var(--letter-spacing-widest);
-    text-transform: uppercase;
     margin-bottom: clamp(30px, 5vh, 60px);
-    color: var(--text-primary);
 }
 
 .contatto-item h3 {
