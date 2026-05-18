@@ -32,6 +32,12 @@
     filter: grayscale(45%) brightness(0.4) contrast(1.2) saturate(1.1) sepia(20%);
 }
 
+@media (max-width: 768px) {
+    .bg-slide[style*="--mobile-position"] {
+        object-position: var(--mobile-position);
+    }
+}
+
 /* ============================================
    BLOCKS - Base Container System
    ============================================ */
