@@ -23,6 +23,7 @@ export const FormSchema = z.object({
   contenutiSocial: z.string().min(1, 'Campo obbligatorio'),
   perche:          z.string().min(1, 'Campo obbligatorio'),
   disponibilita:   z.string().min(1, 'Campo obbligatorio'),
+  privacyConsent:  z.literal(true, { errorMap: () => ({ message: "Devi accettare l'informativa" }) }),
 });
 
 export type FormData = z.infer<typeof FormSchema>;
@@ -30,5 +31,5 @@ export type FormData = z.infer<typeof FormSchema>;
 export const STEP_FIELDS: Record<1 | 2 | 3, (keyof FormData)[]> = {
   1: ['nomeScuola', 'citta', 'provincia', 'indirizzo', 'annoFondazione', 'numeroAllievi'],
   2: ['nome', 'cognome', 'ruolo', 'email', 'telefono'],
-  3: ['discipline', 'unicita', 'contenutiSocial', 'perche', 'disponibilita'],
+  3: ['discipline', 'unicita', 'contenutiSocial', 'perche', 'disponibilita', 'privacyConsent'],
 };

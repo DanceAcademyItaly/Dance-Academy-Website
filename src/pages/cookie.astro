@@ -1,0 +1,260 @@
+---
+import Base from '../layouts/Base.astro';
+import Header from '../components/Header.astro';
+---
+<Base
+  title="Cookie Policy — Dance Academy Italy"
+  description="Informativa sull'uso dei cookie e degli strumenti di tracciamento su dance-academy.it."
+  ogUrl="https://www.dance-academy.it/cookie"
+>
+  <Header />
+  <main class="legal-page">
+    <div class="legal-container">
+      <h1>Cookie Policy</h1>
+      <p class="legal-updated">Aggiornata a: maggio 2026</p>
+
+      <section>
+        <h2>Cosa sono i cookie</h2>
+        <p>
+          I cookie sono piccoli file di testo che i siti web salvano sul tuo dispositivo quando li visiti.
+          Servono a memorizzare informazioni sulla tua visita per migliorare l'esperienza d'uso o,
+          nel caso di cookie di terze parti, per tracciare il comportamento degli utenti.
+        </p>
+      </section>
+
+      <section>
+        <h2>Cookie usati su questo sito</h2>
+
+        <h3>Cookie tecnici (nessun consenso richiesto)</h3>
+        <p>
+          Questi cookie sono necessari per il corretto funzionamento del sito.
+          Non richiedono il tuo consenso e non raccolgono dati a fini di profilazione.
+        </p>
+        <div class="cookie-table-wrapper">
+          <table class="cookie-table">
+            <thead>
+              <tr>
+                <th>Cookie</th>
+                <th>Tipo</th>
+                <th>Finalità</th>
+                <th>Durata</th>
+                <th>Provider</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>da_cookie_consent</code></td>
+                <td>Tecnico</td>
+                <td>Memorizza la tua scelta sul banner cookie</td>
+                <td>6 mesi</td>
+                <td>Dance Academy Italy</td>
+              </tr>
+              <tr>
+                <td>Cookie tecnici CDN</td>
+                <td>Tecnico</td>
+                <td>Funzionamento dell'infrastruttura di hosting</td>
+                <td>Sessione</td>
+                <td>Netlify Inc.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3>Cookie di profilazione di terze parti (consenso richiesto)</h3>
+        <p>
+          Le pagine degli episodi incorporano video tramite iframe YouTube (Google LLC).
+          Se accetti i cookie tramite il banner, YouTube può depositare cookie di profilazione
+          sul tuo dispositivo per personalizzare contenuti e pubblicità.
+        </p>
+        <div class="cookie-table-wrapper">
+          <table class="cookie-table">
+            <thead>
+              <tr>
+                <th>Cookie</th>
+                <th>Tipo</th>
+                <th>Finalità</th>
+                <th>Durata</th>
+                <th>Provider</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Cookie YouTube/Google</td>
+                <td>Profilazione (terza parte)</td>
+                <td>Tracciamento video, personalizzazione contenuti</td>
+                <td>Fino a 2 anni</td>
+                <td>Google LLC</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          Informativa cookie di Google:
+          <a href="https://policies.google.com/technologies/cookies" target="_blank" rel="noopener">
+            policies.google.com/technologies/cookies
+          </a>
+        </p>
+      </section>
+
+      <section>
+        <h2>Come gestire il consenso</h2>
+        <p>
+          Al primo accesso al sito viene mostrato un banner che ti permette di accettare,
+          rifiutare o personalizzare l'uso dei cookie di profilazione.
+        </p>
+        <p>
+          Puoi cambiare la tua scelta in qualsiasi momento cliccando il pulsante qui sotto,
+          oppure cancellando i dati di navigazione dalle impostazioni del tuo browser.
+        </p>
+        <button id="reopenConsentBtn" class="reopen-consent-btn">
+          Gestisci preferenze cookie
+        </button>
+        <script>
+          document.getElementById('reopenConsentBtn')?.addEventListener('click', () => {
+            localStorage.removeItem('da_cookie_consent');
+            window.location.reload();
+          });
+        </script>
+      </section>
+
+      <section>
+        <h2>Cookie del browser</h2>
+        <p>
+          Puoi bloccare o eliminare i cookie anche dalle impostazioni del tuo browser:
+        </p>
+        <ul>
+          <li><a href="https://support.google.com/chrome/answer/95647" target="_blank" rel="noopener">Chrome</a></li>
+          <li><a href="https://support.mozilla.org/it/kb/protezione-antitracciamento-avanzata-firefox" target="_blank" rel="noopener">Firefox</a></li>
+          <li><a href="https://support.apple.com/it-it/guide/safari/sfri11471/mac" target="_blank" rel="noopener">Safari</a></li>
+        </ul>
+        <p>Nota: disabilitare i cookie tecnici può compromettere il funzionamento del sito.</p>
+      </section>
+    </div>
+  </main>
+</Base>
+
+<style>
+  .legal-page {
+    min-height: 100vh;
+    background: var(--black);
+    padding: 6rem 1.5rem 4rem;
+  }
+
+  .legal-container {
+    max-width: 720px;
+    margin: 0 auto;
+    color: var(--text-secondary);
+    line-height: 1.75;
+  }
+
+  h1 {
+    font-size: clamp(1.8rem, 4vw, 2.5rem);
+    font-weight: 300;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+  }
+
+  .legal-updated {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-bottom: 3rem;
+  }
+
+  section {
+    margin-bottom: 2.5rem;
+  }
+
+  h2 {
+    font-size: 1rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-primary);
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.4rem;
+    border-bottom: 1px solid var(--border-light);
+  }
+
+  h3 {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 1.25rem 0 0.75rem;
+  }
+
+  p {
+    margin-bottom: 0.75rem;
+  }
+
+  ul {
+    padding-left: 1.5rem;
+    margin-bottom: 0.75rem;
+  }
+
+  li {
+    margin-bottom: 0.4rem;
+  }
+
+  a {
+    color: var(--accent);
+    text-decoration: none;
+  }
+
+  a:hover {
+    text-decoration: underline;
+  }
+
+  code {
+    font-family: monospace;
+    font-size: 0.85em;
+    background: var(--bg-white-10);
+    padding: 0.1em 0.4em;
+    border-radius: 3px;
+  }
+
+  .cookie-table-wrapper {
+    overflow-x: auto;
+    margin: 0.75rem 0 1.25rem;
+  }
+
+  .cookie-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+  }
+
+  .cookie-table th,
+  .cookie-table td {
+    text-align: left;
+    padding: 0.6rem 0.75rem;
+    border: 1px solid var(--border-light);
+  }
+
+  .cookie-table th {
+    color: var(--text-primary);
+    background: var(--bg-white-03);
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+  }
+
+  .reopen-consent-btn {
+    margin-top: 0.5rem;
+    padding: 0.6rem 1.5rem;
+    background: transparent;
+    border: 1px solid var(--border-default);
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    transition: border-color 0.2s, color 0.2s;
+  }
+
+  .reopen-consent-btn:hover {
+    border-color: var(--border-hover);
+    color: var(--text-primary);
+  }
+</style>

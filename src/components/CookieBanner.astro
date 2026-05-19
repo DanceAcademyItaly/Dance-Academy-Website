@@ -1,0 +1,155 @@
+<div id="cookieBanner" class="cookie-bar" role="dialog" aria-label="Preferenze cookie" aria-modal="true">
+  <div class="cookie-bar-row">
+    <p class="cookie-bar-text">
+      Usiamo cookie YouTube per i video.
+      <a href="/cookie">Cookie Policy</a>
+    </p>
+    <div class="cookie-bar-actions">
+      <button id="cookieReject"      class="cookie-btn">Rifiuta</button>
+      <button id="cookieAccept"      class="cookie-btn cookie-btn-primary">Accetta</button>
+      <button id="cookieBannerClose" class="cookie-close" aria-label="Rifiuta e chiudi">✕</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  import { acceptAll, rejectAll, hasConsented } from '../scripts/consent';
+
+  const banner = document.getElementById('cookieBanner') as HTMLElement;
+
+  if (hasConsented()) {
+    banner.style.display = 'none';
+  } else {
+    banner.style.display = 'flex';
+  }
+
+  function closeBanner() {
+    banner.style.opacity = '0';
+    setTimeout(() => { banner.style.display = 'none'; }, 250);
+  }
+
+  document.getElementById('cookieAccept')?.addEventListener('click', () => { acceptAll(); closeBanner(); });
+  document.getElementById('cookieReject')?.addEventListener('click', () => { rejectAll(); closeBanner(); });
+  document.getElementById('cookieBannerClose')?.addEventListener('click', () => { rejectAll(); closeBanner(); });
+
+  window.DA_SHOW_BANNER = () => {
+    localStorage.removeItem('da_cookie_consent');
+    banner.style.opacity = '1';
+    banner.style.display = 'flex';
+  };
+
+  window.DA_ACCEPT_ALL = () => {
+    acceptAll();
+    closeBanner();
+  };
+</script>
+
+<style>
+  .cookie-bar {
+    display: none;
+    flex-direction: column;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(8, 8, 8, 0.96);
+    border-top: 1px solid var(--border-light);
+    z-index: 9999;
+    backdrop-filter: blur(8px);
+    transition: opacity 0.25s ease;
+  }
+
+  .cookie-bar-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.7rem 1.5rem;
+    flex-wrap: wrap;
+  }
+
+  .cookie-bar-text {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    line-height: 1.4;
+  }
+
+  .cookie-bar-text a {
+    color: var(--text-muted);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
+  .cookie-bar-text a:hover {
+    color: var(--text-secondary);
+  }
+
+  .cookie-bar-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-shrink: 0;
+  }
+
+  .cookie-btn {
+    background: transparent;
+    border: 1px solid var(--border-light);
+    color: var(--text-muted);
+    font-size: 0.72rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 0.35rem 0.9rem;
+    cursor: pointer;
+    transition: border-color 0.15s, color 0.15s;
+    white-space: nowrap;
+  }
+
+  .cookie-btn:hover {
+    border-color: var(--border-default);
+    color: var(--text-secondary);
+  }
+
+  .cookie-btn-primary {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .cookie-btn-primary:hover {
+    border-color: var(--accent);
+    color: var(--text-primary);
+  }
+
+  .cookie-close {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    cursor: pointer;
+    padding: 0.35rem 0.4rem;
+    line-height: 1;
+    transition: color 0.15s;
+  }
+
+  .cookie-close:hover {
+    color: var(--text-secondary);
+  }
+
+
+  @media (max-width: 600px) {
+    .cookie-bar-row {
+      padding: 0.75rem 1rem;
+      justify-content: center;
+      text-align: center;
+    }
+
+    .cookie-bar-text {
+      width: 100%;
+      text-align: center;
+    }
+
+    .cookie-bar-actions {
+      width: 100%;
+      justify-content: center;
+    }
+  }
+</style>
