@@ -8,7 +8,7 @@ export const FormSchema = z.object({
   provincia:      z.enum(ITALIAN_PROVINCES, { errorMap: () => ({ message: 'Seleziona una provincia valida' }) }),
   indirizzo:      z.string().min(5, 'Indirizzo non valido'),
   annoFondazione: z.number().int().min(1900).max(new Date().getFullYear()),
-  numeroAllievi:  z.number().int().min(1),
+  numeroAllievi:  z.string().min(1, 'Seleziona il numero di allievi'),
 
   // Step 2 — Il referente
   nome:     z.string().min(2, 'Nome troppo breve'),
