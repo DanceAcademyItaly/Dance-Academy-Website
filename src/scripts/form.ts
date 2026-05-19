@@ -36,7 +36,6 @@ function getFieldValue(name: string): string | number {
   if (!el) return '';
   const raw = el.value.trim();
   if (name === 'annoFondazione') return raw ? parseInt(raw, 10) : 0;
-  if (name === 'numeroAllievi') return raw ? 1 : 0;
   return raw;
 }
 
