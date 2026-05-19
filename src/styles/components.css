@@ -318,6 +318,8 @@
     width: clamp(300px, 88vw, 500px);
     padding: clamp(20px, 2.5vh, 32px) clamp(20px, 3vw, 32px);
     margin-bottom: clamp(20px, 4vh, 40px);
+    display: flex;
+    flex-direction: column;
 }
 
 .form-step[data-step="2"],
@@ -351,6 +353,7 @@
 }
 
 .card-content {
+    flex: 1;
     overflow: visible;
     display: grid;
     grid-template-columns: 1fr;
