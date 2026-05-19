@@ -475,8 +475,8 @@
 .form-group input:-webkit-autofill:hover,
 .form-group input:-webkit-autofill:focus,
 .form-group input:-webkit-autofill:active {
-    -webkit-box-shadow: 0 0 0 1000px var(--bg-strong) inset !important;
-    -webkit-text-fill-color: var(--text-secondary) !important;
+    -webkit-box-shadow: 0 0 0 1000px rgba(0, 0, 0, 0.7) inset !important;
+    -webkit-text-fill-color: rgba(255, 255, 255, 0.8) !important;
 }
 
 .form-group input.invalid,
