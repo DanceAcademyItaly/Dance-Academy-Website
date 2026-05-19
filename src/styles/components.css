@@ -399,6 +399,16 @@
     transform: scale(0.98);
 }
 
+.card-navigation .submit-button {
+    max-width: none;
+    padding: clamp(10px, 1.5vh, 14px) clamp(16px, 2.5vw, 28px);
+    box-shadow: none;
+}
+
+.card-navigation .submit-button:hover {
+    transform: none;
+}
+
 /* ============================================
    FORM COMPONENTS
    ============================================ */
@@ -459,6 +469,14 @@
 .form-group textarea:focus {
     outline: none;
     border-color: var(--border-hover);
+}
+
+.form-group input:-webkit-autofill,
+.form-group input:-webkit-autofill:hover,
+.form-group input:-webkit-autofill:focus,
+.form-group input:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0 1000px var(--bg-strong) inset !important;
+    -webkit-text-fill-color: var(--text-secondary) !important;
 }
 
 .form-group input.invalid,
