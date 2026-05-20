@@ -229,9 +229,9 @@
 .missione-block {
     flex: 1;
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: center;
-    padding: clamp(40px, 5vh, 60px) clamp(15px, 5vw, 40px);
+    padding: clamp(80px, 12vh, 120px) clamp(15px, 5vw, 40px) clamp(40px, 8vh, 80px);
 }
 
 .missione-container {
@@ -280,9 +280,9 @@
     z-index: 1;
     flex: 1;
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: center;
-    padding: clamp(60px, 10vh, 100px) clamp(20px, 5vw, 40px);
+    padding: clamp(80px, 12vh, 120px) clamp(20px, 5vw, 40px) clamp(40px, 8vh, 80px);
 }
 
 .contatti-container {
