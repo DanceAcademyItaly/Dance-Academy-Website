@@ -291,7 +291,6 @@
     max-width: min(800px, 85vw);
     width: 100%;
     text-align: center;
-    padding: clamp(20px, 5vw, 40px);
 }
 
 .contatti-info {
