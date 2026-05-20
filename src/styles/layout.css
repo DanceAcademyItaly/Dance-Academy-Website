@@ -53,7 +53,7 @@
    ============================================ */
 
 .hero-block {
-    min-height: 100dvh;
+    flex: 1;
     padding: clamp(40px, 10vh, 80px) clamp(20px, 5vw, 40px);
     display: flex;
     align-items: center;
@@ -93,7 +93,7 @@
     position: relative;
     z-index: 1;
     padding: clamp(80px, 12vh, 120px) clamp(20px, 5vw, 60px) clamp(40px, 8vh, 80px);
-    min-height: 100dvh;
+    flex: 1;
 }
 
 .episodi-page-title {
@@ -168,8 +168,11 @@
 .episode-player-page {
     position: relative;
     z-index: 1;
+    flex: 1;
     padding: clamp(80px, 12vh, 120px) clamp(20px, 5vw, 60px) clamp(40px, 8vh, 80px);
-    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 
 .episode-player-back {
@@ -183,6 +186,8 @@
     text-transform: uppercase;
     margin-bottom: clamp(20px, 4vh, 40px);
     transition: color 0.3s;
+    width: 100%;
+    max-width: 900px;
 }
 
 .episode-player-back:hover {
@@ -196,10 +201,12 @@
     text-transform: uppercase;
     margin-bottom: clamp(20px, 4vh, 40px);
     color: var(--text-primary);
-    max-width: 800px;
+    width: 100%;
+    max-width: 900px;
 }
 
 .episode-player-content {
+    width: 100%;
     max-width: 900px;
 }
 
@@ -220,7 +227,7 @@
    ============================================ */
 
 .missione-block {
-    min-height: 100dvh;
+    flex: 1;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -244,7 +251,7 @@
 .candidati-page {
     position: relative;
     z-index: 1;
-    min-height: 100dvh;
+    flex: 1;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -271,7 +278,7 @@
 .contatti-section {
     position: relative;
     z-index: 1;
-    min-height: 100dvh;
+    flex: 1;
     display: flex;
     align-items: center;
     justify-content: center;
