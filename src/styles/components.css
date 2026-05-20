@@ -202,24 +202,24 @@
    MISSIONE COMPONENTS
    ============================================ */
 
-.copy-block {
-    margin: clamp(15px, 3vh, 40px) 0;
-}
-
-.missione-title {
-    font-size: var(--text-2xl);
-    margin-bottom: clamp(15px, 2.5vh, 30px);
+.section-header {
+    font-size: var(--text-4xl);
+    font-weight: 300;
+    letter-spacing: var(--letter-spacing-widest);
+    text-transform: uppercase;
+    color: var(--text-primary);
+    margin-bottom: clamp(20px, 3vh, 36px);
 }
 
 .missione-copy {
-    font-size: var(--text-xl);
+    font-size: var(--text-base);
     line-height: 1.8;
     color: var(--text-secondary);
-    margin-bottom: clamp(20px, 4vh, 40px);
+    margin-bottom: clamp(8px, 1.5vh, 18px);
 }
 
 .cta-container {
-    margin-top: clamp(40px, 6vh, 80px);
+    margin-top: clamp(20px, 3vh, 36px);
 }
 
 .missione-button {
@@ -617,10 +617,6 @@
    CONTATTI COMPONENTS
    ============================================ */
 
-.contatti-container h2 {
-    font-size: var(--text-4xl);
-    margin-bottom: clamp(30px, 5vh, 60px);
-}
 
 .contatto-item h3 {
     font-size: clamp(1.1rem, 2vw + 0.5vh, 1.75rem);
