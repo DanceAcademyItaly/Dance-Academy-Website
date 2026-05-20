@@ -6,10 +6,11 @@
     "subtitle": "Il tuo talento. La nostra regia. Il tuo successo."
   },
   "missione": {
-    "copyBlocks": [
-      { "title": "Ogni episodio una scuola da scoprire", "text": "Non solo un video: la tua storia che raggiunge migliaia di famiglie" },
-      { "title": "Il palcoscenico digitale delle scuole d'Italia", "text": "Il format che trasforma l'eccellenza in riconoscimento" },
-      { "title": "Video professionali che restano tuoi", "text": "Per il sito, per i social, per sempre" }
+    "paragraphs": [
+      "Dance Academy seleziona le scuole di danza che meritano di essere viste. Creiamo per te un contenuto video professionale da usare sui social, sul territorio e ovunque tu voglia raccontare la tua storia — perché le scuole migliori non aspettano di essere scoperte: si fanno conoscere.",
+      "Ci sono scuole di danza ovunque. Solo alcune diventano il punto di riferimento nel proprio territorio. Dance Academy affianca quelle scuole, dando loro la visibilità che hanno guadagnato sul campo.",
+      "Ogni episodio è anche parte di qualcosa di più grande: un racconto collettivo della danza italiana e un network di scuole selezionate, accomunate dall'impegno verso la qualità.",
+      "A coronare ogni stagione: un gala con tutte le scuole del network e un riconoscimento di eccellenza per direttori e insegnanti. Perché chi forma i talenti di domani merita di salire sul palco, non solo di costruirlo."
     ]
   },
   "contatti": {

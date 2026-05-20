@@ -231,7 +231,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: clamp(80px, 12vh, 120px) clamp(15px, 5vw, 40px);
+    padding: clamp(40px, 5vh, 60px) clamp(15px, 5vw, 40px);
 }
 
 .missione-container {

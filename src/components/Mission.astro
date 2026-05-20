@@ -1,20 +1,14 @@
 ---
-interface CopyBlock {
-  title: string;
-  text: string;
-}
 interface Props {
-  copyBlocks: CopyBlock[];
+  paragraphs: string[];
 }
-const { copyBlocks } = Astro.props;
+const { paragraphs } = Astro.props;
 ---
 <section class="missione-block block" id="missione">
   <div class="missione-container">
-    {copyBlocks.map(block => (
-      <div class="copy-block">
-        <h2 class="missione-title">{block.title}</h2>
-        <p class="missione-copy">{block.text}</p>
-      </div>
+    <h1 class="section-header">La nostra missione</h1>
+    {paragraphs.map(p => (
+      <p class="missione-copy">{p}</p>
     ))}
     <div class="cta-container">
       <a href="/candidati" class="missione-button">Candidati</a>
