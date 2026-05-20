@@ -1,0 +1,199 @@
+---
+import Base from '../layouts/Base.astro';
+import Header from '../components/Header.astro';
+---
+<Base
+  title="Privacy Policy — Dance Academy Italy"
+  description="Informativa sul trattamento dei dati personali ai sensi dell'art. 13 GDPR (Reg. UE 2016/679)."
+  ogUrl="https://www.dance-academy.it/privacy"
+>
+  <Header />
+  <main class="legal-page">
+    <div class="legal-container">
+      <h1>Privacy Policy</h1>
+      <p class="legal-updated">Aggiornata a: maggio 2026</p>
+
+      <section>
+        <h2>1. Titolare del trattamento</h2>
+        <p>
+          Titolare del trattamento dei dati personali è <strong>[NOME E COGNOME DEL TITOLARE]</strong>.<br />
+          Indirizzo e-mail: <a href="mailto:danceacademyitaly@gmail.com">danceacademyitaly@gmail.com</a>
+        </p>
+      </section>
+
+      <section>
+        <h2>2. Dati trattati, finalità e base giuridica</h2>
+
+        <h3>Form di candidatura</h3>
+        <p>
+          Raccogliamo i dati che inserisci nel form (nome, cognome, e-mail, telefono, dati della scuola)
+          al solo fine di valutare la candidatura e contattarti in merito.
+          I dati vengono trasmessi e conservati in un foglio Google Sheets gestito dal titolare.
+        </p>
+        <p><strong>Base giuridica:</strong> legittimo interesse del titolare (art. 6, par. 1, lett. f GDPR).</p>
+
+        <h3>Log del server</h3>
+        <p>
+          L'infrastruttura di hosting (Netlify) raccoglie automaticamente dati tecnici di accesso
+          (indirizzo IP, browser, pagine visitate) per garantire il corretto funzionamento e la sicurezza del sito.
+        </p>
+        <p><strong>Base giuridica:</strong> legittimo interesse del titolare (art. 6, par. 1, lett. f GDPR).</p>
+
+        <h3>Video YouTube (previo consenso)</h3>
+        <p>
+          Le pagine degli episodi incorporano video tramite iframe YouTube/Google.
+          Se accetti i cookie di terze parti tramite il banner, YouTube può depositare cookie
+          di profilazione sul tuo dispositivo.
+        </p>
+        <p><strong>Base giuridica:</strong> consenso dell'interessato (art. 6, par. 1, lett. a GDPR).</p>
+      </section>
+
+      <section>
+        <h2>3. Destinatari dei dati</h2>
+        <p>I dati personali possono essere comunicati ai seguenti soggetti in qualità di responsabili del trattamento:</p>
+        <ul>
+          <li>
+            <strong>Google LLC</strong> (Google Sheets, Google Apps Script, YouTube) — azienda USA aderente al
+            Data Privacy Framework UE-USA (DPF). Informativa:
+            <a href="https://policies.google.com/privacy" target="_blank" rel="noopener">policies.google.com/privacy</a>
+          </li>
+          <li>
+            <strong>Netlify, Inc.</strong> (hosting del sito) — azienda USA aderente al DPF UE-USA.
+            Informativa: <a href="https://www.netlify.com/privacy/" target="_blank" rel="noopener">netlify.com/privacy</a>
+          </li>
+        </ul>
+        <p>I dati non vengono venduti né ceduti a terzi per finalità di marketing.</p>
+      </section>
+
+      <section>
+        <h2>4. Trasferimento extra-UE</h2>
+        <p>
+          Google LLC e Netlify Inc. sono soggetti statunitensi. Il trasferimento dei dati verso gli USA
+          è lecito in virtù dell'adeguatezza riconosciuta agli aderenti al Data Privacy Framework UE-USA
+          (Decisione di esecuzione della Commissione UE del 10 luglio 2023).
+        </p>
+      </section>
+
+      <section>
+        <h2>5. Periodo di conservazione</h2>
+        <ul>
+          <li>
+            <strong>Dati del form candidati:</strong> conservati nel foglio Google Sheets del titolare
+            fino alla cancellazione manuale da parte del titolare o su richiesta dell'interessato.
+          </li>
+          <li>
+            <strong>Log del server Netlify:</strong> secondo la policy di Netlify (generalmente 30 giorni).
+          </li>
+          <li>
+            <strong>Cookie YouTube:</strong> fino a 2 anni, secondo la policy di Google.
+          </li>
+        </ul>
+      </section>
+
+      <section>
+        <h2>6. Diritti dell'interessato</h2>
+        <p>Hai il diritto di:</p>
+        <ul>
+          <li>Accedere ai tuoi dati personali (art. 15 GDPR)</li>
+          <li>Rettificarli se inesatti (art. 16 GDPR)</li>
+          <li>Ottenerne la cancellazione ("diritto all'oblio", art. 17 GDPR)</li>
+          <li>Limitarne il trattamento (art. 18 GDPR)</li>
+          <li>Opporti al trattamento (art. 21 GDPR)</li>
+          <li>Ottenerne la portabilità (art. 20 GDPR)</li>
+          <li>Revocare il consenso in qualsiasi momento, senza pregiudicare la liceità del trattamento precedente</li>
+        </ul>
+        <p>
+          Per esercitare questi diritti scrivi a:
+          <a href="mailto:danceacademyitaly@gmail.com">danceacademyitaly@gmail.com</a>
+        </p>
+      </section>
+
+      <section>
+        <h2>7. Diritto di reclamo</h2>
+        <p>
+          Hai il diritto di proporre reclamo al Garante per la Protezione dei Dati Personali:
+          <a href="https://www.garanteprivacy.it" target="_blank" rel="noopener">www.garanteprivacy.it</a>
+        </p>
+      </section>
+    </div>
+  </main>
+</Base>
+
+<style>
+  .legal-page {
+    min-height: 100vh;
+    background: var(--black);
+    padding: 6rem 1.5rem 4rem;
+  }
+
+  .legal-container {
+    max-width: 720px;
+    margin: 0 auto;
+    color: var(--text-secondary);
+    line-height: 1.75;
+  }
+
+  h1 {
+    font-size: clamp(1.8rem, 4vw, 2.5rem);
+    font-weight: 300;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+  }
+
+  .legal-updated {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-bottom: 3rem;
+  }
+
+  section {
+    margin-bottom: 2.5rem;
+  }
+
+  h2 {
+    font-size: 1rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-primary);
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.4rem;
+    border-bottom: 1px solid var(--border-light);
+  }
+
+  h3 {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 1.25rem 0 0.5rem;
+  }
+
+  p {
+    margin-bottom: 0.75rem;
+  }
+
+  ul {
+    padding-left: 1.5rem;
+    margin-bottom: 0.75rem;
+  }
+
+  li {
+    margin-bottom: 0.4rem;
+  }
+
+  a {
+    color: var(--accent);
+    text-decoration: none;
+  }
+
+  a:hover {
+    text-decoration: underline;
+  }
+
+  strong {
+    color: var(--text-primary);
+    font-weight: 600;
+  }
+</style>

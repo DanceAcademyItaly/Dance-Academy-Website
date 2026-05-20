@@ -131,6 +131,18 @@ import { ITALIAN_PROVINCES } from '../lib/provinces';
             </select>
           </div>
         </div>
+          <div class="form-group full-width privacy-group">
+            <p class="privacy-notice">
+              I dati inseriti saranno utilizzati esclusivamente per valutare la candidatura
+              e contattarti in merito. Non saranno ceduti a terzi né usati per finalità di marketing.
+              <a href="/privacy">Consulta la nostra Privacy Policy</a>.
+            </p>
+            <label class="checkbox-label">
+              <input type="checkbox" id="privacyConsent" name="privacyConsent" class="required" required />
+              <span>Ho letto e accetto l'<a href="/privacy">informativa sul trattamento dei dati personali</a> <span class="required-asterisk">*</span></span>
+            </label>
+          </div>
+        </div>
         <div class="card-navigation">
           <button type="button" class="card-nav-button" data-direction="prev">Indietro</button>
           <button type="submit" class="card-nav-button submit-button">Invia candidatura</button>
@@ -142,3 +154,65 @@ import { ITALIAN_PROVINCES } from '../lib/provinces';
     </form>
   </div>
 </div>
+
+<style>
+  .privacy-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-top: 1.25rem;
+  }
+
+  .privacy-group::after {
+    display: none;
+  }
+
+  .privacy-notice {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    line-height: 1.6;
+    padding-left: 0.75rem;
+  }
+
+  .privacy-notice a {
+    color: var(--accent);
+    text-decoration: none;
+  }
+
+  .privacy-notice a:hover {
+    text-decoration: underline;
+  }
+
+  .checkbox-label {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.6rem;
+    font-size: 0.82rem;
+    color: var(--text-primary);
+    line-height: 1.5;
+    cursor: pointer;
+    padding-left: 0.75rem;
+  }
+
+  .required-asterisk {
+    color: var(--accent);
+  }
+
+  .checkbox-label input[type="checkbox"] {
+    margin-top: 0.15rem;
+    flex-shrink: 0;
+    accent-color: var(--accent);
+    width: 1rem;
+    height: 1rem;
+    cursor: pointer;
+  }
+
+  .checkbox-label a {
+    color: var(--accent);
+    text-decoration: none;
+  }
+
+  .checkbox-label a:hover {
+    text-decoration: underline;
+  }
+</style>

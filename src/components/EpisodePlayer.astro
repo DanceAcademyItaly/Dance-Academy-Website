@@ -17,39 +17,103 @@ interface Props {
   episode: EpisodeData;
 }
 const { episode } = Astro.props;
+
+const mainThumb = episode.thumbnail ?? `https://img.youtube.com/vi/${episode.mainVideoId}/maxresdefault.jpg`;
 ---
 <div class="episode-player-page">
   <a href="/episodi" class="episode-player-back">← Tutti gli episodi</a>
   <h1 class="episode-player-title">{episode.title}</h1>
   <div class="episode-player-content">
     <div class="video-principale">
-      <iframe
-        src={`https://www.youtube.com/embed/${episode.mainVideoId}`}
-        title={episode.title}
-        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-        allowfullscreen
-      ></iframe>
+      <div
+        class="yt-placeholder"
+        data-video-id={episode.mainVideoId}
+        data-embed-url={`https://www.youtube-nocookie.com/embed/${episode.mainVideoId}`}
+        style={`background-image: url('${mainThumb}')`}
+      >
+        <div class="yt-placeholder-overlay">
+          <p class="yt-placeholder-msg">Accetta i cookie per visualizzare il video</p>
+          <button class="yt-placeholder-link" onclick="window.DA_ACCEPT_ALL?.()">Accetta</button>
+        </div>
+      </div>
     </div>
 
     {episode.choreographies.length > 0 && (
       <div class="coreografie-section">
         <p class="coreografie-header">Coreografie</p>
         <div class="coreografie-grid">
-          {episode.choreographies.map(coreo => (
-            <div class="coreo-card">
-              <div class="coreo-video">
-                <iframe
-                  src={`https://www.youtube.com/embed/${coreo.videoId}`}
-                  title={coreo.title}
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowfullscreen
-                ></iframe>
+          {episode.choreographies.map(coreo => {
+            const thumb = `https://img.youtube.com/vi/${coreo.videoId}/mqdefault.jpg`;
+            return (
+              <div class="coreo-card">
+                <div class="coreo-video">
+                  <div
+                    class="yt-placeholder yt-placeholder-coreo"
+                    data-video-id={coreo.videoId}
+                    data-embed-url={`https://www.youtube-nocookie.com/embed/${coreo.videoId}`}
+                    style={`background-image: url('${thumb}')`}
+                  >
+                    <div class="yt-placeholder-overlay">
+                      <p class="yt-placeholder-msg">Cookie richiesti</p>
+                    </div>
+                  </div>
+                </div>
+                <p class="coreo-title">{coreo.title}</p>
               </div>
-              <p class="coreo-title">{coreo.title}</p>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     )}
   </div>
 </div>
+
+<style>
+  .yt-placeholder {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    background-size: cover;
+    background-position: center;
+    background-color: #000;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .yt-placeholder-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.65);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    padding: 1rem;
+    text-align: center;
+  }
+
+  .yt-placeholder-coreo .yt-placeholder-overlay {
+    background: rgba(0, 0, 0, 0.55);
+  }
+
+  .yt-placeholder-msg {
+    color: rgba(255, 255, 255, 0.85);
+    font-size: 0.85rem;
+    letter-spacing: 0.04em;
+  }
+
+  .yt-placeholder-link {
+    font-size: 0.78rem;
+    color: var(--accent);
+    text-decoration: none;
+    border-bottom: 1px solid var(--accent);
+    padding-bottom: 1px;
+  }
+
+  .yt-placeholder-link:hover {
+    color: var(--text-primary);
+    border-color: var(--text-primary);
+  }
+</style>
