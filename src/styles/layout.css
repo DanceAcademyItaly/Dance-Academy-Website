@@ -99,7 +99,6 @@
 .episodi-page-title {
     font-size: var(--text-4xl);
     text-align: center;
-    margin-bottom: clamp(40px, 6vh, 80px);
 }
 
 .episode-grid {
@@ -222,6 +221,10 @@
     gap: 20px;
 }
 
+.section-header {
+    font-size: var(--text-4xl);
+}
+
 /* ============================================
    MISSIONE SECTION LAYOUT
    ============================================ */
@@ -261,7 +264,6 @@
 .candidati-title {
     font-size: var(--text-4xl);
     text-align: center;
-    margin: 0 0 clamp(20px, 4vh, 40px) 0;
 }
 
 .candidati-form-wrapper {
@@ -306,6 +308,15 @@
    ============================================ */
 
 @media (max-width: 768px) {
+    .episodi-page-title,
+    .candidati-title,
+    .missione-title,
+    .section-header,
+    .contatti-container h2 {
+        font-size: 1.5rem;
+        margin-bottom: 16px;
+    }
+
     .episode-grid {
         grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
     }
