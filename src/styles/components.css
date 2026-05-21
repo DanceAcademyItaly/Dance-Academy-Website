@@ -220,38 +220,26 @@
 }
 
 .cta-container {
+    display: flex;
+    justify-content: flex-end;
+    width: 100%;
     margin-top: clamp(20px, 3vh, 36px);
 }
 
-.missione-button {
-    display: inline-block;
-    padding: clamp(14px, 2vh, 18px) clamp(28px, 4vw, 48px);
-    background: var(--bg-overlay-30);
-    backdrop-filter: blur(20px) saturate(90%);
-    -webkit-backdrop-filter: blur(20px) saturate(90%);
-    border: 1px solid var(--border-medium);
-    border-radius: 2px;
+.section-cta-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
     color: var(--text-secondary);
-    font-size: var(--text-base);
-    font-weight: 300;
-    letter-spacing: var(--letter-spacing-wider);
-    text-transform: uppercase;
     text-decoration: none;
-    transition: all 0.3s;
-    max-width: 300px;
-    text-align: center;
-    box-shadow:
-        var(--shadow-8),
-        var(--shadow-5),
-        0 3px 6px rgba(0, 0, 0, 0.25),
-        0 1px 3px rgba(0, 0, 0, 0.2),
-        var(--shadow-inset-1);
+    font-size: var(--text-sm);
+    letter-spacing: var(--letter-spacing-wide);
+    text-transform: uppercase;
+    transition: color 0.3s;
 }
 
-.missione-button:hover {
-    border-color: var(--border-hover);
+.section-cta-link:hover {
     color: var(--text-primary);
-    transform: translateY(-1px);
 }
 
 /* ============================================
