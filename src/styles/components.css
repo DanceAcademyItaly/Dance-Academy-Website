@@ -203,9 +203,6 @@
    MISSIONE COMPONENTS
    ============================================ */
 
-.section-header {
-    font-size: var(--text-4xl);
-}
 
 .missione-copy {
     font-size: var(--text-base);
