@@ -24,11 +24,13 @@ main {
 .episodi-page-title,
 .candidati-title,
 .missione-title,
+.section-header,
 .contatti-container h2 {
     font-weight: 300;
     letter-spacing: var(--letter-spacing-widest);
     text-transform: uppercase;
     color: var(--text-primary);
+    margin-bottom: clamp(20px, 3vh, 40px);
 }
 
 .sr-only {
