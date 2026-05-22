@@ -9,11 +9,14 @@
 
 <style>
   .site-footer {
+    position: relative;
+    z-index: 1;
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     align-items: center;
-    gap: 0.5rem;
-    padding: 2rem 1.5rem;
+    justify-content: center;
+    gap: 1rem;
+    padding: 0.4rem 1.5rem;
     border-top: 1px solid var(--border-light);
     color: var(--text-muted);
     font-size: 0.8rem;
@@ -42,5 +45,12 @@
 
   .footer-copy {
     color: var(--text-muted);
+  }
+
+  @media (max-width: 768px) {
+    .site-footer {
+      flex-direction: column;
+      gap: 0.1rem;
+    }
   }
 </style>
