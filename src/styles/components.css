@@ -208,14 +208,14 @@
     font-size: var(--text-base);
     line-height: 1.8;
     color: var(--text-secondary);
-    margin-bottom: clamp(8px, 1.5vh, 18px);
+    margin-bottom: clamp(6px, 1vh, 14px);
 }
 
 .cta-container {
     display: flex;
     justify-content: flex-end;
     width: 100%;
-    margin-top: clamp(20px, 3vh, 36px);
+    margin-top: clamp(12px, 2vh, 24px);
 }
 
 .section-cta-link {
@@ -298,7 +298,7 @@
         var(--shadow-inset-1);
     width: clamp(300px, 88vw, 500px);
     padding: clamp(20px, 2.5vh, 32px) clamp(20px, 3vw, 32px);
-    margin-bottom: clamp(20px, 4vh, 40px);
+    margin-bottom: 0;
     display: flex;
     flex-direction: column;
 }

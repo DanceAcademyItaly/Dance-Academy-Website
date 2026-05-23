@@ -187,7 +187,7 @@
     font-size: var(--text-sm);
     letter-spacing: var(--letter-spacing-wide);
     text-transform: uppercase;
-    margin-bottom: clamp(20px, 4vh, 40px);
+    margin-bottom: clamp(8px, 1.5vh, 20px);
     transition: color 0.3s;
     width: 100%;
     max-width: 900px;
@@ -238,7 +238,7 @@
     display: flex;
     align-items: flex-start;
     justify-content: center;
-    padding: clamp(80px, 12vh, 120px) clamp(15px, 5vw, 40px) clamp(40px, 8vh, 80px);
+    padding: clamp(60px, 8vh, 100px) clamp(15px, 5vw, 40px) clamp(16px, 2.5vh, 36px);
 }
 
 .missione-container {
@@ -350,7 +350,7 @@
     }
 
     .missione-block {
-        padding: clamp(60px, 10vh, 100px) clamp(10px, 3vw, 15px);
+        padding: clamp(50px, 8vh, 80px) clamp(10px, 3vw, 15px) clamp(10px, 2vh, 20px);
     }
 
     .candidati-page,
