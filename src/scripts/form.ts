@@ -31,9 +31,10 @@ function updateStepIndicator(n: number) {
   });
 }
 
-function getFieldValue(name: string): string | number {
+function getFieldValue(name: string): string | number | boolean {
   const el = form!.elements.namedItem(name) as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement | null;
   if (!el) return '';
+  if (el instanceof HTMLInputElement && el.type === 'checkbox') return el.checked;
   const raw = el.value.trim();
   if (name === 'annoFondazione') return raw ? parseInt(raw, 10) : 0;
   return raw;
@@ -102,12 +103,12 @@ async function submitForm() {
   const gasUrl = import.meta.env.PUBLIC_GAS_URL as string ?? '';
 
   try {
-    await fetch(gasUrl, {
+    const res = await fetch(gasUrl, {
       method: 'POST',
-      mode: 'no-cors',
-      headers: { 'Content-Type': 'text/plain' },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(result.data),
     });
+    if (!res.ok) throw new Error(`Server error: ${res.status}`);
     showFeedback('success', 'Candidatura inviata! Ti contatteremo presto.');
     form!.reset();
     showStep(1);
