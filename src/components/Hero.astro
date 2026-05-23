@@ -18,7 +18,7 @@ const { subtitle } = Astro.props;
       />
     </picture>
     <p class="hero-text">
-      {subtitle.map((line) => <span class="hero-text-line">{line}</span>)}
+      {subtitle.map((line, i) => <><>{i > 0 ? ' ' : ''}</><span class="hero-text-line">{line}</span></>)}
     </p>
     <div class="cta-container">
       <a href="/episodi" class="section-cta-link">Guarda gli episodi →</a>
