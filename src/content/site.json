@@ -3,7 +3,7 @@
   "introText": "Il viaggio che racconta la danza italiana",
   "hero": {
     "title": "Dance Academy",
-    "subtitle": "Il tuo talento. La nostra regia. Il tuo successo."
+    "subtitle": ["Il tuo talento.", "La nostra regia.", "Il tuo successo."]
   },
   "missione": {
     "paragraphs": [

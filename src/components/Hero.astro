@@ -1,6 +1,6 @@
 ---
 interface Props {
-  subtitle: string;
+  subtitle: string[];
 }
 const { subtitle } = Astro.props;
 ---
@@ -17,7 +17,9 @@ const { subtitle } = Astro.props;
         fetchpriority="high"
       />
     </picture>
-    <p class="hero-text">{subtitle}</p>
+    <p class="hero-text">
+      {subtitle.map((line) => <span class="hero-text-line">{line}</span>)}
+    </p>
     <div class="cta-container">
       <a href="/episodi" class="section-cta-link">Guarda gli episodi →</a>
     </div>
