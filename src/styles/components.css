@@ -73,12 +73,7 @@
     background: var(--bg-dark);
     border: 1px solid var(--border-default);
     margin-bottom: clamp(7px, 1.5vh, 15px);
-    box-shadow:
-        var(--shadow-8),
-        var(--shadow-5),
-        0 3px 6px rgba(0, 0, 0, 0.25),
-        0 1px 3px rgba(0, 0, 0, 0.2),
-        var(--shadow-inset-1);
+    box-shadow: var(--shadow-card);
     position: relative;
 }
 
@@ -113,12 +108,7 @@
     -webkit-backdrop-filter: blur(8px) saturate(100%) brightness(0.85);
     border: 1px solid var(--border-default);
     transition: all 0.3s;
-    box-shadow:
-        var(--shadow-8),
-        var(--shadow-5),
-        0 3px 6px rgba(0, 0, 0, 0.25),
-        0 1px 3px rgba(0, 0, 0, 0.2),
-        var(--shadow-inset-1);
+    box-shadow: var(--shadow-card);
     user-select: none;
     -webkit-user-select: none;
 }
@@ -290,12 +280,7 @@
     -webkit-backdrop-filter: blur(8px) saturate(100%) brightness(0.85);
     border: 1px solid rgba(255, 255, 255, 0.25);
     border-radius: 2px;
-    box-shadow:
-        var(--shadow-8),
-        var(--shadow-5),
-        0 3px 6px rgba(0, 0, 0, 0.25),
-        0 1px 3px rgba(0, 0, 0, 0.2),
-        var(--shadow-inset-1);
+    box-shadow: var(--shadow-card);
     width: clamp(300px, 88vw, 500px);
     padding: clamp(20px, 2.5vh, 32px) clamp(20px, 3vw, 32px);
     margin-bottom: 0;
@@ -555,12 +540,7 @@
     font-weight: 300;
     max-width: 300px;
     text-align: center;
-    box-shadow:
-        var(--shadow-8),
-        var(--shadow-5),
-        0 3px 6px rgba(0, 0, 0, 0.25),
-        0 1px 3px rgba(0, 0, 0, 0.2),
-        var(--shadow-inset-1);
+    box-shadow: var(--shadow-card);
 }
 
 .submit-button:hover {
@@ -625,35 +605,6 @@
 }
 
 /* ============================================
-   POPUP COMPONENTS
-   ============================================ */
-
-.popup-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.8);
-    z-index: var(--z-popups);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.popup-content {
-    background: var(--bg-ultra);
-    border: 1px solid var(--border-default);
-    color: var(--text-primary);
-    padding: 40px 50px;
-    text-align: center;
-    max-width: 500px;
-    width: 90%;
-    font-weight: 300;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
-}
-
-/* ============================================
    RESPONSIVE
    ============================================ */
 
@@ -684,9 +635,7 @@
         font-size: max(16px, var(--text-sm));
         padding: 15px;
     }
-}
 
-@media (max-width: 768px) {
     .form-step,
     .submit-button,
     .episode-card,
