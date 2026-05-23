@@ -710,6 +710,10 @@
     .header-fixed a {
         letter-spacing: var(--letter-spacing-normal);
     }
+
+    .legal-page {
+        padding-top: clamp(60px, 10vh, 100px);
+    }
 }
 
 /* ============================================

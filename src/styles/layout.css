@@ -343,4 +343,11 @@
     .missione-block {
         padding: clamp(60px, 10vh, 100px) clamp(10px, 3vw, 15px);
     }
+
+    .candidati-page,
+    .episodi-page,
+    .contatti-section,
+    .episode-player-page {
+        padding-top: clamp(60px, 10vh, 100px);
+    }
 }
