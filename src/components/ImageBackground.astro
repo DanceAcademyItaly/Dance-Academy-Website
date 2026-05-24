@@ -15,14 +15,17 @@ const images = [
 ---
 <div class="image-bg" id="image-bg" data-initial={initialIndex}>
   {images.map((img, i) => (
-    <img
-      src={img.src}
-      class="bg-slide"
-      data-index={i}
-      alt=""
-      aria-hidden="true"
-      loading={i === initialIndex ? 'eager' : 'lazy'}
-      style={`will-change: opacity${img.mobilePosition ? `; --mobile-position: ${img.mobilePosition}` : ''}`}
-    />
+    <picture>
+      <source srcset={img.src.replace('.jpg', '.webp')} type="image/webp" />
+      <img
+        src={img.src}
+        class="bg-slide"
+        data-index={i}
+        alt=""
+        aria-hidden="true"
+        loading={i === initialIndex ? 'eager' : 'lazy'}
+        style={`will-change: opacity${img.mobilePosition ? `; --mobile-position: ${img.mobilePosition}` : ''}`}
+      />
+    </picture>
   ))}
 </div>
