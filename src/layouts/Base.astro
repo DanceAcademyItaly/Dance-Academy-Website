@@ -34,6 +34,7 @@ import CookieBanner from '../components/CookieBanner.astro';
     <link rel="canonical" href={ogUrl ?? Astro.url.href} />
     <slot name="head" />
     <link rel="icon" href="/favicon.ico" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   </head>
   <body>
     <slot />
@@ -113,7 +114,8 @@ import CookieBanner from '../components/CookieBanner.astro';
 
         window.addEventListener('load', function() {
           order.slice(1).forEach(function(i) {
-            var src = slides[i].getAttribute('src');
+            var source = slides[i].parentElement && slides[i].parentElement.querySelector('source[type="image/webp"]');
+            var src = (source && source.srcset) || slides[i].getAttribute('src');
             if (src) { var img = new Image(); img.src = src; }
           });
         }, { once: true });
