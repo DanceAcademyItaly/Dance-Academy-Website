@@ -18,7 +18,7 @@ import { ITALIAN_PROVINCES } from '../lib/provinces';
           <h2 class="card-title">La scuola</h2>
         </div>
         <div class="card-content">
-          <div class="form-group">
+          <div class="form-group full-width">
             <label for="nomeScuola" class="sr-only">Nome della scuola</label>
             <input type="text" id="nomeScuola" name="nomeScuola" placeholder="Nome della scuola" class="required" required autocomplete="organization" />
           </div>
@@ -110,8 +110,24 @@ import { ITALIAN_PROVINCES } from '../lib/provinces';
             <textarea id="discipline" name="discipline" placeholder="Discipline insegnate" class="required" required></textarea>
           </div>
           <div class="form-group full-width">
+            <label for="riconoscimenti" class="sr-only">Premi e riconoscimenti (opzionale)</label>
+            <textarea id="riconoscimenti" name="riconoscimenti" placeholder="Premi e riconoscimenti (opzionale)"></textarea>
+          </div>
+          <div class="form-group full-width">
             <label for="unicita" class="sr-only">Cosa rende unica la vostra scuola?</label>
             <textarea id="unicita" name="unicita" placeholder="Cosa rende unica la vostra scuola?" class="required tall" required></textarea>
+          </div>
+          <div class="form-group full-width">
+            <label for="sitoWeb" class="sr-only">Sito web (opzionale)</label>
+            <input type="url" id="sitoWeb" name="sitoWeb" placeholder="Sito web (opzionale)" />
+          </div>
+          <div class="form-group">
+            <label for="instagram" class="sr-only">Instagram (opzionale)</label>
+            <input type="text" id="instagram" name="instagram" placeholder="Instagram (opzionale)" />
+          </div>
+          <div class="form-group">
+            <label for="facebook" class="sr-only">Facebook (opzionale)</label>
+            <input type="text" id="facebook" name="facebook" placeholder="Facebook (opzionale)" />
           </div>
           <div class="form-group full-width">
             <label for="contenutiSocial" class="sr-only">Come utilizzate i social media?</label>
@@ -129,6 +145,10 @@ import { ITALIAN_PROVINCES } from '../lib/provinces';
               <option value="tra-2-mesi">Tra 2 mesi</option>
               <option value="da-concordare">Da concordare</option>
             </select>
+          </div>
+          <div class="form-group full-width">
+            <label for="altreInfo" class="sr-only">Altre informazioni (opzionale)</label>
+            <textarea id="altreInfo" name="altreInfo" placeholder="Altre informazioni (opzionale)"></textarea>
           </div>
           <div class="form-group full-width privacy-group">
             <p class="privacy-notice">

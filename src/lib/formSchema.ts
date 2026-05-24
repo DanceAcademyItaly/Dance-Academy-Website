@@ -19,10 +19,15 @@ export const FormSchema = z.object({
 
   // Step 3 — Il progetto
   discipline:      z.string().min(1, 'Campo obbligatorio'),
+  riconoscimenti:  z.string().optional().default(''),
   unicita:         z.string().min(1, 'Campo obbligatorio'),
+  sitoWeb:         z.string().optional().default(''),
+  instagram:       z.string().optional().default(''),
+  facebook:        z.string().optional().default(''),
   contenutiSocial: z.string().min(1, 'Campo obbligatorio'),
   perche:          z.string().min(1, 'Campo obbligatorio'),
   disponibilita:   z.string().min(1, 'Campo obbligatorio'),
+  altreInfo:       z.string().optional().default(''),
   privacyConsent:  z.literal(true, { errorMap: () => ({ message: "Devi accettare l'informativa" }) }),
 });
 
@@ -31,7 +36,7 @@ export type FormData = z.infer<typeof FormSchema>;
 export const STEP_FIELDS: Record<1 | 2 | 3, (keyof FormData)[]> = {
   1: ['nomeScuola', 'citta', 'provincia', 'indirizzo', 'annoFondazione', 'numeroAllievi'],
   2: ['nome', 'cognome', 'ruolo', 'email', 'telefono'],
-  3: ['discipline', 'unicita', 'contenutiSocial', 'perche', 'disponibilita', 'privacyConsent'],
+  3: ['discipline', 'riconoscimenti', 'unicita', 'sitoWeb', 'instagram', 'facebook', 'contenutiSocial', 'perche', 'disponibilita', 'altreInfo', 'privacyConsent'],
 };
 
 // Compile-time guard: fails if a FormData key is missing from STEP_FIELDS
