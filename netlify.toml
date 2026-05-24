@@ -4,3 +4,4 @@
 
 [build.environment]
   NODE_VERSION = "22"
+  PUBLIC_GAS_URL = "https://script.google.com/macros/s/AKfycbzfIm2PsKRWX5-hjk64qUX5F1Uw4CdM1m1zW3k8JSNgPn6x4JMc8qgfAeozKaG14fghYQ/exec"
