@@ -105,7 +105,7 @@ function initForm(): void {
     try {
       const res = await fetch(gasUrl, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'text/plain' },
         body: JSON.stringify(result.data),
       });
       if (!res.ok) throw new Error(`Server error: ${res.status}`);
