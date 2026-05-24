@@ -33,3 +33,9 @@ export const STEP_FIELDS: Record<1 | 2 | 3, (keyof FormData)[]> = {
   2: ['nome', 'cognome', 'ruolo', 'email', 'telefono'],
   3: ['discipline', 'unicita', 'contenutiSocial', 'perche', 'disponibilita', 'privacyConsent'],
 };
+
+// Compile-time guard: fails if a FormData key is missing from STEP_FIELDS
+type _AllStepFields = typeof STEP_FIELDS[1][number] | typeof STEP_FIELDS[2][number] | typeof STEP_FIELDS[3][number];
+type _AssertAllCovered = keyof FormData extends _AllStepFields ? true : never;
+const _assertAllCovered: _AssertAllCovered = true;
+void _assertAllCovered;

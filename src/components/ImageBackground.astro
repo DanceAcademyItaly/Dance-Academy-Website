@@ -16,7 +16,7 @@ const images = [
 <div class="image-bg" id="image-bg" data-initial={initialIndex}>
   {images.map((img, i) => (
     <picture>
-      <source srcset={img.src.replace('.jpg', '.webp')} type="image/webp" />
+      <source srcset={img.src.replace(/\.jpe?g$/i, '.webp')} type="image/webp" />
       <img
         src={img.src}
         class="bg-slide"

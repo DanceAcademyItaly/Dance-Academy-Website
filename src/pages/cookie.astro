@@ -1,11 +1,12 @@
 ---
 import Base from '../layouts/Base.astro';
 import Header from '../components/Header.astro';
+import { SITE_URL } from '../lib/config';
 ---
 <Base
   title="Cookie Policy — Dance Academy Italy"
   description="Informativa sull'uso dei cookie e degli strumenti di tracciamento su dance-academy.it."
-  ogUrl="https://www.dance-academy.it/cookie"
+  ogUrl={`${SITE_URL}/cookie`}
 >
   <Header />
   <main class="legal-page">

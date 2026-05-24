@@ -1,11 +1,12 @@
 ---
 import Base from '../layouts/Base.astro';
 import Header from '../components/Header.astro';
+import { SITE_URL } from '../lib/config';
 ---
 <Base
   title="Privacy Policy — Dance Academy Italy"
   description="Informativa sul trattamento dei dati personali ai sensi dell'art. 13 GDPR (Reg. UE 2016/679)."
-  ogUrl="https://www.dance-academy.it/privacy"
+  ogUrl={`${SITE_URL}/privacy`}
 >
   <Header />
   <main class="legal-page">

@@ -4,19 +4,21 @@ import Header from '../components/Header.astro';
 import ImageBackground from '../components/ImageBackground.astro';
 import Hero from '../components/Hero.astro';
 import siteData from '../content/site.json';
+import { SITE_URL } from '../lib/config';
 ---
 <Base
   title={siteData.title}
   description="Dance Academy Italy – Il format che racconta le scuole di danza italiane."
   ogTitle={siteData.title}
   ogImage="https://img.youtube.com/vi/L_cHp3yYADI/maxresdefault.jpg"
-  ogUrl="https://www.dance-academy.it"
+  ogUrl={SITE_URL}
 >
   <link rel="preload" slot="head" as="image" href="/assets/logo.webp" type="image/webp" fetchpriority="high" />
   <link rel="preload" slot="head" as="image" href="/assets/bg/4.webp" type="image/webp" fetchpriority="high" />
   <ImageBackground initialIndex={3} />
   <Header />
   <main>
+    <h1 class="sr-only">{siteData.title}</h1>
     <Hero subtitle={siteData.hero.subtitle} />
   </main>
 </Base>

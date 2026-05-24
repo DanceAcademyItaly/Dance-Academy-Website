@@ -1,0 +1,22 @@
+{
+  "id": 3,
+  "season": 1,
+  "seasonName": "2025/26",
+  "title": "Danza City - Padova",
+  "slug": "danza-city-padova",
+  "mainVideoId": "hsK1cywTPvw",
+  "choreographies": [
+    {
+      "title": "Compilation Hip Hop",
+      "videoId": "QuKVCF4b--Y"
+    },
+    {
+      "title": "Compilation Classico",
+      "videoId": "ejrkoCP0_iY"
+    },
+    {
+      "title": "Compilation Modern",
+      "videoId": "2bDCgpjLVpE"
+    }
+  ]
+}

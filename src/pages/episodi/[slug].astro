@@ -4,6 +4,7 @@ import Base from '../../layouts/Base.astro';
 import Header from '../../components/Header.astro';
 import ImageBackground from '../../components/ImageBackground.astro';
 import EpisodePlayer from '../../components/EpisodePlayer.astro';
+import { SITE_URL } from '../../lib/config';
 
 export async function getStaticPaths() {
   const episodes = await getCollection('episodes');
@@ -15,7 +16,7 @@ export async function getStaticPaths() {
 
 const { episode } = Astro.props;
 const ogImage = `https://img.youtube.com/vi/${episode.mainVideoId}/maxresdefault.jpg`;
-const ogUrl = `https://dance-academy.it/episodi/${episode.slug}`;
+const ogUrl = `${SITE_URL}/episodi/${episode.slug}`;
 ---
 <Base
   title={`${episode.title} — Dance Academy Italy`}

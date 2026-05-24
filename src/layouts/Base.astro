@@ -40,47 +40,48 @@ import CookieBanner from '../components/CookieBanner.astro';
     <slot />
     <Footer />
     <CookieBanner />
+    <!-- is:inline keeps this script parser-blocking so slides start before Vite bundles load (prevents FOUC) -->
     <script is:inline>
       (function () {
         if (window.__slideshowRunning) return;
         window.__slideshowRunning = true;
 
-        var FADE_MS = 11000;
-        var HOLD_MS = 3000;
+        const FADE_MS = 11000;
+        const HOLD_MS = 3000;
+        const FRAME_INTERVAL = 1000 / 30;
 
         function shuffle(arr) {
-          for (var i = arr.length - 1; i > 0; i--) {
-            var j = Math.floor(Math.random() * (i + 1));
-            var tmp = arr[i]; arr[i] = arr[j]; arr[j] = tmp;
+          for (let i = arr.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            const tmp = arr[i]; arr[i] = arr[j]; arr[j] = tmp;
           }
           return arr;
         }
 
-        var container = document.getElementById('image-bg');
-        var slides = Array.from(document.querySelectorAll('.bg-slide'));
+        const container = document.getElementById('image-bg');
+        const slides = Array.from(document.querySelectorAll('.bg-slide'));
         if (!slides.length) return;
 
-        var initialIndex = container ? parseInt(container.getAttribute('data-initial') || '0', 10) : 0;
+        const initialIndex = container ? parseInt(container.getAttribute('data-initial') || '0', 10) : 0;
 
-        var opacities = slides.map(function() { return 0; });
-        var rafId = null;
+        const opacities = slides.map(function() { return 0; });
+        let rafId = null;
 
         function applyOpacity(idx, v) {
           opacities[idx] = v;
           slides[idx].style.opacity = v;
         }
 
-        var rest = shuffle(slides.map(function(_, i) { return i; }).filter(function(i) { return i !== initialIndex; }));
-        var order = [initialIndex].concat(rest);
-        var cursor = 0;
-        var FRAME_INTERVAL = 1000 / 30;
-        var lastFrameTime = 0;
+        const rest = shuffle(slides.map(function(_, i) { return i; }).filter(function(i) { return i !== initialIndex; }));
+        const order = [initialIndex].concat(rest);
+        let cursor = 0;
+        let lastFrameTime = 0;
 
         function startFade(prevIdx, nextIdx) {
           if (rafId) cancelAnimationFrame(rafId);
-          var p0 = opacities[prevIdx];
-          var n0 = opacities[nextIdx];
-          var startTime = null;
+          const p0 = opacities[prevIdx];
+          const n0 = opacities[nextIdx];
+          let startTime = null;
 
           function step(now) {
             if (now - lastFrameTime < FRAME_INTERVAL) {
@@ -89,7 +90,7 @@ import CookieBanner from '../components/CookieBanner.astro';
             }
             lastFrameTime = now;
             if (!startTime) startTime = now;
-            var p = Math.min((now - startTime) / FADE_MS, 1);
+            const p = Math.min((now - startTime) / FADE_MS, 1);
             applyOpacity(nextIdx, n0 + p * (1 - n0));
             applyOpacity(prevIdx, p0 * (1 - p));
             if (p < 1) {
@@ -105,7 +106,7 @@ import CookieBanner from '../components/CookieBanner.astro';
         }
 
         function tick() {
-          var prevIdx = order[cursor % order.length];
+          const prevIdx = order[cursor % order.length];
           cursor++;
           startFade(prevIdx, order[cursor % order.length]);
         }
@@ -114,9 +115,9 @@ import CookieBanner from '../components/CookieBanner.astro';
 
         window.addEventListener('load', function() {
           order.slice(1).forEach(function(i) {
-            var source = slides[i].parentElement && slides[i].parentElement.querySelector('source[type="image/webp"]');
-            var src = (source && source.srcset) || slides[i].getAttribute('src');
-            if (src) { var img = new Image(); img.src = src; }
+            const source = slides[i].parentElement && slides[i].parentElement.querySelector('source[type="image/webp"]');
+            const src = (source && source.srcset) || slides[i].getAttribute('src');
+            if (src) { const img = new Image(); img.src = src; }
           });
         }, { once: true });
 
