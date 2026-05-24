@@ -1,12 +1,5 @@
 ---
-const navLinks = [
-  { label: 'Home', href: '/' },
-  { label: 'Episodi', href: '/episodi' },
-  { label: 'Missione', href: '/missione' },
-  { label: 'Candidati', href: '/candidati' },
-  { label: 'Contatti', href: '/contatti' },
-];
-
+import { navLinks } from '../lib/config';
 const currentPath = Astro.url.pathname;
 ---
 <header class="header-fixed" id="header">

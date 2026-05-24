@@ -104,8 +104,8 @@
 
 .coreo-card {
     background: rgba(0, 0, 0, 0.18);
-    backdrop-filter: blur(8px) saturate(100%) brightness(0.85);
-    -webkit-backdrop-filter: blur(8px) saturate(100%) brightness(0.85);
+    backdrop-filter: var(--glass-filter-card);
+    -webkit-backdrop-filter: var(--glass-filter-card);
     border: 1px solid var(--border-default);
     transition: all 0.3s;
     box-shadow: var(--shadow-card);
@@ -276,8 +276,8 @@
 
 .form-step {
     background: rgba(0, 0, 0, 0.18);
-    backdrop-filter: blur(8px) saturate(100%) brightness(0.85);
-    -webkit-backdrop-filter: blur(8px) saturate(100%) brightness(0.85);
+    backdrop-filter: var(--glass-filter-card);
+    -webkit-backdrop-filter: var(--glass-filter-card);
     border: 1px solid rgba(255, 255, 255, 0.25);
     border-radius: 2px;
     box-shadow: var(--shadow-card);
@@ -342,8 +342,8 @@
     width: 100%;
     padding: clamp(10px, 1.5vh, 14px) clamp(16px, 2.5vw, 28px);
     background: var(--bg-overlay-30);
-    backdrop-filter: blur(20px) saturate(90%);
-    -webkit-backdrop-filter: blur(20px) saturate(90%);
+    backdrop-filter: var(--glass-filter-heavy);
+    -webkit-backdrop-filter: var(--glass-filter-heavy);
     border: 1px solid var(--border-medium);
     color: var(--text-secondary);
     font-size: var(--text-sm);
@@ -525,8 +525,8 @@
 .submit-button {
     display: inline-block;
     background: var(--bg-overlay-30);
-    backdrop-filter: blur(20px) saturate(90%);
-    -webkit-backdrop-filter: blur(20px) saturate(90%);
+    backdrop-filter: var(--glass-filter-heavy);
+    -webkit-backdrop-filter: var(--glass-filter-heavy);
     border: 1px solid var(--border-medium);
     border-radius: 2px;
     color: var(--text-secondary);

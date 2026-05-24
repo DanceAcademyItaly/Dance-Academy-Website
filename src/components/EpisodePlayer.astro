@@ -1,18 +1,5 @@
 ---
-interface Choreography {
-  title: string;
-  videoId: string;
-}
-interface EpisodeData {
-  id: number;
-  season: number;
-  seasonName: string;
-  title: string;
-  slug: string;
-  mainVideoId: string;
-  choreographies: Choreography[];
-  thumbnail?: string;
-}
+import type { EpisodeData } from '../types';
 interface Props {
   episode: EpisodeData;
 }

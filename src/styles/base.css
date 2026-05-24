@@ -68,6 +68,9 @@
     --z-episodi: 200;
     --z-hero: 100;
     --z-video-bg: 0;
+
+    --glass-filter-card: blur(8px) saturate(100%) brightness(0.85);
+    --glass-filter-heavy: blur(20px) saturate(90%);
 }
 
 html {
