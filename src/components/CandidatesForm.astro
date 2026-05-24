@@ -218,11 +218,18 @@ import { ITALIAN_PROVINCES } from '../lib/provinces';
   }
 
   .checkbox-label input[type="checkbox"] {
+    appearance: auto;
+    -webkit-appearance: checkbox;
+    display: inline-block;
+    width: 1rem;
+    height: 1rem;
+    padding: 0;
+    background: transparent;
+    border: none;
+    box-sizing: content-box;
     margin-top: 0.15rem;
     flex-shrink: 0;
     accent-color: var(--accent);
-    width: 1rem;
-    height: 1rem;
     cursor: pointer;
   }
 
