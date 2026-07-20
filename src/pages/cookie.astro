@@ -2,6 +2,7 @@
 import Base from '../layouts/Base.astro';
 import Header from '../components/Header.astro';
 import { SITE_URL } from '../lib/config';
+import { cookiePolicyVersion } from '../lib/cookiePolicyVersion';
 ---
 <Base
   title="Cookie Policy — Dance Academy Italy"
@@ -12,7 +13,7 @@ import { SITE_URL } from '../lib/config';
   <main class="legal-page">
     <div class="legal-container">
       <h1>Cookie Policy</h1>
-      <p class="legal-updated">Aggiornata a: maggio 2026</p>
+      <p class="legal-updated">Aggiornata a: {cookiePolicyVersion.updatedLabel}</p>
 
       <section>
         <h2>Cosa sono i cookie</h2>
@@ -46,7 +47,8 @@ import { SITE_URL } from '../lib/config';
               <tr>
                 <td><code>da_cookie_consent</code></td>
                 <td>Tecnico</td>
-                <td>Memorizza la tua scelta sul banner cookie</td>
+                <td>Memorizza la tua scelta sul banner cookie e un identificativo casuale usato per
+                  registrare la scelta anche lato server (vedi sotto)</td>
                 <td>6 mesi</td>
                 <td>Dance Academy Italy</td>
               </tr>
@@ -100,12 +102,20 @@ import { SITE_URL } from '../lib/config';
       <section>
         <h2>Come gestire il consenso</h2>
         <p>
-          Al primo accesso al sito viene mostrato un banner che ti permette di accettare,
-          rifiutare o personalizzare l'uso dei cookie di profilazione.
+          Al primo accesso al sito viene mostrato un banner che ti permette di accettare o
+          rifiutare i cookie di profilazione (oggi presente solo la categoria YouTube: non ci sono
+          al momento altre categorie tra cui scegliere singolarmente).
         </p>
         <p>
           Puoi cambiare la tua scelta in qualsiasi momento cliccando il pulsante qui sotto,
           oppure cancellando i dati di navigazione dalle impostazioni del tuo browser.
+        </p>
+        <p>
+          Oltre a essere salvata sul tuo dispositivo, ogni scelta (accetta/rifiuta) viene registrata
+          anche in un log conservato dal titolare — data/ora, scelta, un identificativo casuale non
+          riconducibile alla tua identità, tipo di browser e versione di questa Cookie Policy — al solo
+          fine di poter dimostrare che il consenso è stato raccolto correttamente. Dettagli e base
+          giuridica nella <a href="/privacy">Privacy Policy</a>.
         </p>
         <button id="reopenConsentBtn" class="reopen-consent-btn">
           Gestisci preferenze cookie
