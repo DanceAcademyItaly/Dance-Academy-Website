@@ -2,6 +2,7 @@
 import Base from '../layouts/Base.astro';
 import Header from '../components/Header.astro';
 import { SITE_URL } from '../lib/config';
+import { privacyVersion } from '../lib/privacyVersion';
 ---
 <Base
   title="Privacy Policy — Dance Academy Italy"
@@ -12,7 +13,7 @@ import { SITE_URL } from '../lib/config';
   <main class="legal-page">
     <div class="legal-container">
       <h1>Privacy Policy</h1>
-      <p class="legal-updated">Aggiornata a: maggio 2026</p>
+      <p class="legal-updated">Aggiornata a: {privacyVersion.updatedLabel}</p>
 
       <section>
         <h2>1. Titolare del trattamento</h2>
@@ -29,7 +30,9 @@ import { SITE_URL } from '../lib/config';
         <p>
           Raccogliamo i dati che inserisci nel form (nome, cognome, e-mail, telefono, dati della scuola)
           al solo fine di valutare la candidatura e contattarti in merito.
-          I dati vengono trasmessi e conservati in un foglio Google Sheets gestito dal titolare.
+          I dati vengono trasmessi e conservati in un foglio Google Sheets gestito dal titolare, insieme
+          alla fonte tecnica della candidatura (sito principale o eventuale sito partner convenzionato)
+          e alla versione della presente informativa in vigore al momento dell'invio.
         </p>
         <p><strong>Base giuridica:</strong> legittimo interesse del titolare (art. 6, par. 1, lett. f GDPR).</p>
 
@@ -47,6 +50,18 @@ import { SITE_URL } from '../lib/config';
           di profilazione sul tuo dispositivo.
         </p>
         <p><strong>Base giuridica:</strong> consenso dell'interessato (art. 6, par. 1, lett. a GDPR).</p>
+
+        <h3>Registro delle scelte sul banner cookie</h3>
+        <p>
+          Quando accetti o rifiuti i cookie dal banner, la scelta viene registrata sia sul tuo dispositivo
+          (per non richiedertela di nuovo) sia in un log conservato dal titolare, con data/ora, la scelta
+          effettuata, un identificativo casuale non riconducibile alla tua identità e generato una sola
+          volta per quella scelta, il tipo di browser usato e la versione della Cookie Policy in vigore in
+          quel momento. Questo registro serve esclusivamente a poter dimostrare, se richiesto, che il
+          consenso è stato raccolto correttamente; non viene utilizzato per profilazione, analytics o
+          marketing, né incrociato con altri dati raccolti dal sito.
+        </p>
+        <p><strong>Base giuridica:</strong> legittimo interesse del titolare a poter dimostrare la conformità del trattamento (art. 6, par. 1, lett. f GDPR).</p>
       </section>
 
       <section>
@@ -81,6 +96,11 @@ import { SITE_URL } from '../lib/config';
           <li>
             <strong>Dati del form candidati:</strong> conservati nel foglio Google Sheets del titolare
             fino alla cancellazione manuale da parte del titolare o su richiesta dell'interessato.
+          </li>
+          <li>
+            <strong>Registro delle scelte sul banner cookie:</strong> conservato dal titolare fino a
+            cancellazione manuale, in quanto la sua finalità è dimostrare un consenso passato anche a
+            distanza di tempo.
           </li>
           <li>
             <strong>Log del server Netlify:</strong> secondo la policy di Netlify (generalmente 30 giorni).
